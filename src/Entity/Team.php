@@ -38,12 +38,16 @@ class Team
     #[ORM\OneToMany(targetEntity: TeamMember::class, mappedBy: 'team', cascade: ['persist', 'remove'])]
     private Collection $teamMembers;
 
+    #[ORM\OneToMany(mappedBy: 'team', targetEntity: Retrospective::class, cascade: ['persist', 'remove'])]
+    private Collection $retrospectives;
+
     #[ORM\Column]
     private bool $isActive = true;
 
     public function __construct()
     {
         $this->teamMembers = new ArrayCollection();
+        $this->retrospectives = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
     }
@@ -207,5 +211,32 @@ class Team
             }
         }
         return null;
+    }
+
+    /**
+     * @return Collection<int, Retrospective>
+     */
+    public function getRetrospectives(): Collection
+    {
+        return $this->retrospectives;
+    }
+
+    public function addRetrospective(Retrospective $retrospective): static
+    {
+        if (!$this->retrospectives->contains($retrospective)) {
+            $this->retrospectives->add($retrospective);
+            $retrospective->setTeam($this);
+        }
+        return $this;
+    }
+
+    public function removeRetrospective(Retrospective $retrospective): static
+    {
+        if ($this->retrospectives->removeElement($retrospective)) {
+            if ($retrospective->getTeam() === $this) {
+                $retrospective->setTeam(null);
+            }
+        }
+        return $this;
     }
 }
