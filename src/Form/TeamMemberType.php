@@ -38,13 +38,7 @@ class TeamMemberType extends AbstractType
                 'required' => false,
                 'choices' => [
                     'Member' => 'Member',
-                    'Lead' => 'Lead',
                     'Facilitator' => 'Facilitator',
-                    'Developer' => 'Developer',
-                    'Designer' => 'Designer',
-                    'Tester' => 'Tester',
-                    'Product Owner' => 'Product Owner',
-                    'Scrum Master' => 'Scrum Master',
                 ],
                 'attr' => [
                     'class' => 'form-control'
