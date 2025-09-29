@@ -308,32 +308,26 @@ final class TeamController extends AbstractController
                 return $this->json(['success' => false, 'message' => 'Invalid CSRF token'], 400);
             }
             
-            $email = $request->request->get('email');
             $role = $request->request->get('role', 'Member');
             $message = $request->request->get('message');
             
-            if (!$email) {
-                return $this->json(['success' => false, 'message' => 'Email is required'], 400);
-            }
-            
-            // Check if user is already a member
-            $existingUser = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
-            if ($existingUser && $team->hasMember($existingUser)) {
-                return $this->json(['success' => false, 'message' => 'User is already a member of this team'], 400);
-            }
-            
-            // Check if there's already a pending invitation
+            // Check if there's already a pending generic invitation for this team
             $existingInvitation = $this->entityManager->getRepository(TeamInvitation::class)
-                ->findOneBy(['email' => $email, 'team' => $team, 'status' => 'pending']);
+                ->findOneBy(['email' => 'team@invitation.com', 'team' => $team, 'status' => 'pending']);
             
             if ($existingInvitation && !$existingInvitation->isExpired()) {
-                return $this->json(['success' => false, 'message' => 'There is already a pending invitation for this email'], 400);
+                // Return existing invitation link
+                return $this->json([
+                    'success' => true,
+                    'invitationUrl' => $existingInvitation->getInvitationUrl(),
+                    'expiresAt' => $existingInvitation->getExpiresAt()->format('Y-m-d H:i:s')
+                ]);
             }
             
             // Create new invitation
             $invitation = new TeamInvitation();
             $invitation->setTeam($team);
-            $invitation->setEmail($email);
+            $invitation->setEmail('team@invitation.com'); // Generic email for team invitations
             $invitation->setRole($role);
             $invitation->setMessage($message);
             $invitation->setInvitedBy($this->getUser());
