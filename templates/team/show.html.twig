@@ -261,7 +261,7 @@
         function createInvitation(teamId) {
             // Create form data with default values
             const formData = new FormData();
-            formData.append('email', 'team@invitation.com'); // Placeholder email
+            formData.append('email', 'team@invitation.com'); // Generic email for team invitations
             formData.append('role', 'Member'); // Default role
             formData.append('message', 'Team invitation link'); // Default message
             formData.append('_token', '{{ csrf_token('create_invitation') }}');
