@@ -122,6 +122,9 @@ final class RoleController extends AbstractController
     public function getRolesData(Request $request): JsonResponse
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        
+        // Debug logging
+        error_log('DataTables request received: ' . json_encode($request->query->all()));
 
         $draw = (int) $request->query->get('draw', 1);
         $start = (int) $request->query->get('start', 0);
@@ -175,11 +178,16 @@ final class RoleController extends AbstractController
             ];
         }
 
-        return new JsonResponse([
+        $response = [
             'draw' => $draw,
             'recordsTotal' => $totalRecords,
             'recordsFiltered' => $totalRecords,
             'data' => $data
-        ]);
+        ];
+        
+        // Debug logging
+        error_log('DataTables response: ' . json_encode($response));
+        
+        return new JsonResponse($response);
     }
 }
