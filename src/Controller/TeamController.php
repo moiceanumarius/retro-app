@@ -298,8 +298,13 @@ final class TeamController extends AbstractController
         }
         
         if ($request->isMethod('POST')) {
+            // Debug CSRF token
+            $token = $request->request->get('_token');
+            $isValid = $this->isCsrfTokenValid('create_invitation', $token);
+            error_log("CSRF Token: $token, Valid: " . ($isValid ? 'YES' : 'NO'));
+            
             // Validate CSRF token
-            if (!$this->isCsrfTokenValid('create_invitation', $request->request->get('_token'))) {
+            if (!$isValid) {
                 return $this->json(['success' => false, 'message' => 'Invalid CSRF token'], 400);
             }
             
