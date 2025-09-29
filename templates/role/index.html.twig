@@ -292,6 +292,7 @@
                 margin: 0;
                 flex: 0 0 auto;
                 text-align: right;
+                margin-left: auto;
             }
             
             .dataTables_wrapper .dataTables_info,
@@ -319,6 +320,10 @@
                 text-align: center;
                 margin: 0;
                 flex: 0 0 auto;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
             }
             
             .dataTables_wrapper .dataTables_length select {
@@ -593,10 +598,10 @@
                 scrollX: true,
                 autoWidth: false,
                 initComplete: function() {
-                    // Move the default length selector to footer
+                    // Move the default length selector to pagination div
                     var lengthSelector = $('.dataTables_length');
                     if (lengthSelector.length) {
-                        $('.dataTables_wrapper .dataTables_info').parent().append(lengthSelector);
+                        $('.dataTables_paginate').append(lengthSelector);
                     }
                 }
             });
