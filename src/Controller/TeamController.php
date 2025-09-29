@@ -313,15 +313,13 @@ final class TeamController extends AbstractController
             $message = $request->request->get('message');
             
             if (!$email) {
-                $this->addFlash('error', 'Email is required');
-                return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+                return $this->json(['success' => false, 'message' => 'Email is required'], 400);
             }
             
             // Check if user is already a member
             $existingUser = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
             if ($existingUser && $team->hasMember($existingUser)) {
-                $this->addFlash('error', 'User is already a member of this team');
-                return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+                return $this->json(['success' => false, 'message' => 'User is already a member of this team'], 400);
             }
             
             // Check if there's already a pending invitation
@@ -329,8 +327,7 @@ final class TeamController extends AbstractController
                 ->findOneBy(['email' => $email, 'team' => $team, 'status' => 'pending']);
             
             if ($existingInvitation && !$existingInvitation->isExpired()) {
-                $this->addFlash('error', 'There is already a pending invitation for this email');
-                return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+                return $this->json(['success' => false, 'message' => 'There is already a pending invitation for this email'], 400);
             }
             
             // Create new invitation
