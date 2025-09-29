@@ -27,9 +27,26 @@ final class RoleController extends AbstractController
         $roles = $this->entityManager->getRepository(Role::class)->findAll();
         $users = $this->entityManager->getRepository(User::class)->findAll();
 
+        // Count users per role
+        $roleCounts = [];
+        foreach ($roles as $role) {
+            $count = $this->entityManager->getRepository(UserRole::class)
+                ->createQueryBuilder('ur')
+                ->select('COUNT(ur.id)')
+                ->where('ur.role = :role')
+                ->andWhere('ur.isActive = :active')
+                ->setParameter('role', $role)
+                ->setParameter('active', true)
+                ->getQuery()
+                ->getSingleScalarResult();
+            
+            $roleCounts[$role->getCode()] = $count;
+        }
+
         return $this->render('role/index.html.twig', [
             'roles' => $roles,
             'users' => $users,
+            'roleCounts' => $roleCounts,
         ]);
     }
 

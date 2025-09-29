@@ -615,6 +615,14 @@
             <p>Total Users</p>
         </div>
         
+        <!-- Role Stats -->
+        {% for role in roles %}
+            <div class="stats-card">
+                <h3>{{ roleCounts[role.code] ?? 0 }}</h3>
+                <p>{{ role.name }}</p>
+            </div>
+        {% endfor %}
+        
         <!-- Role Assignment Form -->
         <div class="modern-card">
             <div class="modern-card-header">
