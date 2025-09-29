@@ -340,18 +340,12 @@ final class TeamController extends AbstractController
             $this->entityManager->persist($invitation);
             $this->entityManager->flush();
             
-            // Return JSON response for AJAX
-            if ($request->isXmlHttpRequest() || $request->headers->get('X-Requested-With') === 'XMLHttpRequest') {
-                return $this->json([
-                    'success' => true,
-                    'message' => 'Invitation created successfully!',
-                    'invitationUrl' => $request->getSchemeAndHttpHost() . $invitation->getInvitationUrl()
-                ]);
-            }
-            
-            $this->addFlash('success', '✅ Invitation created successfully! Share this link: ' . $request->getSchemeAndHttpHost() . $invitation->getInvitationUrl());
-            
-            return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+            // Always return JSON for POST requests (popup expects JSON)
+            return $this->json([
+                'success' => true,
+                'message' => 'Invitation created successfully!',
+                'invitationUrl' => $request->getSchemeAndHttpHost() . $invitation->getInvitationUrl()
+            ]);
         }
         
         // GET request - just return to team page (popup handles invitation creation)
