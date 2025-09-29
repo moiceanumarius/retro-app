@@ -130,14 +130,13 @@ final class RoleController extends AbstractController
         $start = (int) $request->query->get('start', 0);
         $length = (int) $request->query->get('length', 20);
         
-        // Handle search parameter properly
-        $search = $request->query->get('search', []);
-        $searchValue = is_array($search) ? ($search['value'] ?? '') : $search;
+        // Handle search parameter properly - get all query params first
+        $allParams = $request->query->all();
+        $searchValue = $allParams['search']['value'] ?? '';
         
         // Handle order parameter properly
-        $order = $request->query->get('order', []);
-        $orderColumn = is_array($order) && isset($order[0]) ? (int) $order[0]['column'] : 3;
-        $orderDir = is_array($order) && isset($order[0]) ? $order[0]['dir'] : 'desc';
+        $orderColumn = isset($allParams['order'][0]['column']) ? (int) $allParams['order'][0]['column'] : 3;
+        $orderDir = $allParams['order'][0]['dir'] ?? 'desc';
 
         $qb = $this->entityManager->createQueryBuilder()
             ->select('ur')
