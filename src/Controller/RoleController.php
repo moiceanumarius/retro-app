@@ -175,7 +175,7 @@ final class RoleController extends AbstractController
                 'roleName' => $userRole->getRole()->getName(),
                 'assignedAt' => $userRole->getAssignedAt()->format('M d, Y H:i'),
                 'assignedBy' => $userRole->getAssignedBy() ?? 'System',
-                'status' => $userRole->getIsActive() ? 'Active' : 'Inactive',
+                'status' => $userRole->isActive() ? 'Active' : 'Inactive',
                 'actions' => '<form method="post" action="' . $this->generateUrl('app_roles_remove', ['userRoleId' => $userRole->getId()]) . '" style="display: inline;" onsubmit="return confirm(\'Are you sure?\')">
                     <input type="hidden" name="_token" value="' . $this->container->get('security.csrf.token_manager')->getToken('remove_role') . '">
                     <button type="submit" class="btn-modern btn-danger-modern" style="padding: 4px 8px; font-size: 12px;">Remove</button>
