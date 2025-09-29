@@ -657,7 +657,7 @@
             <!-- Role Stats -->
             {% for role in roles %}
                 {% set roleClass = role.code|lower|replace({'_': '-'}) %}
-                <div class="stats-card role-{{ roleClass }}">
+                <div class="stats-card {{ roleClass }}">
                     <h3>{{ roleCounts[role.code] ?? 0 }}</h3>
                     <p>{{ role.name }}</p>
                 </div>
