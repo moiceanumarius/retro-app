@@ -282,6 +282,7 @@
             formData.append('email', email);
             formData.append('role', role);
             formData.append('message', message);
+            formData.append('_token', '{{ csrf_token('create_invitation') }}');
 
             // Send AJAX request
             fetch(`/teams/${teamId}/create-invitation`, {
@@ -291,18 +292,23 @@
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             })
-            .then(response => response.json())
+            .then(response => {
+                console.log('Response status:', response.status);
+                console.log('Response headers:', response.headers);
+                return response.json();
+            })
             .then(data => {
+                console.log('Response data:', data);
                 if (data.success) {
                     document.getElementById('inviteLink').value = data.invitationUrl;
                     document.getElementById('inviteResult').style.display = 'block';
                 } else {
-                    alert('Error creating invitation');
+                    alert('Error creating invitation: ' + (data.message || 'Unknown error'));
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
-                alert('Error creating invitation');
+                alert('Error creating invitation: ' + error.message);
             });
         }
 
