@@ -27,6 +27,7 @@
             box-shadow: 0 2px 20px rgba(0,0,0,0.08);
             border: 1px solid #e9ecef;
             transition: all 0.3s ease;
+            color: #495057;
         }
         
         .stats-card:hover {
@@ -656,7 +657,8 @@
             
             <!-- Role Stats -->
             {% for role in roles %}
-                <div class="stats-card role-{{ role.code|lower|replace({'_': '-'}) }}">
+                {% set roleClass = 'role-' ~ role.code|lower|replace({'_': '-'}) %}
+                <div class="stats-card {{ roleClass }}">
                     <h3>{{ roleCounts[role.code] ?? 0 }}</h3>
                     <p>{{ role.name }}</p>
                 </div>
