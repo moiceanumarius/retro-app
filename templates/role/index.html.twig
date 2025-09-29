@@ -264,21 +264,33 @@
         
         <!-- jqGrid Styles -->
         <style>
+            #userRolesGrid {
+                width: 100% !important;
+                min-height: 400px !important;
+            }
+            
             .ui-jqgrid {
-                border: none !important;
+                border: 1px solid #e9ecef !important;
+                border-radius: 8px !important;
+                background: white !important;
+                width: 100% !important;
             }
             
             .ui-jqgrid .ui-jqgrid-hdiv {
                 border: none !important;
+                background: white !important;
             }
             
             .ui-jqgrid .ui-jqgrid-bdiv {
                 border: none !important;
+                background: white !important;
+                min-height: 300px !important;
             }
             
             .ui-jqgrid tr.jqgrow td {
                 border-bottom: 1px solid #e9ecef !important;
                 padding: 12px 8px !important;
+                background: white !important;
             }
             
             .ui-jqgrid tr.jqgrow:hover td {
@@ -297,6 +309,7 @@
                 border: 2px solid #e9ecef !important;
                 border-radius: 4px !important;
                 padding: 4px 8px !important;
+                background: white !important;
             }
             
             .ui-jqgrid .ui-pg-button {
@@ -315,17 +328,31 @@
                 border: 2px solid #e9ecef !important;
                 border-radius: 4px !important;
                 padding: 4px 8px !important;
+                background: white !important;
             }
             
             .ui-jqgrid .ui-search-toolbar input {
                 border: 2px solid #e9ecef !important;
                 border-radius: 4px !important;
                 padding: 6px 10px !important;
+                background: white !important;
             }
             
             .ui-jqgrid .ui-search-toolbar input:focus {
                 border-color: #667eea !important;
                 outline: none !important;
+            }
+            
+            #userRolesPager {
+                background: white !important;
+                border: 1px solid #e9ecef !important;
+                border-top: none !important;
+                border-radius: 0 0 8px 8px !important;
+                padding: 10px !important;
+            }
+            
+            .ui-jqgrid .ui-jqgrid-pager {
+                background: white !important;
             }
         </style>
     {% endblock %}
@@ -375,9 +402,9 @@
                 viewrecords: true,
                 gridview: true,
                 autoencode: true,
-                height: 'auto',
+                height: 400,
                 width: '100%',
-                shrinkToFit: true,
+                shrinkToFit: false,
                 search: true,
                 searchOnEnter: true,
                 searchOperators: true,
