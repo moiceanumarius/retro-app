@@ -54,7 +54,7 @@ class TeamInvitation
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->status = 'pending';
-        $this->expiresAt = (new \DateTimeImmutable())->modify('+7 days');
+        $this->expiresAt = (new \DateTimeImmutable())->modify('+24 hours');
         $this->token = bin2hex(random_bytes(32));
     }
 

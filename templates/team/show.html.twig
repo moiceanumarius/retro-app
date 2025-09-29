@@ -219,37 +219,27 @@
                 <button type="button" class="modal-close" onclick="closeInvitePopup()">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="invite-form">
-                    <div class="form-group">
-                        <label for="inviteEmail" class="form-label">Email Address</label>
-                        <input type="email" id="inviteEmail" class="form-control" placeholder="Enter email address">
-                    </div>
-                    <div class="form-group">
-                        <label for="inviteRole" class="form-label">Role</label>
-                        <select id="inviteRole" class="form-control">
-                            <option value="Member">Member</option>
-                            <option value="Facilitator">Facilitator</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="inviteMessage" class="form-label">Personal Message (Optional)</label>
-                        <textarea id="inviteMessage" class="form-control" rows="3" placeholder="Add a personal message..."></textarea>
-                    </div>
+                <div id="inviteLoading" class="invite-loading" style="display: none;">
+                    <div class="loading-spinner"></div>
+                    <p>Generating invitation link...</p>
                 </div>
                 <div id="inviteResult" class="invite-result" style="display: none;">
                     <div class="result-success">
-                        <h4>Invitation Created!</h4>
-                        <p>Share this link with the person you want to invite:</p>
+                        <h4>Team Invitation Link</h4>
+                        <p>Share this link with your team members. It will expire in 24 hours.</p>
                         <div class="invite-link-container">
                             <input type="text" id="inviteLink" class="form-control" readonly>
                             <button type="button" class="btn btn-secondary" onclick="copyInviteLink()">Copy</button>
+                        </div>
+                        <div class="invite-info">
+                            <p><strong>Role:</strong> Member</p>
+                            <p><strong>Expires:</strong> <span id="expiryTime"></span></p>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" onclick="closeInvitePopup()">Cancel</button>
-                <button type="button" class="btn btn-primary" onclick="createInvitation({{ team.id }})">Create Invitation</button>
+                <button type="button" class="btn btn-secondary" onclick="closeInvitePopup()">Close</button>
             </div>
         </div>
     </div>
@@ -258,9 +248,10 @@
         function openInvitePopup(teamId) {
             document.getElementById('inviteModal').style.display = 'flex';
             document.getElementById('inviteResult').style.display = 'none';
-            document.getElementById('inviteEmail').value = '';
-            document.getElementById('inviteRole').value = 'Member';
-            document.getElementById('inviteMessage').value = '';
+            document.getElementById('inviteLoading').style.display = 'block';
+            
+            // Automatically create invitation
+            createInvitation(teamId);
         }
 
         function closeInvitePopup() {
@@ -268,20 +259,11 @@
         }
 
         function createInvitation(teamId) {
-            const email = document.getElementById('inviteEmail').value;
-            const role = document.getElementById('inviteRole').value;
-            const message = document.getElementById('inviteMessage').value;
-
-            if (!email) {
-                alert('Please enter an email address');
-                return;
-            }
-
-            // Create form data
+            // Create form data with default values
             const formData = new FormData();
-            formData.append('email', email);
-            formData.append('role', role);
-            formData.append('message', message);
+            formData.append('email', 'team@invitation.com'); // Placeholder email
+            formData.append('role', 'Member'); // Default role
+            formData.append('message', 'Team invitation link'); // Default message
             formData.append('_token', '{{ csrf_token('create_invitation') }}');
 
             // Send AJAX request
@@ -311,15 +293,23 @@
             })
             .then(data => {
                 console.log('Response data:', data);
+                document.getElementById('inviteLoading').style.display = 'none';
+                
                 if (data.success) {
                     document.getElementById('inviteLink').value = data.invitationUrl;
                     document.getElementById('inviteResult').style.display = 'block';
+                    
+                    // Set expiry time (24 hours from now)
+                    const expiryDate = new Date();
+                    expiryDate.setHours(expiryDate.getHours() + 24);
+                    document.getElementById('expiryTime').textContent = expiryDate.toLocaleString();
                 } else {
                     alert('Error creating invitation: ' + (data.message || 'Unknown error'));
                 }
             })
             .catch(error => {
                 console.error('Error:', error);
+                document.getElementById('inviteLoading').style.display = 'none';
                 alert('Error creating invitation: ' + error.message);
             });
         }
