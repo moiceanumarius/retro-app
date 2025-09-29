@@ -123,15 +123,12 @@ final class RoleController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        $page = (int) $request->query->get('page', 1);
-        $rows = (int) $request->query->get('rows', 20);
-        $sidx = $request->query->get('sidx', 'assignedAt');
-        $sord = $request->query->get('sord', 'desc');
-        $searchField = $request->query->get('searchField');
-        $searchString = $request->query->get('searchString');
-        $searchOper = $request->query->get('searchOper');
-
-        $offset = ($page - 1) * $rows;
+        $draw = (int) $request->query->get('draw', 1);
+        $start = (int) $request->query->get('start', 0);
+        $length = (int) $request->query->get('length', 20);
+        $searchValue = $request->query->get('search')['value'] ?? '';
+        $orderColumn = $request->query->get('order')[0]['column'] ?? 3; // Default to Assigned At
+        $orderDir = $request->query->get('order')[0]['dir'] ?? 'desc';
 
         $qb = $this->entityManager->createQueryBuilder()
             ->select('ur')
@@ -141,35 +138,30 @@ final class RoleController extends AbstractController
             ->where('ur.isActive = :active')
             ->setParameter('active', true);
 
-        // Apply search filters
-        if ($searchField && $searchString) {
-            switch ($searchField) {
-                case 'userName':
-                    $qb->andWhere('u.firstName LIKE :search OR u.lastName LIKE :search')
-                       ->setParameter('search', '%' . $searchString . '%');
-                    break;
-                case 'email':
-                    $qb->andWhere('u.email LIKE :search')
-                       ->setParameter('search', '%' . $searchString . '%');
-                    break;
-            }
+        // Apply global search
+        if (!empty($searchValue)) {
+            $qb->andWhere('u.firstName LIKE :search OR u.lastName LIKE :search OR u.email LIKE :search')
+               ->setParameter('search', '%' . $searchValue . '%');
         }
 
         // Get total count
         $totalQb = clone $qb;
         $totalRecords = $totalQb->select('COUNT(ur.id)')->getQuery()->getSingleScalarResult();
 
-        // Apply sorting and pagination
-        $qb->orderBy('ur.' . $sidx, $sord)
-           ->setFirstResult($offset)
-           ->setMaxResults($rows);
+        // Apply sorting
+        $columns = ['u.firstName', 'u.email', 'r.name', 'ur.assignedAt', 'ur.assignedBy', 'ur.isActive'];
+        $orderColumnName = $columns[$orderColumn] ?? 'ur.assignedAt';
+        $qb->orderBy($orderColumnName, $orderDir);
+
+        // Apply pagination
+        $qb->setFirstResult($start)
+           ->setMaxResults($length);
 
         $userRoles = $qb->getQuery()->getResult();
 
-        $rows = [];
+        $data = [];
         foreach ($userRoles as $userRole) {
-            $rows[] = [
-                'id' => $userRole->getId(),
+            $data[] = [
                 'userName' => $userRole->getUser()->getFullName(),
                 'email' => $userRole->getUser()->getEmail(),
                 'roleName' => $userRole->getRole()->getName(),
@@ -183,13 +175,11 @@ final class RoleController extends AbstractController
             ];
         }
 
-        $totalPages = ceil($totalRecords / $rows);
-
         return new JsonResponse([
-            'page' => $page,
-            'total' => $totalPages,
-            'records' => $totalRecords,
-            'rows' => $rows
+            'draw' => $draw,
+            'recordsTotal' => $totalRecords,
+            'recordsFiltered' => $totalRecords,
+            'data' => $data
         ]);
     }
 }
