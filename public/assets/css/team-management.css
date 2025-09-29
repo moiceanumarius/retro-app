@@ -945,7 +945,7 @@
     margin: 0 0 1.5rem 0;
 }
 
-.team-card {
+.invitation-container .team-card {
     background: #f8f9fa;
     border-radius: 8px;
     padding: 1.5rem;
@@ -955,7 +955,7 @@
     border: 1px solid #e9ecef;
 }
 
-.team-color {
+.invitation-container .team-color {
     width: 32px;
     height: 32px;
     border-radius: 50%;
@@ -963,25 +963,25 @@
     flex-shrink: 0;
 }
 
-.team-details h2 {
+.invitation-container .team-details h2 {
     font-size: 1.25rem;
     font-weight: 600;
     color: #2d3748;
     margin: 0 0 0.5rem 0;
 }
 
-.team-details p {
+.invitation-container .team-details p {
     color: #64748b;
     margin: 0 0 1rem 0;
 }
 
-.team-meta {
+.invitation-container .team-meta {
     display: flex;
     gap: 1.5rem;
     flex-wrap: wrap;
 }
 
-.meta-item {
+.invitation-container .meta-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -989,7 +989,7 @@
     font-size: 0.875rem;
 }
 
-.meta-item svg {
+.invitation-container .meta-item svg {
     color: #a0aec0;
 }
 
