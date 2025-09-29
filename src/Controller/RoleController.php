@@ -61,21 +61,28 @@ final class RoleController extends AbstractController
         ]);
 
         if ($existingUserRole) {
-            $this->addFlash('warning', 'User already has this role.');
-            return $this->redirectToRoute('app_roles');
+            // Update existing role assignment
+            $existingUserRole->setAssignedAt(new \DateTimeImmutable());
+            $existingUserRole->setAssignedBy($this->getUser()->getEmail());
+            $existingUserRole->setIsActive(true);
+            $userRole = $existingUserRole;
+        } else {
+            // Create new UserRole
+            $userRole = new UserRole();
+            $userRole->setUser($user);
+            $userRole->setRole($role);
+            $userRole->setAssignedAt(new \DateTimeImmutable());
+            $userRole->setAssignedBy($this->getUser()->getEmail());
         }
-
-        // Create new UserRole
-        $userRole = new UserRole();
-        $userRole->setUser($user);
-        $userRole->setRole($role);
-        $userRole->setAssignedAt(new \DateTimeImmutable());
-        $userRole->setAssignedBy($this->getUser()->getEmail());
 
         $this->entityManager->persist($userRole);
         $this->entityManager->flush();
 
-        $this->addFlash('success', "Role '{$role->getName()}' assigned to '{$user->getFullName()}' successfully.");
+        if ($existingUserRole) {
+            $this->addFlash('success', "Role '{$role->getName()}' updated for '{$user->getFullName()}' successfully.");
+        } else {
+            $this->addFlash('success', "Role '{$role->getName()}' assigned to '{$user->getFullName()}' successfully.");
+        }
 
         return $this->redirectToRoute('app_roles');
     }
