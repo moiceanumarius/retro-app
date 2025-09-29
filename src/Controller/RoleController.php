@@ -60,12 +60,17 @@ final class RoleController extends AbstractController
             'role' => $role
         ]);
 
+        // Debug: Log the search
+        error_log("Searching for UserRole: User ID {$user->getId()}, Role ID {$role->getId()}");
+        error_log("Found existing UserRole: " . ($existingUserRole ? "YES (ID: {$existingUserRole->getId()})" : "NO"));
+
         if ($existingUserRole) {
             // Update existing role assignment
             $existingUserRole->setAssignedAt(new \DateTimeImmutable());
             $existingUserRole->setAssignedBy($this->getUser()->getEmail());
             $existingUserRole->setIsActive(true);
             $userRole = $existingUserRole;
+            error_log("Updating existing UserRole ID: {$existingUserRole->getId()}");
         } else {
             // Create new UserRole
             $userRole = new UserRole();
@@ -73,6 +78,7 @@ final class RoleController extends AbstractController
             $userRole->setRole($role);
             $userRole->setAssignedAt(new \DateTimeImmutable());
             $userRole->setAssignedBy($this->getUser()->getEmail());
+            error_log("Creating new UserRole");
         }
 
         $this->entityManager->persist($userRole);
