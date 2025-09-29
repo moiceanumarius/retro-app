@@ -4,665 +4,75 @@
 
 {% block page_title %}Role Management{% endblock %}
 
-    {% block stylesheets %}
-        <!-- DataTables CSS -->
-        <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
-        <style>
-        .role-management {
-            padding: 0;
-        }
-        
-        .stats-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        
-        .stats-card {
-            padding: 1.5rem;
-            border-radius: 12px;
-            text-align: center;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
-            border: 1px solid #e9ecef;
-            transition: all 0.3s ease;
-            color: #495057;
-        }
-        
-        .stats-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 25px rgba(0,0,0,0.15);
-        }
-        
-        .stats-card.total {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        
-        .stats-card.role-admin {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
-            color: white;
-        }
-        
-        .stats-card.role-team-lead {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-        
-        .stats-card.role-facilitator {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-        }
-        
-        .stats-card.role-member {
-            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-            color: white;
-        }
-        
-        .stats-card h3 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 700;
-        }
-        
-        .stats-card p {
-            margin: 0.5rem 0 0 0;
-            opacity: 0.9;
-        }
-        
-        .modern-card {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
-            border: none;
-            margin-bottom: 2rem;
-            overflow: hidden;
-        }
-        
-        .modern-card-header {
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-bottom: 1px solid #dee2e6;
-            padding: 1.5rem;
-        }
-        
-        .modern-card-header h2 {
-            margin: 0;
-            color: #495057;
-            font-weight: 600;
-            font-size: 1.25rem;
-        }
-        
-        .modern-card-body {
-            padding: 1.5rem;
-        }
-        
-        .form-group-modern {
-            margin-bottom: 1.5rem;
-        }
-        
-        .form-label-modern {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #495057;
-            font-weight: 500;
-            font-size: 0.875rem;
-        }
-        
-        .form-select-modern {
-            width: 100%;
-            padding: 0.5rem 0.75rem;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            color: #495057;
-            background-color: white;
-            transition: all 0.3s ease;
-            height: 42px;
-        }
-        
-        .form-select-modern:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .btn-modern {
-            padding: 0.5rem 1.5rem;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.875rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            height: 42px;
-            line-height: 1.5;
-        }
-        
-        .btn-primary-modern {
-            background: #667eea;
-            color: white;
-        }
-        
-        .btn-primary-modern:hover {
-            background: #5a67d8;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .btn-danger-modern {
-            background: #ff6b6b;
-            color: white;
-            padding: 0.5rem 1rem;
-            font-size: 0.75rem;
-        }
-        
-        .btn-danger-modern:hover {
-            background: #f56565;
-            transform: translateY(-1px);
-            box-shadow: 0 2px 10px rgba(255, 107, 107, 0.4);
-        }
-        
-        .table-modern {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-        
-        .table-modern th {
-            background: #f8f9fa;
-            color: #495057;
-            font-weight: 600;
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 2px solid #dee2e6;
-            font-size: 0.875rem;
-        }
-        
-        .table-modern td {
-            padding: 1rem;
-            border-bottom: 1px solid #f1f3f4;
-            vertical-align: middle;
-        }
-        
-        .table-modern tr:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .badge-modern {
-            padding: 0.375rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .badge-primary-modern {
-            background: #667eea;
-            color: white;
-        }
-        
-        .badge-success-modern {
-            background: #56ab2f;
-            color: white;
-        }
-        
-        .badge-warning-modern {
-            background: #f093fb;
-            color: white;
-        }
-        
-        .badge-secondary-modern {
-            background: #6c757d;
-            color: white;
-        }
-        
-        .role-card {
-            background: white;
-            border-radius: 12px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 15px rgba(0,0,0,0.08);
-            border: 1px solid #f1f3f4;
-            transition: all 0.3s ease;
-            height: 100%;
-        }
-        
-        .role-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-        }
-        
-        .role-card h5 {
-            color: #495057;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-        
-        .role-card p {
-            color: #6c757d;
-            margin-bottom: 0.5rem;
-            font-size: 0.875rem;
-        }
-        
-        .permission-count {
-            background: #667eea;
-            color: white;
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            display: inline-block;
-        }
-        
-        .empty-state {
-            text-align: center;
-            padding: 3rem 1rem;
-            color: #6c757d;
-        }
-        
-        .empty-state svg {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-        
-        .form-row {
-            display: flex;
-            gap: 1rem;
-            align-items: end;
-        }
-        
-        .form-group-modern {
-            margin-bottom: 0;
-        }
-        
-        .form-col {
-            flex: 1;
-        }
-        
-        .form-col-button {
-            flex: 0 0 auto;
-        }
-        
-        @media (max-width: 768px) {
-            .form-row {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            
-            .form-col-button {
-                flex: 1;
-            }
-        }
-        </style>
-        
-        <!-- DataTables Styles -->
-        <style>
-            .dataTables_wrapper {
-                background: white;
-                border-radius: 12px;
-                padding: 0;
-                box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-                overflow: hidden;
-                width: 100%;
-                position: relative;
-            }
-            
-            .dataTables_processing {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                z-index: 1000;
-                background: rgba(255, 255, 255, 0.9);
-                padding: 20px;
-                border-radius: 8px;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                font-weight: 500;
-                color: #495057;
-            }
-            
-            #userRolesTable {
-                width: 100% !important;
-                table-layout: fixed;
-            }
-            
-            .dataTables_wrapper .dataTables_filter {
-                padding: 20px 20px 10px 20px;
-                background: #f8f9fa;
-                border-bottom: 1px solid #e9ecef;
-                text-align: right;
-            }
-            
-            .dataTables_wrapper .dataTables_length {
-                color: #6c757d;
-                font-size: 14px;
-                font-weight: 500;
-                margin: 0;
-                flex: 0 0 auto;
-                text-align: right;
-                margin-left: auto;
-            }
-            
-            .dataTables_wrapper .dataTables_info,
-            .dataTables_wrapper .dataTables_paginate {
-                padding: 15px 20px;
-                background: white;
-                position: relative;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                min-height: 60px;
-            }
-            
-            .dataTables_wrapper .dataTables_paginate {
-                border-top: 1px solid #e9ecef;
-            }
-            
-            .dataTables_wrapper .dataTables_info {
-                color: #6c757d;
-                font-size: 14px;
-                font-weight: 500;
-                margin: 0;
-                flex: 0 0 auto;
-                text-align: center;
-            }
-            
-            .dataTables_wrapper .dataTables_paginate {
-                text-align: center;
-                margin: 0;
-                flex: 0 0 auto;
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                width: 100%;
-            }
-            
-            .dataTables_wrapper .dataTables_paginate ul {
-                margin: 0;
-                flex: 0 0 auto;
-            }
-            
-            .dataTables_wrapper .dataTables_length select {
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-                padding: 6px 10px;
-                margin: 0 10px;
-                background: white;
-                font-size: 14px;
-                transition: all 0.3s ease;
-                vertical-align: middle;
-            }
-            
-            .dataTables_wrapper .dataTables_length select:focus {
-                border-color: #667eea;
-                outline: none;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            }
-            
-            /* Ensure footer container has proper height and positioning */
-            .dataTables_wrapper .dataTables_info:parent,
-            .dataTables_wrapper .dataTables_paginate:parent {
-                position: relative;
-                min-height: 60px;
-            }
-            
-            .dataTables_wrapper .dataTables_filter input {
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-                padding: 10px 15px;
-                margin-left: 10px;
-                font-size: 14px;
-                transition: all 0.3s ease;
-                background: white;
-            }
-            
-            .dataTables_wrapper .dataTables_filter input:focus {
-                border-color: #667eea;
-                outline: none;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-                transform: translateY(-1px);
-            }
-            
-            
-            .dataTables_wrapper .dataTables_paginate .paginate_button {
-                border: 1px solid #dee2e6;
-                border-radius: 6px;
-                padding: 8px 12px;
-                margin: 0 2px;
-                background: white;
-                color: #495057;
-                font-weight: 500;
-                font-size: 14px;
-                transition: all 0.2s ease;
-                text-decoration: none;
-                display: inline-block;
-                min-width: 40px;
-                text-align: center;
-            }
-            
-            .dataTables_wrapper .dataTables_paginate .paginate_button:hover {
-                background: #667eea;
-                color: white;
-                border-color: #667eea;
-                text-decoration: none;
-            }
-            
-            .dataTables_wrapper .dataTables_paginate .paginate_button.current {
-                background: #667eea;
-                color: white;
-                border-color: #667eea;
-                font-weight: 600;
-            }
-            
-            .dataTables_wrapper .dataTables_paginate .paginate_button.disabled {
-                opacity: 0.4;
-                cursor: not-allowed;
-                background: #f8f9fa;
-                color: #6c757d;
-            }
-            
-            .dataTables_wrapper .dataTables_paginate .paginate_button.disabled:hover {
-                background: #f8f9fa;
-                color: #6c757d;
-                border-color: #dee2e6;
-            }
-            
-            table.dataTable {
-                margin: 0 !important;
-                border-collapse: separate;
-                border-spacing: 0;
-            }
-            
-        table.dataTable thead th {
-            background: #e9ecef;
-            color: #495057;
-            border: none !important;
-            border-top: none !important;
-            border-bottom: 1px solid #dee2e6 !important;
-            padding: 16px 15px;
-            font-weight: 500;
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-            position: relative;
-            width: auto;
-        }
-            
-            table.dataTable thead th:nth-child(1) { width: 15%; } /* User */
-            table.dataTable thead th:nth-child(2) { width: 20%; } /* Email */
-            table.dataTable thead th:nth-child(3) { width: 12%; } /* Role */
-            table.dataTable thead th:nth-child(4) { width: 15%; } /* Assigned At */
-            table.dataTable thead th:nth-child(5) { width: 15%; } /* Assigned By */
-            table.dataTable thead th:nth-child(6) { width: 8%; }  /* Status */
-            table.dataTable thead th:nth-child(7) { width: 15%; } /* Actions */
-            
-        table.dataTable thead th:first-child {
-            border-top-left-radius: 0;
-            border-left: none !important;
-        }
+{% block stylesheets %}
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/role-management.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/datatables-custom.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/flash-messages.css') }}">
+{% endblock %}
 
-        table.dataTable thead th:last-child {
-            border-top-right-radius: 0;
-            border-right: none !important;
-        }
-            
-        table.dataTable thead th.sorting:after,
-        table.dataTable thead th.sorting_asc:after,
-        table.dataTable thead th.sorting_desc:after {
-            display: none;
-        }
-            
-            table.dataTable tbody td {
-                padding: 15px;
-                border-bottom: 1px solid #e9ecef;
-                vertical-align: middle;
-                font-size: 14px;
-                word-wrap: break-word;
-                overflow: hidden;
-            }
-            
-            table.dataTable tbody tr {
-                transition: all 0.3s ease;
-            }
-            
-            table.dataTable tbody tr:nth-child(even) {
-                background-color: #fafbfc;
-            }
-            
-            table.dataTable tbody tr:hover {
-                background-color: #f1f3f4;
-                transform: translateY(-1px);
-                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-            
-            table.dataTable tbody tr:last-child td {
-                border-bottom: none;
-            }
-            
-            
-            /* Role badges styling */
-            .badge-modern {
-                display: inline-block;
-                padding: 6px 12px;
-                border-radius: 20px;
-                font-size: 12px;
-                font-weight: 600;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }
-            
-            .badge-primary-modern {
-                background: #667eea;
-                color: white;
-            }
-            
-            .badge-success-modern {
-                background: #56ab2f;
-                color: white;
-            }
-            
-            .badge-warning-modern {
-                background: #f093fb;
-                color: white;
-            }
-            
-            .badge-danger-modern {
-                background: #ff6b6b;
-                color: white;
-            }
-            
-            /* Action buttons */
-            .btn-modern {
-                padding: 6px 12px;
-                border: none;
-                border-radius: 6px;
-                font-weight: 600;
-                font-size: 12px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                text-decoration: none;
-                display: inline-block;
-                text-align: center;
-            }
-            
-            .btn-danger-modern {
-                background: #ff6b6b;
-                color: white;
-            }
-            
-            .btn-danger-modern:hover {
-                background: #f56565;
-                transform: translateY(-1px);
-                box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
-            }
-        </style>
-    {% endblock %}
+{% block javascripts %}
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- DataTables -->
+    <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     
-    {% block javascripts %}
-        <!-- jQuery -->
-        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-        <!-- DataTables -->
-        <script src="https://cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
-        <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
-        
-        <script>
-        $(document).ready(function() {
-            $('#userRolesTable').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: {
-                    url: "{{ path('app_roles_data') }}",
-                    type: 'GET'
-                },
-                columns: [
-                    { data: 'userName', name: 'userName' },
-                    { data: 'email', name: 'email' },
-                    { data: 'roleName', name: 'roleName' },
-                    { data: 'assignedAt', name: 'assignedAt' },
-                    { data: 'assignedBy', name: 'assignedBy' },
-                    { data: 'status', name: 'status' },
-                    { data: 'actions', name: 'actions', orderable: false, searchable: false }
-                ],
-                pageLength: 20,
-                lengthMenu: [[10, 20, 30, 50], [10, 20, 30, 50]],
-                order: [[3, 'desc']], // Sort by Assigned At column
-                language: {
-                    search: "Search:",
-                    lengthMenu: "Show _MENU_ entries",
-                    info: "Showing _START_ to _END_ of _TOTAL_ entries",
-                    paginate: {
-                        first: "First",
-                        last: "Last",
-                        next: "Next",
-                        previous: "Previous"
-                    }
-                },
-                responsive: true,
-                dom: 'lfrtip', // Include 'l' to show length selector
-                scrollX: true,
-                autoWidth: false,
-                initComplete: function() {
-                    // Move both info and length selector to pagination div
-                    var infoSelector = $('.dataTables_info');
-                    var lengthSelector = $('.dataTables_length');
-                    
-                    if (infoSelector.length) {
-                        $('.dataTables_paginate').prepend(infoSelector);
-                    }
-                    
-                    if (lengthSelector.length) {
-                        $('.dataTables_paginate').append(lengthSelector);
-                    }
+    <script>
+    $(document).ready(function() {
+        $('#userRolesTable').DataTable({
+            processing: true,
+            serverSide: true,
+            ajax: {
+                url: "{{ path('app_roles_data') }}",
+                type: 'GET'
+            },
+            columns: [
+                { data: 'userName', name: 'userName' },
+                { data: 'email', name: 'email' },
+                { data: 'roleName', name: 'roleName' },
+                { data: 'assignedAt', name: 'assignedAt' },
+                { data: 'assignedBy', name: 'assignedBy' },
+                { data: 'status', name: 'status' },
+                { data: 'actions', name: 'actions', orderable: false, searchable: false }
+            ],
+            pageLength: 20,
+            lengthMenu: [[10, 20, 30, 50], [10, 20, 30, 50]],
+            order: [[3, 'desc']], // Sort by Assigned At column
+            language: {
+                search: "Search:",
+                lengthMenu: "Show _MENU_ entries",
+                info: "Showing _START_ to _END_ of _TOTAL_ entries",
+                paginate: {
+                    first: "First",
+                    last: "Last",
+                    next: "Next",
+                    previous: "Previous"
                 }
-            });
+            },
+            responsive: true,
+            dom: 'lfrtip', // Include 'l' to show length selector
+            scrollX: true,
+            autoWidth: false,
+            initComplete: function() {
+                // Move both info and length selector to pagination div
+                var infoSelector = $('.dataTables_info');
+                var lengthSelector = $('.dataTables_length');
+                
+                if (infoSelector.length) {
+                    $('.dataTables_paginate').prepend(infoSelector);
+                }
+                
+                if (lengthSelector.length) {
+                    $('.dataTables_paginate').append(lengthSelector);
+                }
+            }
         });
-        </script>
-    {% endblock %}
+    });
+    </script>
+{% endblock %}
 
 {% block body %}
     <div class="role-management">
@@ -778,5 +188,5 @@
                 </div>
             </div>
         </div>
-</div>
+    </div>
 {% endblock %}

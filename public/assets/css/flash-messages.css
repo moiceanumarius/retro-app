@@ -1,0 +1,97 @@
+/* Flash Messages Popup Styles */
+
+.flash-popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    animation: slideIn 0.3s ease-out;
+    opacity: 0;
+    transform: translateX(100%);
+}
+
+.flash-popup.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.flash-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-radius: 8px;
+}
+
+.flash-message {
+    flex: 1;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.flash-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 15px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.flash-close:hover {
+    opacity: 1;
+}
+
+.flash-success {
+    background: linear-gradient(135deg, #56ab2f, #a8e6cf);
+    color: white;
+}
+
+.flash-danger {
+    background: linear-gradient(135deg, #ff6b6b, #ffa8a8);
+    color: white;
+}
+
+.flash-info {
+    background: linear-gradient(135deg, #667eea, #a8c0ff);
+    color: white;
+}
+
+.flash-warning {
+    background: linear-gradient(135deg, #f093fb, #f5a9f5);
+    color: white;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOut {
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+}
+
+.flash-popup.hide {
+    animation: slideOut 0.3s ease-in forwards;
+}
