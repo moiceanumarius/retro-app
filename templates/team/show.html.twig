@@ -272,6 +272,7 @@
             fetch(url, {
                 method: 'POST',
                 body: formData,
+                credentials: 'include',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
