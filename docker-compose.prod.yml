@@ -1,0 +1,94 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: production
+    container_name: retro_app_php_prod
+    working_dir: /var/www/html
+    volumes:
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+      - ./docker/php/php-prod.ini:/usr/local/etc/php/conf.d/99-prod.ini
+      - app_prod_data:/var/www/html/var
+    environment:
+      - APP_ENV=prod
+      - APP_DEBUG=false
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - retro_network
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: retro_app_nginx_prod
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx-prod.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/nginx/ssl:/etc/nginx/ssl
+      - app_prod_data:/var/www/html/var
+    depends_on:
+      - app
+    networks:
+      - retro_network
+    restart: unless-stopped
+
+  mysql:
+    image: mysql:8.0
+    container_name: retro_app_mysql_prod
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: retro_app
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_prod_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./docker/mysql/mysql-prod.cnf:/etc/mysql/conf.d/mysql-prod.cnf
+    networks:
+      - retro_network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: retro_app_redis_prod
+    volumes:
+      - redis_prod_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - retro_network
+    restart: unless-stopped
+
+  # Production monitoring
+  prometheus:
+    image: prom/prometheus
+    container_name: retro_app_prometheus_prod
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+    networks:
+      - retro_network
+    restart: unless-stopped
+
+volumes:
+  mysql_prod_data:
+  redis_prod_data:
+  app_prod_data:
+  prometheus_data:
+
+networks:
+  retro_network:
+    driver: bridge

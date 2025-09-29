@@ -1,0 +1,21 @@
+<!-- Content Header -->
+<header class="content-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h1 class="content-title">{% block page_title %}Dashboard{% endblock %}</h1>
+        
+        <div style="display: flex; align-items: center; gap: 1rem;">
+            {% if app.user %}
+                <span style="color: #64748b; font-size: 0.875rem;">
+                    Welcome, {{ app.user.firstName }} {{ app.user.lastName }}
+                </span>
+            {% endif %}
+            
+            <!-- Mobile sidebar toggle -->
+            <button id="sidebar-toggle" class="btn btn-secondary" style="display: none;">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+</header>

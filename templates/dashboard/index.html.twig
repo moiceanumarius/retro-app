@@ -1,0 +1,109 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block body %}
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Welcome to Retro App</h2>
+        </div>
+        <div class="card-body">
+            <p>Your Agile Retrospectives dashboard is ready! This is a clean, white content area where you can add your dashboard widgets and content.</p>
+
+            <div class="mt-4">
+                <h3>Your Roles</h3>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
+                    {% for role in user_roles %}
+                        <span class="badge badge-primary">{{ role }}</span>
+                    {% endfor %}
+                </div>
+                
+                {% if is_admin %}
+                    <div class="mt-3">
+                        <a href="{{ path('app_roles') }}" class="btn btn-sm btn-outline-primary">
+                            Manage Roles
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mt-4">
+                <h3>Getting Started</h3>
+                <p>This dashboard is built with the Adminty theme and includes:</p>
+                <ul style="margin-left: 1.5rem; margin-top: 1rem;">
+                    <li>Responsive sidebar navigation</li>
+                    <li>Clean, modern design</li>
+                    <li>Mobile-friendly layout</li>
+                    <li>Ready for your retrospective features</li>
+                    <li>Role-based access control (RBAC)</li>
+                </ul>
+            </div>
+            
+            <div class="mt-4">
+                <h3>Next Steps</h3>
+                <p>You can now start building your retrospective features:</p>
+                <ul style="margin-left: 1.5rem; margin-top: 1rem;">
+                    <li>Add team management</li>
+                    <li>Create sprint tracking</li>
+                    <li>Build retrospective forms</li>
+                    <li>Add voting and collaboration features</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Quick Actions</h2>
+        </div>
+        <div class="card-body">
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                {% if is_admin or is_team_lead %}
+                    <button class="btn btn-primary" disabled>
+                        Create Team
+                    </button>
+                {% endif %}
+                
+                {% if is_facilitator or is_team_lead %}
+                    <button class="btn btn-secondary" disabled>
+                        Start Sprint
+                    </button>
+                    <button class="btn btn-secondary" disabled>
+                        New Retrospective
+                    </button>
+                {% endif %}
+                
+                {% if is_member %}
+                    <button class="btn btn-secondary" disabled>
+                        Join Retrospective
+                    </button>
+                {% endif %}
+            </div>
+            <p class="mt-3 text-muted">These buttons will be functional as you add more features to the application.</p>
+        </div>
+    </div>
+
+    {% if is_admin %}
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">Admin Panel</h2>
+            </div>
+            <div class="card-body">
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <a href="{{ path('app_roles') }}" class="btn btn-primary">
+                        Manage Roles
+                    </a>
+                    <button class="btn btn-secondary" disabled>
+                        User Management
+                    </button>
+                    <button class="btn btn-secondary" disabled>
+                        System Settings
+                    </button>
+                </div>
+                <p class="mt-3 text-muted">Administrative functions available to you.</p>
+            </div>
+        </div>
+    {% endif %}
+{% endblock %}

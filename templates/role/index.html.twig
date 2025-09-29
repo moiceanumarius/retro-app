@@ -1,0 +1,128 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Role Management{% endblock %}
+
+{% block page_title %}Role Management{% endblock %}
+
+{% block body %}
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">User Role Assignment</h2>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ path('app_roles_assign') }}" class="mb-4">
+                <div style="display: flex; gap: 1rem; align-items: end;">
+                    <div style="flex: 1;">
+                        <label for="user_id" class="form-label">User</label>
+                        <select name="user_id" id="user_id" class="form-input" required>
+                            <option value="">Select a user...</option>
+                            {% for user in users %}
+                                <option value="{{ user.id }}">{{ user.getFullName() }} ({{ user.email }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div style="flex: 1;">
+                        <label for="role_id" class="form-label">Role</label>
+                        <select name="role_id" id="role_id" class="form-input" required>
+                            <option value="">Select a role...</option>
+                            {% for role in roles %}
+                                <option value="{{ role.id }}">{{ role.name }} ({{ role.code }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" class="btn btn-primary">Assign Role</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Current Role Assignments</h2>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Assigned At</th>
+                            <th>Assigned By</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                            {% for userRole in user.userRoles %}
+                                <tr>
+                                    <td>{{ user.getFullName() }}</td>
+                                    <td>{{ user.email }}</td>
+                                    <td>
+                                        <span class="badge badge-primary">{{ userRole.role.name }}</span>
+                                        <small class="text-muted">({{ userRole.role.code }})</small>
+                                    </td>
+                                    <td>{{ userRole.assignedAt|date('Y-m-d H:i:s') }}</td>
+                                    <td>{{ userRole.assignedBy ?? 'System' }}</td>
+                                    <td>
+                                        {% if userRole.isActive %}
+                                            <span class="badge badge-success">Active</span>
+                                        {% else %}
+                                            <span class="badge badge-secondary">Inactive</span>
+                                        {% endif %}
+                                        {% if userRole.isExpired %}
+                                            <span class="badge badge-warning">Expired</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form method="post" action="{{ path('app_roles_remove', {'userRoleId': userRole.id}) }}" 
+                                              onsubmit="return confirm('Are you sure you want to remove this role?')" 
+                                              style="display: inline;">
+                                            <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="7" class="text-center text-muted">No role assignments found</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title">Available Roles</h2>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for role in roles %}
+                    <div class="col-md-6 mb-3">
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ role.name }}</h5>
+                                <p class="card-text">{{ role.description }}</p>
+                                <p class="card-text">
+                                    <small class="text-muted">Code: {{ role.code }}</small>
+                                </p>
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        Permissions: {{ role.permissions|length }}
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+{% endblock %}

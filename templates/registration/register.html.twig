@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Retro App</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>🔄</text></svg>">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Adminty CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/adminty.css') }}">
+    
+    <style>
+        .auth-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 2rem;
+        }
+        
+        .auth-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 3rem;
+            width: 100%;
+            max-width: 450px;
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .auth-logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #6366f1;
+            margin-bottom: 0.5rem;
+        }
+        
+        .auth-subtitle {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 500;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+        
+        .form-input.error {
+            border-color: #ef4444;
+        }
+        
+        .error-message {
+            color: #ef4444;
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+        
+        .btn-register {
+            width: 100%;
+            background-color: #6366f1;
+            color: white;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .btn-register:hover {
+            background-color: #5856eb;
+        }
+        
+        .auth-footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .auth-link {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .auth-link:hover {
+            text-decoration: underline;
+        }
+        
+        .checkbox-group {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .checkbox-input {
+            margin-top: 0.25rem;
+        }
+        
+        .checkbox-label {
+            font-size: 0.875rem;
+            color: #374151;
+            line-height: 1.4;
+        }
+        
+        .form-errors {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .flash-error {
+            background-color: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+            padding: 0.75rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-card">
+            <div class="auth-header">
+                <div class="auth-logo">🔄 Retro App</div>
+                <p class="auth-subtitle">Create your account</p>
+            </div>
+            
+            {% for flash_error in app.flashes('verify_email_error') %}
+                <div class="flash-error">{{ flash_error }}</div>
+            {% endfor %}
+            
+            {{ form_start(registrationForm, {'attr': {'novalidate': 'novalidate'}}) }}
+            
+            {% if not registrationForm.vars.valid %}
+                <div class="form-errors">
+                    {{ form_errors(registrationForm) }}
+                </div>
+            {% endif %}
+            
+            <div class="form-group">
+                <label for="{{ registrationForm.firstName.vars.id }}" class="form-label">First Name</label>
+                {{ form_widget(registrationForm.firstName, {'attr': {'class': 'form-input'}}) }}
+                {{ form_errors(registrationForm.firstName) }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ registrationForm.lastName.vars.id }}" class="form-label">Last Name</label>
+                {{ form_widget(registrationForm.lastName, {'attr': {'class': 'form-input'}}) }}
+                {{ form_errors(registrationForm.lastName) }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ registrationForm.email.vars.id }}" class="form-label">Email</label>
+                {{ form_widget(registrationForm.email, {'attr': {'class': 'form-input'}}) }}
+                {{ form_errors(registrationForm.email) }}
+            </div>
+            
+            <div class="form-group">
+                <label for="{{ registrationForm.plainPassword.vars.id }}" class="form-label">Password</label>
+                {{ form_widget(registrationForm.plainPassword, {'attr': {'class': 'form-input'}}) }}
+                {{ form_errors(registrationForm.plainPassword) }}
+            </div>
+            
+            <div class="checkbox-group">
+                {{ form_widget(registrationForm.agreeTerms, {'attr': {'class': 'checkbox-input'}}) }}
+                <label for="{{ registrationForm.agreeTerms.vars.id }}" class="checkbox-label">
+                    I agree to the <a href="#" class="auth-link">Terms of Service</a> and <a href="#" class="auth-link">Privacy Policy</a>
+                </label>
+            </div>
+            {{ form_errors(registrationForm.agreeTerms) }}
+            
+            <button type="submit" class="btn-register">
+                Create Account
+            </button>
+            
+            {{ form_end(registrationForm) }}
+            
+            <div class="auth-footer">
+                <p style="color: #64748b; font-size: 0.875rem;">
+                    Already have an account? 
+                    <a href="{{ path('app_login') }}" class="auth-link">Sign in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

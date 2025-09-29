@@ -1,0 +1,79 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: development
+    container_name: retro_app_php_dev
+    working_dir: /var/www/html
+    volumes:
+      - .:/var/www/html
+      - ./docker/php/php.ini:/usr/local/etc/php/php.ini
+      - ./docker/php/php-dev.ini:/usr/local/etc/php/conf.d/99-dev.ini
+    environment:
+      - APP_ENV=dev
+      - APP_DEBUG=true
+    depends_on:
+      - mysql
+    networks:
+      - retro_network
+
+  nginx:
+    image: nginx:alpine
+    container_name: retro_app_nginx_dev
+    ports:
+      - "8080:80"
+    volumes:
+      - .:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - retro_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: retro_app_mysql_dev
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: retro_app
+      MYSQL_USER: retro_user
+      MYSQL_PASSWORD: retro_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - retro_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: retro_app_phpmyadmin_dev
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: retro_user
+      PMA_PASSWORD: retro_password
+    ports:
+      - "8081:80"
+    depends_on:
+      - mysql
+    networks:
+      - retro_network
+
+  # Development tools
+  mailhog:
+    image: mailhog/mailhog
+    container_name: retro_app_mailhog_dev
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - retro_network
+
+volumes:
+  mysql_dev_data:
+
+networks:
+  retro_network:
+    driver: bridge

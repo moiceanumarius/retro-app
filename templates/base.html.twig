@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Retro App - Agile Retrospectives{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>🔄</text></svg>">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Adminty CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/adminty.css') }}">
+    
+    {% block stylesheets %}{% endblock %}
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Include Sidebar Component -->
+        {% include 'components/sidebar.html.twig' %}
+        
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Include Header Component -->
+            {% include 'components/header.html.twig' %}
+            
+            <!-- Content Body -->
+            <div class="content-body">
+                {% block body %}{% endblock %}
+            </div>
+            
+            <!-- Include Footer Component -->
+            {% include 'components/footer.html.twig' %}
+        </main>
+    </div>
+    
+    <!-- Adminty JavaScript -->
+    <script src="{{ asset('assets/js/adminty.js') }}"></script>
+    
+    {% block javascripts %}{% endblock %}
+    
+    <!-- Mobile responsive script -->
+    <script>
+        // Show/hide mobile sidebar toggle
+        function checkMobile() {
+            const toggle = document.getElementById('sidebar-toggle');
+            if (window.innerWidth <= 768) {
+                toggle.style.display = 'block';
+            } else {
+                toggle.style.display = 'none';
+            }
+        }
+        
+        window.addEventListener('resize', checkMobile);
+        checkMobile();
+    </script>
+</body>
+</html>
