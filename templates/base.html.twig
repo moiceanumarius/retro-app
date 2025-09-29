@@ -125,7 +125,7 @@
         <!-- Main Content -->
         <main class="main-content">
             <!-- Include Header Component -->
-            {% include 'components/header.html.twig' %}
+            {% include 'components/header.html.twig' with {'page_title': block('page_title')} %}
             
             <!-- Content Body -->
             <div class="content-body">

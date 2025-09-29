@@ -1,7 +1,7 @@
 <!-- Content Header -->
 <header class="content-header">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 class="content-title">{% block page_title %}Dashboard{% endblock %}</h1>
+        <h1 class="content-title">{{ page_title|default('Dashboard') }}</h1>
         
         <div style="display: flex; align-items: center; gap: 1rem;">
             {% if app.user %}
