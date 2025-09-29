@@ -150,7 +150,11 @@
                 </div>
                 
                 <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
-                <input type="hidden" name="_target_path" value="{{ path('app_dashboard') }}">
+                {% if invitation_token %}
+                    <input type="hidden" name="_target_path" value="{{ path('app_team_invitation_accept', {'token': invitation_token}) }}">
+                {% else %}
+                    <input type="hidden" name="_target_path" value="{{ path('app_dashboard') }}">
+                {% endif %}
                 
                 <button type="submit" class="btn-login">
                     Sign in

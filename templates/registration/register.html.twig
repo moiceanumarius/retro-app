@@ -222,7 +222,11 @@
             <div class="auth-footer">
                 <p style="color: #64748b; font-size: 0.875rem;">
                     Already have an account? 
-                    <a href="{{ path('app_login') }}" class="auth-link">Sign in</a>
+                    {% if invitation_token %}
+                        <a href="{{ path('app_login', {'invitation': invitation_token}) }}" class="auth-link">Sign in</a>
+                    {% else %}
+                        <a href="{{ path('app_login') }}" class="auth-link">Sign in</a>
+                    {% endif %}
                 </p>
             </div>
         </div>

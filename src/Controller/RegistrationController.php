@@ -53,11 +53,21 @@ class RegistrationController extends AbstractController
 
             // do anything else you need here, like send an email
 
+            // Check if there's an invitation token to redirect to
+            $invitationToken = $request->query->get('invitation');
+            if ($invitationToken) {
+                return $this->redirectToRoute('app_team_invitation_accept', ['token' => $invitationToken]);
+            }
+
             return $this->redirectToRoute('app_dashboard');
         }
 
+        // Get invitation token from URL parameter
+        $invitationToken = $request->query->get('invitation');
+
         return $this->render('registration/register.html.twig', [
             'registrationForm' => $form,
+            'invitation_token' => $invitationToken,
         ]);
     }
 

@@ -407,8 +407,8 @@ final class TeamController extends AbstractController
             return $this->redirectToRoute('app_login', ['invitation' => $token]);
         }
         
-        // Check if user email matches invitation email
-        if ($user->getEmail() !== $invitation->getEmail()) {
+        // Check if user email matches invitation email (skip for generic team invitations)
+        if ($invitation->getEmail() !== 'team@invitation.com' && $user->getEmail() !== $invitation->getEmail()) {
             $this->addFlash('error', 'This invitation is for a different email address');
             return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
         }
