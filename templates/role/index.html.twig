@@ -331,13 +331,21 @@
     {% endblock %}
     
     {% block javascripts %}
-        <!-- jQuery -->
+        <!-- jQuery UI (required for jqGrid) -->
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/ui-lightness/jquery-ui.css">
         <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
         <!-- jqGrid -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/free-jqgrid/4.15.5/js/jquery.jqgrid.min.js"></script>
         
         <script>
         $(document).ready(function() {
+            // Check if jqGrid is loaded
+            if (typeof $.fn.jqGrid === 'undefined') {
+                console.error('jqGrid is not loaded');
+                return;
+            }
+            
             $("#userRolesGrid").jqGrid({
                 url: "{{ path('app_roles_data') }}",
                 datatype: "json",
