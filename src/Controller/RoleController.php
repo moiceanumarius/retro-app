@@ -169,16 +169,32 @@ final class RoleController extends AbstractController
 
         $data = [];
         foreach ($userRoles as $userRole) {
+            // Role badge styling
+            $roleClass = match($userRole->getRole()->getCode()) {
+                'ROLE_ADMIN' => 'badge-danger-modern',
+                'ROLE_TEAM_LEAD' => 'badge-warning-modern',
+                'ROLE_FACILITATOR' => 'badge-primary-modern',
+                'ROLE_MEMBER' => 'badge-success-modern',
+                default => 'badge-primary-modern'
+            };
+            
+            $roleBadge = '<span class="badge-modern ' . $roleClass . '">' . $userRole->getRole()->getName() . '</span>';
+            
+            // Status badge
+            $statusBadge = $userRole->isActive() 
+                ? '<span class="badge-modern badge-success-modern">Active</span>'
+                : '<span class="badge-modern badge-danger-modern">Inactive</span>';
+            
             $data[] = [
                 'userName' => $userRole->getUser()->getFullName(),
                 'email' => $userRole->getUser()->getEmail(),
-                'roleName' => $userRole->getRole()->getName(),
+                'roleName' => $roleBadge,
                 'assignedAt' => $userRole->getAssignedAt()->format('M d, Y H:i'),
                 'assignedBy' => $userRole->getAssignedBy() ?? 'System',
-                'status' => $userRole->isActive() ? 'Active' : 'Inactive',
+                'status' => $statusBadge,
                 'actions' => '<form method="post" action="' . $this->generateUrl('app_roles_remove', ['userRoleId' => $userRole->getId()]) . '" style="display: inline;" onsubmit="return confirm(\'Are you sure?\')">
                     <input type="hidden" name="_token" value="' . $this->container->get('security.csrf.token_manager')->getToken('remove_role') . '">
-                    <button type="submit" class="btn-modern btn-danger-modern" style="padding: 4px 8px; font-size: 12px;">Remove</button>
+                    <button type="submit" class="btn-modern btn-danger-modern">Remove</button>
                 </form>'
             ];
         }
