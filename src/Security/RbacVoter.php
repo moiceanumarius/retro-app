@@ -66,13 +66,13 @@ class RbacVoter extends Voter
     {
         switch ($attribute) {
             case self::VIEW:
-                return $user->hasAnyRole(['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_TEAM_LEAD', 'ROLE_MEMBER']);
+                return $user->hasRole('ROLE_MEMBER'); // All roles inherit from MEMBER
             case self::CREATE:
             case self::EDIT:
             case self::MANAGE:
-                return $user->hasAnyRole(['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_TEAM_LEAD']);
+                return $user->hasRole('ROLE_FACILITATOR'); // FACILITATOR and above
             case self::DELETE:
-                return $user->hasRole('ROLE_ADMIN');
+                return $user->hasRole('ROLE_ADMIN'); // Only ADMIN
         }
 
         return false;
@@ -83,13 +83,13 @@ class RbacVoter extends Voter
         switch ($attribute) {
             case self::VIEW:
             case self::PARTICIPATE:
-                return $user->hasAnyRole(['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_TEAM_LEAD', 'ROLE_MEMBER']);
+                return $user->hasRole('ROLE_MEMBER'); // All roles inherit from MEMBER
             case self::CREATE:
             case self::EDIT:
             case self::FACILITATE:
-                return $user->hasAnyRole(['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_TEAM_LEAD']);
+                return $user->hasRole('ROLE_FACILITATOR'); // FACILITATOR and above
             case self::DELETE:
-                return $user->hasRole('ROLE_ADMIN');
+                return $user->hasRole('ROLE_ADMIN'); // Only ADMIN
         }
 
         return false;
@@ -99,10 +99,10 @@ class RbacVoter extends Voter
     {
         switch ($attribute) {
             case self::VIEW:
-                return $user->hasAnyRole(['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_TEAM_LEAD', 'ROLE_MEMBER']);
+                return $user->hasRole('ROLE_MEMBER'); // All roles inherit from MEMBER
             case self::CREATE:
             case self::MANAGE:
-                return $user->hasAnyRole(['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_TEAM_LEAD']);
+                return $user->hasRole('ROLE_FACILITATOR'); // FACILITATOR and above
         }
 
         return false;
@@ -112,9 +112,9 @@ class RbacVoter extends Voter
     {
         switch ($attribute) {
             case self::VIEW:
-                return $user->hasAnyRole(['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_TEAM_LEAD', 'ROLE_MEMBER']);
+                return $user->hasRole('ROLE_MEMBER'); // All roles inherit from MEMBER
             case self::MANAGE:
-                return $user->hasRole('ROLE_ADMIN');
+                return $user->hasRole('ROLE_ADMIN'); // Only ADMIN
         }
 
         return false;

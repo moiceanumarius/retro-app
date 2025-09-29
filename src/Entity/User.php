@@ -112,8 +112,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getRoles(): array
     {
-        // Get roles from UserRole entities
-        $roles = $this->getActiveRoles();
+        // Get roles from UserRole entities including inherited ones
+        $roles = $this->getAllRolesIncludingInherited();
         
         // guarantee every user at least has ROLE_USER
         $roles[] = 'ROLE_USER';
@@ -358,18 +358,54 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     /**
-     * Check if user has a specific role
+     * Get all roles including inherited ones based on hierarchy
+     * Hierarchy: Administrator > Team Lead > Facilitator > Member
+     * @return array
      */
-    public function hasRole(string $roleCode): bool
+    public function getAllRolesIncludingInherited(): array
     {
-        return in_array($roleCode, $this->getActiveRoles());
+        $activeRoles = $this->getActiveRoles();
+        $allRoles = $activeRoles;
+
+        // Define role hierarchy (higher roles include lower ones)
+        $hierarchy = [
+            'ROLE_ADMIN' => ['ROLE_TEAM_LEAD', 'ROLE_FACILITATOR', 'ROLE_MEMBER'],
+            'ROLE_TEAM_LEAD' => ['ROLE_FACILITATOR', 'ROLE_MEMBER'],
+            'ROLE_FACILITATOR' => ['ROLE_MEMBER'],
+            'ROLE_MEMBER' => []
+        ];
+
+        // Add inherited roles
+        foreach ($activeRoles as $role) {
+            if (isset($hierarchy[$role])) {
+                $allRoles = array_merge($allRoles, $hierarchy[$role]);
+            }
+        }
+
+        return array_unique($allRoles);
     }
 
     /**
-     * Check if user has any of the specified roles
+     * Check if user has a specific role (including inherited)
+     */
+    public function hasRole(string $roleCode): bool
+    {
+        return in_array($roleCode, $this->getAllRolesIncludingInherited());
+    }
+
+    /**
+     * Check if user has any of the specified roles (including inherited)
      */
     public function hasAnyRole(array $roleCodes): bool
     {
-        return !empty(array_intersect($roleCodes, $this->getActiveRoles()));
+        return !empty(array_intersect($roleCodes, $this->getAllRolesIncludingInherited()));
+    }
+
+    /**
+     * Check if user has a specific role directly assigned (not inherited)
+     */
+    public function hasDirectRole(string $roleCode): bool
+    {
+        return in_array($roleCode, $this->getActiveRoles());
     }
 }
