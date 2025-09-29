@@ -341,7 +341,7 @@ final class TeamController extends AbstractController
             $this->entityManager->flush();
             
             // Return JSON response for AJAX
-            if ($request->isXmlHttpRequest()) {
+            if ($request->isXmlHttpRequest() || $request->headers->get('X-Requested-With') === 'XMLHttpRequest') {
                 return $this->json([
                     'success' => true,
                     'message' => 'Invitation created successfully!',

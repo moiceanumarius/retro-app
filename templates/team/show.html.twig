@@ -295,7 +295,19 @@
             .then(response => {
                 console.log('Response status:', response.status);
                 console.log('Response headers:', response.headers);
-                return response.json();
+                console.log('Content-Type:', response.headers.get('content-type'));
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    // If not JSON, get text and log it
+                    return response.text().then(text => {
+                        console.log('Response text:', text);
+                        throw new Error('Expected JSON response but got: ' + contentType);
+                    });
+                }
             })
             .then(data => {
                 console.log('Response data:', data);
