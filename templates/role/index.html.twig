@@ -313,7 +313,7 @@
                 font-weight: 500;
                 margin: 0;
                 flex: 0 0 auto;
-                text-align: left;
+                text-align: center;
             }
             
             .dataTables_wrapper .dataTables_paginate {
@@ -324,6 +324,11 @@
                 align-items: center;
                 justify-content: space-between;
                 width: 100%;
+            }
+            
+            .dataTables_wrapper .dataTables_paginate ul {
+                margin: 0;
+                flex: 0 0 auto;
             }
             
             .dataTables_wrapper .dataTables_length select {
@@ -598,8 +603,14 @@
                 scrollX: true,
                 autoWidth: false,
                 initComplete: function() {
-                    // Move the default length selector to pagination div
+                    // Move both info and length selector to pagination div
+                    var infoSelector = $('.dataTables_info');
                     var lengthSelector = $('.dataTables_length');
+                    
+                    if (infoSelector.length) {
+                        $('.dataTables_paginate').prepend(infoSelector);
+                    }
+                    
                     if (lengthSelector.length) {
                         $('.dataTables_paginate').append(lengthSelector);
                     }
@@ -712,5 +723,5 @@
                 </div>
             </div>
         </div>
-    </div>
+</div>
 {% endblock %}
