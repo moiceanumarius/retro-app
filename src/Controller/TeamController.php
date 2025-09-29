@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Team;
 use App\Entity\TeamMember;
+use App\Entity\TeamInvitation;
 use App\Entity\User;
 use App\Form\TeamType;
 use App\Form\TeamMemberType;
@@ -277,6 +278,182 @@ final class TeamController extends AbstractController
             $this->addFlash('error', 'Invalid CSRF token');
             return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
         }
+    }
+
+    #[Route('/teams/{id}/create-invitation', name: 'app_teams_create_invitation', requirements: ['id' => '\d+'])]
+    public function createInvitation(Request $request, int $id): Response
+    {
+        $team = $this->entityManager->getRepository(Team::class)->find($id);
+        
+        if (!$team || !$team->isActive()) {
+            throw $this->createNotFoundException('Team not found');
+        }
+        
+        // Only owner can create invitations
+        if ($team->getOwner() !== $this->getUser()) {
+            throw $this->createAccessDeniedException('Only team owner can create invitations');
+        }
+        
+        if ($request->isMethod('POST')) {
+            $email = $request->request->get('email');
+            $role = $request->request->get('role', 'Member');
+            $message = $request->request->get('message');
+            
+            if (!$email) {
+                $this->addFlash('error', 'Email is required');
+                return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+            }
+            
+            // Check if user is already a member
+            $existingUser = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $email]);
+            if ($existingUser && $team->hasMember($existingUser)) {
+                $this->addFlash('error', 'User is already a member of this team');
+                return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+            }
+            
+            // Check if there's already a pending invitation
+            $existingInvitation = $this->entityManager->getRepository(TeamInvitation::class)
+                ->findOneBy(['email' => $email, 'team' => $team, 'status' => 'pending']);
+            
+            if ($existingInvitation && !$existingInvitation->isExpired()) {
+                $this->addFlash('error', 'There is already a pending invitation for this email');
+                return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+            }
+            
+            // Create new invitation
+            $invitation = new TeamInvitation();
+            $invitation->setTeam($team);
+            $invitation->setEmail($email);
+            $invitation->setRole($role);
+            $invitation->setMessage($message);
+            $invitation->setInvitedBy($this->getUser());
+            
+            $this->entityManager->persist($invitation);
+            $this->entityManager->flush();
+            
+            $this->addFlash('success', '✅ Invitation created successfully! Share this link: ' . $request->getSchemeAndHttpHost() . $invitation->getInvitationUrl());
+            
+            return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+        }
+        
+        return $this->render('team/create_invitation.html.twig', [
+            'team' => $team,
+        ]);
+    }
+
+    #[Route('/team-invitation/{token}', name: 'app_team_invitation_show')]
+    public function showInvitation(string $token): Response
+    {
+        $invitation = $this->entityManager->getRepository(TeamInvitation::class)
+            ->findOneBy(['token' => $token]);
+        
+        if (!$invitation) {
+            throw $this->createNotFoundException('Invitation not found');
+        }
+        
+        if ($invitation->isExpired()) {
+            $invitation->setStatus('expired');
+            $this->entityManager->persist($invitation);
+            $this->entityManager->flush();
+        }
+        
+        return $this->render('team/invitation_show.html.twig', [
+            'invitation' => $invitation,
+        ]);
+    }
+
+    #[Route('/team-invitation/{token}/accept', name: 'app_team_invitation_accept')]
+    public function acceptInvitation(Request $request, string $token): Response
+    {
+        $invitation = $this->entityManager->getRepository(TeamInvitation::class)
+            ->findOneBy(['token' => $token]);
+        
+        if (!$invitation) {
+            throw $this->createNotFoundException('Invitation not found');
+        }
+        
+        if ($invitation->isExpired()) {
+            $this->addFlash('error', 'This invitation has expired');
+            return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
+        }
+        
+        if ($invitation->isAccepted()) {
+            $this->addFlash('info', 'This invitation has already been accepted');
+            return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
+        }
+        
+        $user = $this->getUser();
+        
+        // If user is not logged in, redirect to login with invitation token
+        if (!$user) {
+            $this->addFlash('info', 'Please log in or register to accept this invitation');
+            return $this->redirectToRoute('app_login', ['invitation' => $token]);
+        }
+        
+        // Check if user email matches invitation email
+        if ($user->getEmail() !== $invitation->getEmail()) {
+            $this->addFlash('error', 'This invitation is for a different email address');
+            return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
+        }
+        
+        // Check if user is already a member
+        if ($invitation->getTeam()->hasMember($user)) {
+            $this->addFlash('info', 'You are already a member of this team');
+            $invitation->setStatus('accepted');
+            $invitation->setAcceptedAt(new \DateTimeImmutable());
+            $invitation->setAcceptedBy($user);
+            $this->entityManager->persist($invitation);
+            $this->entityManager->flush();
+            return $this->redirectToRoute('app_teams_show', ['id' => $invitation->getTeam()->getId()]);
+        }
+        
+        // Add user to team
+        $teamMember = new TeamMember();
+        $teamMember->setTeam($invitation->getTeam());
+        $teamMember->setUser($user);
+        $teamMember->setRole($invitation->getRole() ?: 'Member');
+        $teamMember->setInvitedBy($invitation->getInvitedBy());
+        
+        $invitation->setStatus('accepted');
+        $invitation->setAcceptedAt(new \DateTimeImmutable());
+        $invitation->setAcceptedBy($user);
+        
+        $this->entityManager->persist($teamMember);
+        $this->entityManager->persist($invitation);
+        $this->entityManager->flush();
+        
+        $this->addFlash('success', '✅ You have successfully joined the team!');
+        
+        return $this->redirectToRoute('app_teams_show', ['id' => $invitation->getTeam()->getId()]);
+    }
+
+    #[Route('/team-invitation/{token}/decline', name: 'app_team_invitation_decline')]
+    public function declineInvitation(Request $request, string $token): Response
+    {
+        $invitation = $this->entityManager->getRepository(TeamInvitation::class)
+            ->findOneBy(['token' => $token]);
+        
+        if (!$invitation) {
+            throw $this->createNotFoundException('Invitation not found');
+        }
+        
+        if ($invitation->isExpired()) {
+            $this->addFlash('error', 'This invitation has expired');
+            return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
+        }
+        
+        if ($invitation->isAccepted() || $invitation->isDeclined()) {
+            $this->addFlash('info', 'This invitation has already been processed');
+            return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
+        }
+        
+        $invitation->setStatus('declined');
+        $this->entityManager->persist($invitation);
+        $this->entityManager->flush();
+        
+        $this->addFlash('info', 'You have declined the team invitation');
+        
+        return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
     }
 
     /**

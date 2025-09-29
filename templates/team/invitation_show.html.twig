@@ -1,0 +1,150 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Team Invitation{% endblock %}
+
+{% block page_title %}Team Invitation{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="team-invitation-show">
+        <div class="invitation-container">
+            {% if invitation.isExpired() %}
+                <div class="invitation-expired">
+                    <div class="expired-icon">
+                        <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <h2>Invitation Expired</h2>
+                    <p>This team invitation has expired. Please contact the team owner for a new invitation.</p>
+                    <a href="{{ path('app_home') }}" class="btn btn-primary">Go to Home</a>
+                </div>
+            {% elseif invitation.isAccepted() %}
+                <div class="invitation-accepted">
+                    <div class="accepted-icon">
+                        <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <h2>Invitation Accepted</h2>
+                    <p>You have successfully joined <strong>{{ invitation.team.name }}</strong>!</p>
+                    {% if app.user %}
+                        <a href="{{ path('app_teams_show', {'id': invitation.team.id}) }}" class="btn btn-primary">View Team</a>
+                    {% else %}
+                        <a href="{{ path('app_login') }}" class="btn btn-primary">Log In</a>
+                    {% endif %}
+                </div>
+            {% elseif invitation.isDeclined() %}
+                <div class="invitation-declined">
+                    <div class="declined-icon">
+                        <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <h2>Invitation Declined</h2>
+                    <p>You have declined the invitation to join <strong>{{ invitation.team.name }}</strong>.</p>
+                    <a href="{{ path('app_home') }}" class="btn btn-primary">Go to Home</a>
+                </div>
+            {% else %}
+                <div class="invitation-pending">
+                    <div class="invitation-header">
+                        <div class="team-info">
+                            <h1>You're invited to join</h1>
+                            <div class="team-card">
+                                <div class="team-color" style="background-color: {{ invitation.team.color ?: '#667eea' }}"></div>
+                                <div class="team-details">
+                                    <h2>{{ invitation.team.name }}</h2>
+                                    {% if invitation.team.description %}
+                                        <p>{{ invitation.team.description }}</p>
+                                    {% endif %}
+                                    <div class="team-meta">
+                                        <span class="meta-item">
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            Owner: {{ invitation.team.owner.getFullName() }}
+                                        </span>
+                                        <span class="meta-item">
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                                            </svg>
+                                            {{ invitation.team.getMemberCount() }} Members
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="invitation-details">
+                        <div class="detail-item">
+                            <label>Invited as:</label>
+                            <span class="role-badge">{{ invitation.role ?: 'Member' }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Invited by:</label>
+                            <span>{{ invitation.invitedBy.getFullName() }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Invited on:</label>
+                            <span>{{ invitation.createdAt|date('F d, Y') }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Expires on:</label>
+                            <span>{{ invitation.expiresAt|date('F d, Y') }}</span>
+                        </div>
+                    </div>
+
+                    {% if invitation.message %}
+                    <div class="invitation-message">
+                        <h3>Personal Message</h3>
+                        <div class="message-content">
+                            {{ invitation.message|nl2br }}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="invitation-actions">
+                        {% if app.user %}
+                            {% if app.user.email == invitation.email %}
+                                <a href="{{ path('app_team_invitation_accept', {'token': invitation.token}) }}" 
+                                   class="btn btn-primary btn-large">
+                                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Accept Invitation
+                                </a>
+                                <a href="{{ path('app_team_invitation_decline', {'token': invitation.token}) }}" 
+                                   class="btn btn-secondary btn-large"
+                                   onclick="return confirm('Are you sure you want to decline this invitation?')">
+                                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Decline
+                                </a>
+                            {% else %}
+                                <div class="email-mismatch">
+                                    <p>This invitation is for <strong>{{ invitation.email }}</strong>, but you are logged in as <strong>{{ app.user.email }}</strong>.</p>
+                                    <a href="{{ path('app_logout') }}" class="btn btn-secondary">Log Out</a>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="login-required">
+                                <p>Please log in or register to accept this invitation.</p>
+                                <a href="{{ path('app_login', {'invitation': invitation.token}) }}" class="btn btn-primary btn-large">
+                                    <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Log In / Register
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

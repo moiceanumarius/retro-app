@@ -135,15 +135,33 @@
                 <div class="action-card">
                     <div class="action-icon">
                         <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                        </svg>
+                    </div>
+                    <div class="action-content">
+                        <h4>Create Invitation</h4>
+                        <p>Generate a shareable link to invite new members</p>
+                    </div>
+                    <div class="action-button">
+                        <a href="{{ path('app_teams_create_invitation', {'id': team.id}) }}" class="btn btn-primary">
+                            Create Invitation
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="action-card">
+                    <div class="action-icon">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
                             <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
                         </svg>
                     </div>
                     <div class="action-content">
                         <h4>Add Members</h4>
-                        <p>Invite new members to join your team</p>
+                        <p>Add existing users directly to your team</p>
                     </div>
                     <div class="action-button">
-                        <a href="{{ path('app_teams_add_member', {'id': team.id}) }}" class="btn btn-primary">
+                        <a href="{{ path('app_teams_add_member', {'id': team.id}) }}" class="btn btn-secondary">
                             Add Member
                         </a>
                     </div>
