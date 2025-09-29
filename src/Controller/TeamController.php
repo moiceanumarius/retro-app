@@ -51,8 +51,15 @@ final class TeamController extends AbstractController
     #[Route('/teams/create', name: 'app_teams_create')]
     public function create(Request $request): Response
     {
+        $user = $this->getUser();
+        
+        // Only Administrator, Team Lead, and Facilitator can create teams
+        if (!$user->hasRole('ROLE_ADMIN') && !$user->hasRole('ROLE_TEAM_LEAD') && !$user->hasRole('ROLE_FACILITATOR')) {
+            throw $this->createAccessDeniedException('Only Administrators, Team Leads, and Facilitators can create teams');
+        }
+        
         $team = new Team();
-        $team->setOwner($this->getUser());
+        $team->setOwner($user);
         
         $form = $this->createForm(TeamType::class, $team);
         $form->handleRequest($request);
