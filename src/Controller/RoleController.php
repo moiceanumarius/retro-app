@@ -7,6 +7,7 @@ use App\Entity\User;
 use App\Entity\UserRole;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -115,5 +116,80 @@ final class RoleController extends AbstractController
         $this->addFlash('success', "✅ User role was removed successfully!");
 
         return $this->redirectToRoute('app_roles');
+    }
+
+    #[Route('/roles/data', name: 'app_roles_data', methods: ['GET'])]
+    public function getRolesData(Request $request): JsonResponse
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        $page = (int) $request->query->get('page', 1);
+        $rows = (int) $request->query->get('rows', 20);
+        $sidx = $request->query->get('sidx', 'assignedAt');
+        $sord = $request->query->get('sord', 'desc');
+        $searchField = $request->query->get('searchField');
+        $searchString = $request->query->get('searchString');
+        $searchOper = $request->query->get('searchOper');
+
+        $offset = ($page - 1) * $rows;
+
+        $qb = $this->entityManager->createQueryBuilder()
+            ->select('ur')
+            ->from(UserRole::class, 'ur')
+            ->leftJoin('ur.user', 'u')
+            ->leftJoin('ur.role', 'r')
+            ->where('ur.isActive = :active')
+            ->setParameter('active', true);
+
+        // Apply search filters
+        if ($searchField && $searchString) {
+            switch ($searchField) {
+                case 'userName':
+                    $qb->andWhere('u.firstName LIKE :search OR u.lastName LIKE :search')
+                       ->setParameter('search', '%' . $searchString . '%');
+                    break;
+                case 'email':
+                    $qb->andWhere('u.email LIKE :search')
+                       ->setParameter('search', '%' . $searchString . '%');
+                    break;
+            }
+        }
+
+        // Get total count
+        $totalQb = clone $qb;
+        $totalRecords = $totalQb->select('COUNT(ur.id)')->getQuery()->getSingleScalarResult();
+
+        // Apply sorting and pagination
+        $qb->orderBy('ur.' . $sidx, $sord)
+           ->setFirstResult($offset)
+           ->setMaxResults($rows);
+
+        $userRoles = $qb->getQuery()->getResult();
+
+        $rows = [];
+        foreach ($userRoles as $userRole) {
+            $rows[] = [
+                'id' => $userRole->getId(),
+                'userName' => $userRole->getUser()->getFullName(),
+                'email' => $userRole->getUser()->getEmail(),
+                'roleName' => $userRole->getRole()->getName(),
+                'assignedAt' => $userRole->getAssignedAt()->format('M d, Y H:i'),
+                'assignedBy' => $userRole->getAssignedBy() ?? 'System',
+                'status' => $userRole->getIsActive() ? 'Active' : 'Inactive',
+                'actions' => '<form method="post" action="' . $this->generateUrl('app_roles_remove', ['userRoleId' => $userRole->getId()]) . '" style="display: inline;" onsubmit="return confirm(\'Are you sure?\')">
+                    <input type="hidden" name="_token" value="' . $this->container->get('security.csrf.token_manager')->getToken('remove_role') . '">
+                    <button type="submit" class="btn-modern btn-danger-modern" style="padding: 4px 8px; font-size: 12px;">Remove</button>
+                </form>'
+            ];
+        }
+
+        $totalPages = ceil($totalRecords / $rows);
+
+        return new JsonResponse([
+            'page' => $page,
+            'total' => $totalPages,
+            'records' => $totalRecords,
+            'rows' => $rows
+        ]);
     }
 }

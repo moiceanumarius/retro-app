@@ -4,8 +4,10 @@
 
 {% block page_title %}Role Management{% endblock %}
 
-{% block stylesheets %}
-    <style>
+    {% block stylesheets %}
+        <!-- jqGrid CSS -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/free-jqgrid/4.15.5/css/ui.jqgrid.min.css">
+        <style>
         .role-management {
             padding: 0;
         }
@@ -258,8 +260,138 @@
                 flex: 1;
             }
         }
-    </style>
-{% endblock %}
+        </style>
+        
+        <!-- jqGrid Styles -->
+        <style>
+            .ui-jqgrid {
+                border: none !important;
+            }
+            
+            .ui-jqgrid .ui-jqgrid-hdiv {
+                border: none !important;
+            }
+            
+            .ui-jqgrid .ui-jqgrid-bdiv {
+                border: none !important;
+            }
+            
+            .ui-jqgrid tr.jqgrow td {
+                border-bottom: 1px solid #e9ecef !important;
+                padding: 12px 8px !important;
+            }
+            
+            .ui-jqgrid tr.jqgrow:hover td {
+                background-color: #f8f9fa !important;
+            }
+            
+            .ui-jqgrid .ui-jqgrid-htable th {
+                background: linear-gradient(135deg, #667eea, #764ba2) !important;
+                color: white !important;
+                border: none !important;
+                padding: 12px 8px !important;
+                font-weight: 600 !important;
+            }
+            
+            .ui-jqgrid .ui-pg-input {
+                border: 2px solid #e9ecef !important;
+                border-radius: 4px !important;
+                padding: 4px 8px !important;
+            }
+            
+            .ui-jqgrid .ui-pg-button {
+                border: 2px solid #e9ecef !important;
+                border-radius: 4px !important;
+                background: white !important;
+                color: #495057 !important;
+            }
+            
+            .ui-jqgrid .ui-pg-button:hover {
+                background: #667eea !important;
+                color: white !important;
+            }
+            
+            .ui-jqgrid .ui-pg-selbox {
+                border: 2px solid #e9ecef !important;
+                border-radius: 4px !important;
+                padding: 4px 8px !important;
+            }
+            
+            .ui-jqgrid .ui-search-toolbar input {
+                border: 2px solid #e9ecef !important;
+                border-radius: 4px !important;
+                padding: 6px 10px !important;
+            }
+            
+            .ui-jqgrid .ui-search-toolbar input:focus {
+                border-color: #667eea !important;
+                outline: none !important;
+            }
+        </style>
+    {% endblock %}
+    
+    {% block javascripts %}
+        <!-- jQuery -->
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <!-- jqGrid -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/free-jqgrid/4.15.5/js/jquery.jqgrid.min.js"></script>
+        
+        <script>
+        $(document).ready(function() {
+            $("#userRolesGrid").jqGrid({
+                url: "{{ path('app_roles_data') }}",
+                datatype: "json",
+                colNames: ['ID', 'User', 'Email', 'Role', 'Assigned At', 'Assigned By', 'Status', 'Actions'],
+                colModel: [
+                    {name: 'id', index: 'id', width: 50, hidden: true},
+                    {name: 'userName', index: 'userName', width: 150, search: true},
+                    {name: 'email', index: 'email', width: 200, search: true},
+                    {name: 'roleName', index: 'roleName', width: 120},
+                    {name: 'assignedAt', index: 'assignedAt', width: 150},
+                    {name: 'assignedBy', index: 'assignedBy', width: 120},
+                    {name: 'status', index: 'status', width: 80},
+                    {name: 'actions', index: 'actions', width: 100, sortable: false, search: false}
+                ],
+                rowNum: 20,
+                rowList: [10, 20, 30, 50],
+                pager: '#userRolesPager',
+                sortname: 'assignedAt',
+                sortorder: 'desc',
+                viewrecords: true,
+                gridview: true,
+                autoencode: true,
+                height: 'auto',
+                width: '100%',
+                shrinkToFit: true,
+                search: true,
+                searchOnEnter: true,
+                searchOperators: true,
+                multipleSearch: true,
+                loadonce: false,
+                jsonReader: {
+                    root: "rows",
+                    page: "page",
+                    total: "total",
+                    records: "records",
+                    repeatitems: false,
+                    id: "id"
+                }
+            });
+            
+            $("#userRolesGrid").jqGrid('navGrid', '#userRolesPager', {
+                search: true,
+                refresh: true,
+                add: false,
+                edit: false,
+                del: false
+            }, {}, {}, {}, {}, {
+                multipleSearch: true,
+                multipleGroup: true,
+                showQuery: true
+            });
+        });
+        </script>
+    {% endblock %}
 
 {% block body %}
     <div class="role-management">
@@ -316,71 +448,8 @@
                 <h2>Current Role Assignments</h2>
             </div>
             <div class="modern-card-body">
-                <div style="overflow-x: auto;">
-                    <table class="table-modern">
-                        <thead>
-                            <tr>
-                                <th>User</th>
-                                <th>Email</th>
-                                <th>Role</th>
-                                <th>Assigned At</th>
-                                <th>Assigned By</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% set hasAssignments = false %}
-                            {% for user in users %}
-                                {% for userRole in user.userRoles %}
-                                    {% set hasAssignments = true %}
-                                    <tr>
-                                        <td>
-                                            <strong>{{ user.getFullName() }}</strong>
-                                        </td>
-                                        <td>{{ user.email }}</td>
-                                        <td>
-                                            <span class="badge-modern badge-primary-modern">{{ userRole.role.name }}</span>
-                                            <br>
-                                            <small style="color: #6c757d; font-size: 0.75rem;">{{ userRole.role.code }}</small>
-                                        </td>
-                                        <td>{{ userRole.assignedAt|date('M d, Y H:i') }}</td>
-                                        <td>{{ userRole.assignedBy ?? 'System' }}</td>
-                                        <td>
-                                            {% if userRole.isActive %}
-                                                <span class="badge-modern badge-success-modern">Active</span>
-                                            {% else %}
-                                                <span class="badge-modern badge-secondary-modern">Inactive</span>
-                                            {% endif %}
-                                            {% if userRole.isExpired %}
-                                                <br><span class="badge-modern badge-warning-modern">Expired</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <form method="post" action="{{ path('app_roles_remove', {'userRoleId': userRole.id}) }}" 
-                                                  onsubmit="return confirm('Are you sure you want to remove this role?')" 
-                                                  style="display: inline;">
-                                                <input type="hidden" name="_token" value="{{ csrf_token('remove_role') }}">
-                                                <button type="submit" class="btn-modern btn-danger-modern">Remove</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            {% endfor %}
-                            
-                            {% if not hasAssignments %}
-                                <tr>
-                                    <td colspan="7" class="empty-state">
-                                        <svg fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        <p>No role assignments found</p>
-                                    </td>
-                                </tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
-                </div>
+                <table id="userRolesGrid"></table>
+                <div id="userRolesPager"></div>
             </div>
         </div>
 
