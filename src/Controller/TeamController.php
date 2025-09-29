@@ -354,9 +354,8 @@ final class TeamController extends AbstractController
             return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
         }
         
-        return $this->render('team/create_invitation.html.twig', [
-            'team' => $team,
-        ]);
+        // GET request - just return to team page (popup handles invitation creation)
+        return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
     }
 
     #[Route('/team-invitation/{token}', name: 'app_team_invitation_show')]
