@@ -60,21 +60,28 @@ class AssignRoleCommand extends Command
         ]);
 
         if ($existingUserRole) {
-            $io->warning("User '{$email}' already has role '{$roleCode}'.");
-            return Command::SUCCESS;
+            // Update existing role assignment
+            $existingUserRole->setAssignedAt(new \DateTimeImmutable());
+            $existingUserRole->setAssignedBy('system');
+            $existingUserRole->setIsActive(true);
+            
+            $this->entityManager->persist($existingUserRole);
+            $this->entityManager->flush();
+            
+            $io->success("Role '{$roleCode}' updated for user '{$email}' successfully.");
+        } else {
+            // Create new UserRole
+            $userRole = new UserRole();
+            $userRole->setUser($user);
+            $userRole->setRole($role);
+            $userRole->setAssignedAt(new \DateTimeImmutable());
+            $userRole->setAssignedBy('system');
+
+            $this->entityManager->persist($userRole);
+            $this->entityManager->flush();
+
+            $io->success("Role '{$roleCode}' assigned to user '{$email}' successfully.");
         }
-
-        // Create new UserRole
-        $userRole = new UserRole();
-        $userRole->setUser($user);
-        $userRole->setRole($role);
-        $userRole->setAssignedAt(new \DateTimeImmutable());
-        $userRole->setAssignedBy('system');
-
-        $this->entityManager->persist($userRole);
-        $this->entityManager->flush();
-
-        $io->success("Role '{$roleCode}' assigned to user '{$email}' successfully.");
 
         return Command::SUCCESS;
     }

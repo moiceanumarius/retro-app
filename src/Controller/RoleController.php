@@ -54,7 +54,7 @@ final class RoleController extends AbstractController
             return $this->redirectToRoute('app_roles');
         }
 
-        // Check if user already has this role
+        // Check if user already has this role (including inactive ones)
         $existingUserRole = $this->entityManager->getRepository(UserRole::class)->findOneBy([
             'user' => $user,
             'role' => $role
