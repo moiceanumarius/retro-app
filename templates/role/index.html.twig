@@ -461,27 +461,7 @@
         table.dataTable thead th.sorting:after,
         table.dataTable thead th.sorting_asc:after,
         table.dataTable thead th.sorting_desc:after {
-            content: '';
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 0;
-            height: 0;
-            border-left: 4px solid transparent;
-            border-right: 4px solid transparent;
-        }
-            
-        table.dataTable thead th.sorting:after {
-            border-top: 5px solid rgba(0,0,0,0.6);
-        }
-
-        table.dataTable thead th.sorting_asc:after {
-            border-bottom: 5px solid #000;
-        }
-
-        table.dataTable thead th.sorting_desc:after {
-            border-top: 5px solid #000;
+            display: none;
         }
             
             table.dataTable tbody td {
