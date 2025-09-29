@@ -286,18 +286,12 @@
             }
             
             .dataTables_wrapper .dataTables_length {
-                float: right;
-                padding: 15px 20px;
-                background: white;
-                border-top: 1px solid #e9ecef;
                 color: #6c757d;
                 font-size: 14px;
                 font-weight: 500;
-                position: absolute;
-                right: 20px;
-                top: 50%;
-                transform: translateY(-50%);
                 margin: 0;
+                flex: 1;
+                text-align: right;
             }
             
             .dataTables_wrapper .dataTables_info,
@@ -308,28 +302,22 @@
                 position: relative;
                 display: flex;
                 align-items: center;
-                justify-content: center;
+                justify-content: space-between;
                 min-height: 60px;
             }
             
             .dataTables_wrapper .dataTables_info {
-                position: absolute;
-                left: 20px;
-                top: 50%;
-                transform: translateY(-50%);
                 color: #6c757d;
                 font-size: 14px;
                 font-weight: 500;
                 margin: 0;
+                flex: 1;
             }
             
             .dataTables_wrapper .dataTables_paginate {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
                 text-align: center;
                 margin: 0;
+                flex: 1;
             }
             
             .dataTables_wrapper .dataTables_length select {
@@ -347,13 +335,6 @@
                 border-color: #667eea;
                 outline: none;
                 box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            }
-            
-            .dataTables_wrapper .dataTables_paginate:after,
-            .dataTables_wrapper .dataTables_length:after {
-                content: "";
-                display: table;
-                clear: both;
             }
             
             /* Ensure footer container has proper height and positioning */
