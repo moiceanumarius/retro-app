@@ -37,6 +37,12 @@ final class RoleController extends AbstractController
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
+        // CSRF protection
+        if (!$this->isCsrfTokenValid('assign_role', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_roles');
+        }
+
         $userId = $request->request->get('user_id');
         $roleId = $request->request->get('role_id');
 
@@ -75,9 +81,15 @@ final class RoleController extends AbstractController
     }
 
     #[Route('/roles/remove/{userRoleId}', name: 'app_roles_remove', methods: ['POST'])]
-    public function removeRole(int $userRoleId): Response
+    public function removeRole(Request $request, int $userRoleId): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        // CSRF protection
+        if (!$this->isCsrfTokenValid('remove_role', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('app_roles');
+        }
 
         $userRole = $this->entityManager->getRepository(UserRole::class)->find($userRoleId);
 

@@ -274,6 +274,7 @@
             </div>
             <div class="modern-card-body">
                 <form method="post" action="{{ path('app_roles_assign') }}">
+                    <input type="hidden" name="_token" value="{{ csrf_token('assign_role') }}">
                     <div class="form-row">
                         <div class="form-col">
                             <div class="form-group-modern">
@@ -357,6 +358,7 @@
                                             <form method="post" action="{{ path('app_roles_remove', {'userRoleId': userRole.id}) }}" 
                                                   onsubmit="return confirm('Are you sure you want to remove this role?')" 
                                                   style="display: inline;">
+                                                <input type="hidden" name="_token" value="{{ csrf_token('remove_role') }}">
                                                 <button type="submit" class="btn-modern btn-danger-modern">Remove</button>
                                             </form>
                                         </td>
