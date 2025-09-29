@@ -144,9 +144,9 @@
                         <p>Generate a shareable link to invite new members</p>
                     </div>
                     <div class="action-button">
-                        <a href="{{ path('app_teams_create_invitation', {'id': team.id}) }}" class="btn btn-primary">
+                        <button type="button" class="btn btn-primary" onclick="openInvitePopup({{ team.id }})">
                             Invite
-                        </a>
+                        </button>
                     </div>
                 </div>
                 
@@ -210,4 +210,122 @@
         </div>
         {% endif %}
     </div>
+
+    <!-- Invite Popup Modal -->
+    <div id="inviteModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Invite to {{ team.name }}</h3>
+                <button type="button" class="modal-close" onclick="closeInvitePopup()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="invite-form">
+                    <div class="form-group">
+                        <label for="inviteEmail" class="form-label">Email Address</label>
+                        <input type="email" id="inviteEmail" class="form-control" placeholder="Enter email address">
+                    </div>
+                    <div class="form-group">
+                        <label for="inviteRole" class="form-label">Role</label>
+                        <select id="inviteRole" class="form-control">
+                            <option value="Member">Member</option>
+                            <option value="Facilitator">Facilitator</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="inviteMessage" class="form-label">Personal Message (Optional)</label>
+                        <textarea id="inviteMessage" class="form-control" rows="3" placeholder="Add a personal message..."></textarea>
+                    </div>
+                </div>
+                <div id="inviteResult" class="invite-result" style="display: none;">
+                    <div class="result-success">
+                        <h4>Invitation Created!</h4>
+                        <p>Share this link with the person you want to invite:</p>
+                        <div class="invite-link-container">
+                            <input type="text" id="inviteLink" class="form-control" readonly>
+                            <button type="button" class="btn btn-secondary" onclick="copyInviteLink()">Copy</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeInvitePopup()">Cancel</button>
+                <button type="button" class="btn btn-primary" onclick="createInvitation({{ team.id }})">Create Invitation</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function openInvitePopup(teamId) {
+            document.getElementById('inviteModal').style.display = 'flex';
+            document.getElementById('inviteResult').style.display = 'none';
+            document.getElementById('inviteEmail').value = '';
+            document.getElementById('inviteRole').value = 'Member';
+            document.getElementById('inviteMessage').value = '';
+        }
+
+        function closeInvitePopup() {
+            document.getElementById('inviteModal').style.display = 'none';
+        }
+
+        function createInvitation(teamId) {
+            const email = document.getElementById('inviteEmail').value;
+            const role = document.getElementById('inviteRole').value;
+            const message = document.getElementById('inviteMessage').value;
+
+            if (!email) {
+                alert('Please enter an email address');
+                return;
+            }
+
+            // Create form data
+            const formData = new FormData();
+            formData.append('email', email);
+            formData.append('role', role);
+            formData.append('message', message);
+
+            // Send AJAX request
+            fetch(`/teams/${teamId}/create-invitation`, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('inviteLink').value = data.invitationUrl;
+                    document.getElementById('inviteResult').style.display = 'block';
+                } else {
+                    alert('Error creating invitation');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating invitation');
+            });
+        }
+
+        function copyInviteLink() {
+            const inviteLink = document.getElementById('inviteLink');
+            inviteLink.select();
+            inviteLink.setSelectionRange(0, 99999); // For mobile devices
+            document.execCommand('copy');
+            
+            // Show feedback
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Copied!';
+            setTimeout(() => {
+                button.textContent = originalText;
+            }, 2000);
+        }
+
+        // Close modal when clicking outside
+        document.getElementById('inviteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeInvitePopup();
+            }
+        });
+    </script>
 {% endblock %}
