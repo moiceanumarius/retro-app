@@ -1,0 +1,64 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Add Member to {{ team.name }}{% endblock %}
+
+{% block page_title %}Add Member to {{ team.name }}{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="team-add-member">
+        <div class="add-member-header">
+            <h1>Add Member</h1>
+            <p>Invite a new member to join <strong>{{ team.name }}</strong></p>
+        </div>
+
+        <div class="add-member-form">
+            {{ form_start(form, {'attr': {'class': 'team-form'}}) }}
+            
+            <div class="form-section">
+                <h3>Member Information</h3>
+                
+                <div class="form-group">
+                    {{ form_label(form.user) }}
+                    {{ form_widget(form.user) }}
+                    {{ form_errors(form.user) }}
+                    <small class="form-text">Select a user to add to your team</small>
+                </div>
+                
+                <div class="form-group">
+                    {{ form_label(form.role) }}
+                    {{ form_widget(form.role) }}
+                    {{ form_errors(form.role) }}
+                    <small class="form-text">Assign a role to this team member</small>
+                </div>
+                
+                <div class="form-group">
+                    {{ form_label(form.notes) }}
+                    {{ form_widget(form.notes) }}
+                    {{ form_errors(form.notes) }}
+                    <small class="form-text">Add any notes about this member (optional)</small>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Add Member
+                </button>
+                <a href="{{ path('app_teams_show', {'id': team.id}) }}" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                    Cancel
+                </a>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}
