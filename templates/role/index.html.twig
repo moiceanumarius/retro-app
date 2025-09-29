@@ -20,7 +20,6 @@
         }
         
         .stats-card {
-            background: white;
             padding: 1.5rem;
             border-radius: 12px;
             text-align: center;
@@ -657,8 +656,8 @@
             
             <!-- Role Stats -->
             {% for role in roles %}
-                {% set roleClass = 'role-' ~ role.code|lower|replace({'_': '-'}) %}
-                <div class="stats-card {{ roleClass }}">
+                {% set roleClass = role.code|lower|replace({'_': '-'}) %}
+                <div class="stats-card role-{{ roleClass }}">
                     <h3>{{ roleCounts[role.code] ?? 0 }}</h3>
                     <p>{{ role.name }}</p>
                 </div>
