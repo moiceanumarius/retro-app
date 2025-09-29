@@ -36,6 +36,7 @@ final class RoleController extends AbstractController
     public function assignRole(Request $request): Response
     {
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        
 
         // CSRF protection
         if (!$this->isCsrfTokenValid('assign_role', $request->request->get('_token'))) {
@@ -54,23 +55,18 @@ final class RoleController extends AbstractController
             return $this->redirectToRoute('app_roles');
         }
 
-        // Check if user already has this role (including inactive ones)
+        // Check if user has any existing role assignment
         $existingUserRole = $this->entityManager->getRepository(UserRole::class)->findOneBy([
-            'user' => $user,
-            'role' => $role
+            'user' => $user
         ]);
 
-        // Debug: Log the search
-        error_log("Searching for UserRole: User ID {$user->getId()}, Role ID {$role->getId()}");
-        error_log("Found existing UserRole: " . ($existingUserRole ? "YES (ID: {$existingUserRole->getId()})" : "NO"));
-
         if ($existingUserRole) {
-            // Update existing role assignment
+            // Update existing role assignment with new role
+            $existingUserRole->setRole($role);
             $existingUserRole->setAssignedAt(new \DateTimeImmutable());
             $existingUserRole->setAssignedBy($this->getUser()->getEmail());
             $existingUserRole->setIsActive(true);
             $userRole = $existingUserRole;
-            error_log("Updating existing UserRole ID: {$existingUserRole->getId()}");
         } else {
             // Create new UserRole
             $userRole = new UserRole();
@@ -78,16 +74,15 @@ final class RoleController extends AbstractController
             $userRole->setRole($role);
             $userRole->setAssignedAt(new \DateTimeImmutable());
             $userRole->setAssignedBy($this->getUser()->getEmail());
-            error_log("Creating new UserRole");
         }
 
         $this->entityManager->persist($userRole);
         $this->entityManager->flush();
 
         if ($existingUserRole) {
-            $this->addFlash('success', "Role '{$role->getName()}' updated for '{$user->getFullName()}' successfully.");
+            $this->addFlash('success', "✅ User role was updated successfully!");
         } else {
-            $this->addFlash('success', "Role '{$role->getName()}' assigned to '{$user->getFullName()}' successfully.");
+            $this->addFlash('success', "✅ New user role was added successfully!");
         }
 
         return $this->redirectToRoute('app_roles');
@@ -117,7 +112,7 @@ final class RoleController extends AbstractController
         $this->entityManager->remove($userRole);
         $this->entityManager->flush();
 
-        $this->addFlash('success', "Role '{$roleName}' removed from '{$userName}' successfully.");
+        $this->addFlash('success', "✅ User role was removed successfully!");
 
         return $this->redirectToRoute('app_roles');
     }
