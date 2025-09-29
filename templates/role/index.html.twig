@@ -278,11 +278,15 @@
                 table-layout: fixed;
             }
             
-            .dataTables_wrapper .dataTables_length,
             .dataTables_wrapper .dataTables_filter {
                 padding: 20px 20px 10px 20px;
                 background: #f8f9fa;
                 border-bottom: 1px solid #e9ecef;
+                text-align: right;
+            }
+            
+            .dataTables_wrapper .dataTables_length {
+                display: none; /* Hide from top */
             }
             
             .dataTables_wrapper .dataTables_info,
@@ -304,15 +308,35 @@
                 margin-left: 20px;
             }
             
-            .dataTables_wrapper .dataTables_length {
+            /* Custom length selector in footer */
+            .dataTables_wrapper .dataTables_length_footer {
                 float: right;
                 padding: 15px 20px;
                 background: #f8f9fa;
                 border-top: 1px solid #e9ecef;
+                color: #6c757d;
+                font-size: 14px;
+                font-weight: 500;
+            }
+            
+            .dataTables_wrapper .dataTables_length_footer select {
+                border: 2px solid #e9ecef;
+                border-radius: 8px;
+                padding: 6px 10px;
+                margin: 0 10px;
+                background: white;
+                font-size: 14px;
+                transition: all 0.3s ease;
+            }
+            
+            .dataTables_wrapper .dataTables_length_footer select:focus {
+                border-color: #667eea;
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             }
             
             .dataTables_wrapper .dataTables_paginate:after,
-            .dataTables_wrapper .dataTables_length:after {
+            .dataTables_wrapper .dataTables_length_footer:after {
                 content: "";
                 display: table;
                 clear: both;
@@ -335,21 +359,6 @@
                 transform: translateY(-1px);
             }
             
-            .dataTables_wrapper .dataTables_length select {
-                border: 2px solid #e9ecef;
-                border-radius: 8px;
-                padding: 8px 12px;
-                margin: 0 10px;
-                background: white;
-                font-size: 14px;
-                transition: all 0.3s ease;
-            }
-            
-            .dataTables_wrapper .dataTables_length select:focus {
-                border-color: #667eea;
-                outline: none;
-                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            }
             
             .dataTables_wrapper .dataTables_paginate .paginate_button {
                 border: 1px solid #dee2e6;
@@ -577,9 +586,19 @@
                     }
                 },
                 responsive: true,
-                dom: 'lfrtip',
+                dom: 'frtip',
                 scrollX: true,
-                autoWidth: false
+                autoWidth: false,
+                initComplete: function() {
+                    // Add custom length selector to footer
+                    var lengthSelector = $('<div class="dataTables_length_footer">Show <select><option value="10">10</option><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option></select> entries</div>');
+                    $('.dataTables_wrapper .dataTables_info').parent().append(lengthSelector);
+                    
+                    // Handle length change
+                    lengthSelector.find('select').on('change', function() {
+                        $('#userRolesTable').DataTable().page.len(parseInt($(this).val())).draw();
+                    });
+                }
             });
         });
         </script>
