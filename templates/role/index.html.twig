@@ -286,7 +286,18 @@
             }
             
             .dataTables_wrapper .dataTables_length {
-                display: none; /* Hide from top */
+                float: right;
+                padding: 15px 20px;
+                background: white;
+                border-top: 1px solid #e9ecef;
+                color: #6c757d;
+                font-size: 14px;
+                font-weight: 500;
+                position: absolute;
+                right: 20px;
+                top: 50%;
+                transform: translateY(-50%);
+                margin: 0;
             }
             
             .dataTables_wrapper .dataTables_info,
@@ -321,21 +332,7 @@
                 margin: 0;
             }
             
-            /* Custom length selector in footer */
-            .dataTables_wrapper .dataTables_length_footer {
-                position: absolute;
-                right: 20px;
-                top: 50%;
-                transform: translateY(-50%);
-                padding: 0;
-                background: transparent;
-                color: #6c757d;
-                font-size: 14px;
-                font-weight: 500;
-                margin: 0;
-            }
-            
-            .dataTables_wrapper .dataTables_length_footer select {
+            .dataTables_wrapper .dataTables_length select {
                 border: 2px solid #e9ecef;
                 border-radius: 8px;
                 padding: 6px 10px;
@@ -346,14 +343,14 @@
                 vertical-align: middle;
             }
             
-            .dataTables_wrapper .dataTables_length_footer select:focus {
+            .dataTables_wrapper .dataTables_length select:focus {
                 border-color: #667eea;
                 outline: none;
                 box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
             }
             
             .dataTables_wrapper .dataTables_paginate:after,
-            .dataTables_wrapper .dataTables_length_footer:after {
+            .dataTables_wrapper .dataTables_length:after {
                 content: "";
                 display: table;
                 clear: both;
@@ -610,18 +607,15 @@
                     }
                 },
                 responsive: true,
-                dom: 'frtip',
+                dom: 'lfrtip', // Include 'l' to show length selector
                 scrollX: true,
                 autoWidth: false,
                 initComplete: function() {
-                    // Add custom length selector to footer
-                    var lengthSelector = $('<div class="dataTables_length_footer">Show <select><option value="10">10</option><option value="20" selected>20</option><option value="30">30</option><option value="50">50</option></select> entries</div>');
-                    $('.dataTables_wrapper .dataTables_info').parent().append(lengthSelector);
-                    
-                    // Handle length change
-                    lengthSelector.find('select').on('change', function() {
-                        $('#userRolesTable').DataTable().page.len(parseInt($(this).val())).draw();
-                    });
+                    // Move the default length selector to footer
+                    var lengthSelector = $('.dataTables_length');
+                    if (lengthSelector.length) {
+                        $('.dataTables_wrapper .dataTables_info').parent().append(lengthSelector);
+                    }
                 }
             });
         });
