@@ -1,0 +1,132 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}My Profile{% endblock %}
+
+{% block page_title %}My Profile{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/user-profile.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="user-profile">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                {% if user.avatar %}
+                    <img src="{{ asset('uploads/avatars/' ~ user.avatar) }}" alt="Profile Avatar" class="avatar-image">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        <svg width="80" height="80" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="profile-info">
+                <h1 class="profile-name">{{ user.getFullName() }}</h1>
+                <p class="profile-email">{{ user.email }}</p>
+                <div class="profile-actions">
+                    <a href="{{ path('app_user_profile_edit') }}" class="btn btn-primary">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"></path>
+                        </svg>
+                        Edit Profile
+                    </a>
+                    <a href="{{ path('app_user_change_password') }}" class="btn btn-secondary">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        Change Password
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Details -->
+        <div class="profile-details">
+            <div class="profile-section">
+                <h3>Personal Information</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>First Name</label>
+                        <span>{{ user.firstName }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Last Name</label>
+                        <span>{{ user.lastName }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Email</label>
+                        <span>{{ user.email }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Member Since</label>
+                        <span>{{ user.createdAt|date('F d, Y') }}</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if user.bio %}
+            <div class="profile-section">
+                <h3>Bio</h3>
+                <p class="bio-text">{{ user.bio }}</p>
+            </div>
+            {% endif %}
+
+            <div class="profile-section">
+                <h3>Preferences</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Timezone</label>
+                        <span>{{ user.timezone ?: 'Not set' }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Language</label>
+                        <span>{{ user.language ?: 'Not set' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Notification Settings</h3>
+                <div class="notification-settings">
+                    <div class="setting-item">
+                        <span class="setting-label">Email Notifications</span>
+                        <span class="setting-status {{ user.emailNotifications ? 'enabled' : 'disabled' }}">
+                            {{ user.emailNotifications ? 'Enabled' : 'Disabled' }}
+                        </span>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Push Notifications</span>
+                        <span class="setting-status {{ user.pushNotifications ? 'enabled' : 'disabled' }}">
+                            {{ user.pushNotifications ? 'Enabled' : 'Disabled' }}
+                        </span>
+                    </div>
+                    <div class="setting-item">
+                        <span class="setting-label">Weekly Digest</span>
+                        <span class="setting-status {{ user.weeklyDigest ? 'enabled' : 'disabled' }}">
+                            {{ user.weeklyDigest ? 'Enabled' : 'Disabled' }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="profile-section">
+                <h3>Account Status</h3>
+                <div class="account-status">
+                    <div class="status-item">
+                        <span class="status-label">Email Verified</span>
+                        <span class="status-badge {{ user.isVerified ? 'verified' : 'unverified' }}">
+                            {{ user.isVerified ? 'Verified' : 'Unverified' }}
+                        </span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Last Updated</span>
+                        <span>{{ user.updatedAt|date('F d, Y H:i') }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

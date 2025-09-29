@@ -1,0 +1,127 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Profile{% endblock %}
+
+{% block page_title %}Edit Profile{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/user-profile.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="user-profile-edit">
+        <div class="profile-edit-header">
+            <h1>Edit Profile</h1>
+            <p>Update your personal information and preferences</p>
+        </div>
+
+        <div class="profile-edit-form">
+            {{ form_start(form, {'attr': {'class': 'profile-form', 'enctype': 'multipart/form-data'}}) }}
+            
+            <div class="form-section">
+                <h3>Personal Information</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form_label(form.firstName) }}
+                        {{ form_widget(form.firstName) }}
+                        {{ form_errors(form.firstName) }}
+                    </div>
+                    <div class="form-group">
+                        {{ form_label(form.lastName) }}
+                        {{ form_widget(form.lastName) }}
+                        {{ form_errors(form.lastName) }}
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    {{ form_label(form.email) }}
+                    {{ form_widget(form.email) }}
+                    {{ form_errors(form.email) }}
+                </div>
+                
+                <div class="form-group">
+                    {{ form_label(form.bio) }}
+                    {{ form_widget(form.bio) }}
+                    {{ form_errors(form.bio) }}
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Avatar</h3>
+                <div class="avatar-upload">
+                    <div class="current-avatar">
+                        {% if user.avatar %}
+                            <img src="{{ asset('uploads/avatars/' ~ user.avatar) }}" alt="Current Avatar" class="avatar-preview">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                <svg width="60" height="60" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="avatar-upload-field">
+                        {{ form_label(form.avatarFile) }}
+                        {{ form_widget(form.avatarFile) }}
+                        {{ form_errors(form.avatarFile) }}
+                        <small class="form-text">Upload a new avatar (JPEG, PNG, GIF, or WebP, max 2MB)</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Preferences</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        {{ form_label(form.timezone) }}
+                        {{ form_widget(form.timezone) }}
+                        {{ form_errors(form.timezone) }}
+                    </div>
+                    <div class="form-group">
+                        {{ form_label(form.language) }}
+                        {{ form_widget(form.language) }}
+                        {{ form_errors(form.language) }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3>Notification Settings</h3>
+                <div class="notification-settings">
+                    <div class="setting-item">
+                        {{ form_widget(form.emailNotifications) }}
+                        {{ form_label(form.emailNotifications) }}
+                        {{ form_errors(form.emailNotifications) }}
+                    </div>
+                    <div class="setting-item">
+                        {{ form_widget(form.pushNotifications) }}
+                        {{ form_label(form.pushNotifications) }}
+                        {{ form_errors(form.pushNotifications) }}
+                    </div>
+                    <div class="setting-item">
+                        {{ form_widget(form.weeklyDigest) }}
+                        {{ form_label(form.weeklyDigest) }}
+                        {{ form_errors(form.weeklyDigest) }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    Save Changes
+                </button>
+                <a href="{{ path('app_user_profile') }}" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                    Cancel
+                </a>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+{% endblock %}
