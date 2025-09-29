@@ -1,0 +1,696 @@
+/* Retrospective Management Styles */
+.retrospective-management {
+    padding: 0;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* Retrospective Header */
+.retrospective-header {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-content h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.header-content p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.header-actions .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.header-actions .btn-primary:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+}
+
+.header-actions .btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.header-actions .btn-secondary:hover {
+    background: #cbd5e0;
+    transform: translateY(-1px);
+}
+
+/* Status Badge */
+.status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-badge.planned {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.status-badge.active {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.status-badge.completed {
+    background: #bee3f8;
+    color: #2a4365;
+}
+
+.status-badge.cancelled {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+/* Stats Overview */
+.retrospectives-overview {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stats-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+}
+
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    flex-shrink: 0;
+}
+
+.stats-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0 0 0.25rem 0;
+}
+
+.stats-content p {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Retrospectives Grid */
+.retrospectives-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+}
+
+.retrospective-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 1.5rem;
+    transition: all 0.3s ease;
+    border-left: 4px solid #e9ecef;
+}
+
+.retrospective-card.planned {
+    border-left-color: #e2e8f0;
+}
+
+.retrospective-card.active {
+    border-left-color: #48bb78;
+}
+
+.retrospective-card.completed {
+    border-left-color: #4299e1;
+}
+
+.retrospective-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+}
+
+.retrospective-card .retrospective-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+}
+
+.retrospective-info h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.retrospective-info p {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.retrospective-details {
+    margin-bottom: 1.5rem;
+}
+
+.detail {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.detail-label {
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.detail-value {
+    color: #2d3748;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.retrospective-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.retrospective-actions .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.retrospective-actions .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.retrospective-actions .btn-primary:hover {
+    background: #5a67d8;
+}
+
+.retrospective-actions .btn-success {
+    background: #48bb78;
+    color: white;
+}
+
+.retrospective-actions .btn-success:hover {
+    background: #38a169;
+}
+
+.retrospective-actions .btn-warning {
+    background: #ed8936;
+    color: white;
+}
+
+.retrospective-actions .btn-warning:hover {
+    background: #dd6b20;
+}
+
+.retrospective-actions .btn-secondary {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.retrospective-actions .btn-secondary:hover {
+    background: #cbd5e0;
+}
+
+/* Form Styles */
+.retrospective-form-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 2rem;
+}
+
+.form-container {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.retrospective-form .form-group {
+    margin-bottom: 1.5rem;
+}
+
+.retrospective-form label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.retrospective-form .form-control {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s ease;
+}
+
+.retrospective-form .form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+}
+
+.form-actions .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Retrospective Details */
+.retrospective-details {
+    margin-bottom: 2rem;
+}
+
+.detail-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 2rem;
+}
+
+.detail-card h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 1.5rem 0;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-item .detail-label {
+    font-size: 0.875rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.detail-item .detail-value {
+    font-size: 1rem;
+    color: #2d3748;
+    font-weight: 600;
+}
+
+.description {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 1.5rem;
+}
+
+.description h4 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 0.5rem 0;
+}
+
+.description p {
+    color: #4a5568;
+    line-height: 1.6;
+    margin: 0;
+}
+
+/* Retrospective Content */
+.retrospective-content {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.category-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 2rem;
+}
+
+.category-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.category-header h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+}
+
+.item-count {
+    background: #f7fafc;
+    color: #4a5568;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Items Grid */
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.retrospective-item {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    border-left: 4px solid #e2e8f0;
+}
+
+.retrospective-item.well {
+    border-left-color: #48bb78;
+}
+
+.retrospective-item.improve {
+    border-left-color: #ed8936;
+}
+
+.retrospective-item.action {
+    border-left-color: #667eea;
+}
+
+.item-content p {
+    color: #2d3748;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.5;
+}
+
+.item-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.item-author {
+    color: #64748b;
+}
+
+.item-votes {
+    background: #e2e8f0;
+    color: #4a5568;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+}
+
+/* Actions Grid */
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1rem;
+}
+
+.retrospective-action {
+    background: #f7fafc;
+    border-radius: 8px;
+    padding: 1rem;
+    border-left: 4px solid #e2e8f0;
+}
+
+.retrospective-action.pending {
+    border-left-color: #e2e8f0;
+}
+
+.retrospective-action.in_progress {
+    border-left-color: #ed8936;
+}
+
+.retrospective-action.completed {
+    border-left-color: #48bb78;
+}
+
+.retrospective-action.cancelled {
+    border-left-color: #e53e3e;
+}
+
+.action-content p {
+    color: #2d3748;
+    margin: 0 0 0.75rem 0;
+    line-height: 1.5;
+}
+
+.action-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.action-assignment {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.assigned-to {
+    color: #64748b;
+}
+
+.due-date {
+    color: #ed8936;
+    font-weight: 500;
+}
+
+.action-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+}
+
+.action-status.pending {
+    background: #e2e8f0;
+    color: #4a5568;
+}
+
+.action-status.in_progress {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+.action-status.completed {
+    background: #c6f6d5;
+    color: #22543d;
+}
+
+.action-status.cancelled {
+    background: #fed7d7;
+    color: #742a2a;
+}
+
+/* Action Buttons */
+.retrospective-actions {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 2rem;
+    margin-top: 2rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.action-buttons .btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Planned Retrospective */
+.retrospective-planned {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.planned-message h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 1rem 0;
+}
+
+.planned-message p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin: 0 0 2rem 0;
+}
+
+/* Empty State */
+.empty-state {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 4rem 2rem;
+    text-align: center;
+}
+
+.empty-icon {
+    color: #cbd5e0;
+    margin-bottom: 2rem;
+}
+
+.empty-state h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 1rem 0;
+}
+
+.empty-state p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin: 0 0 2rem 0;
+}
+
+.text-muted {
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .retrospective-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .header-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .retrospectives-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .items-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}

@@ -1,8 +1,8 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Retrospectives{% endblock %}
+{% block title %}{{ team.name }} Retrospectives{% endblock %}
 
-{% block page_title %}Retrospectives{% endblock %}
+{% block page_title %}{{ team.name }} Retrospectives{% endblock %}
 
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
@@ -13,8 +13,8 @@
         <!-- Header Section -->
         <div class="retrospective-header">
             <div class="header-content">
-                <h1>My Retrospectives</h1>
-                <p>Manage and participate in team retrospectives</p>
+                <h1>{{ team.name }} Retrospectives</h1>
+                <p>All retrospectives for this team</p>
             </div>
             <div class="header-actions">
                 {% if app.user.hasRole('ROLE_ADMIN') or app.user.hasRole('ROLE_TEAM_LEAD') or app.user.hasRole('ROLE_FACILITATOR') %}
@@ -22,13 +22,19 @@
                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
                     </svg>
-                    Create New Retrospective
+                    Create Retrospective
                 </a>
                 {% endif %}
+                <a href="{{ path('app_teams_show', {'id': team.id}) }}" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                    Back to Team
+                </a>
             </div>
         </div>
 
-        <!-- Retrospectives Overview -->
+        <!-- Team Retrospectives Overview -->
         <div class="retrospectives-overview">
             <div class="stats-card">
                 <div class="stats-icon">
@@ -69,8 +75,8 @@
         {% if retrospectives|length > 0 %}
         <div class="retrospectives-section">
             <div class="section-header">
-                <h2>All Retrospectives</h2>
-                <p>Retrospectives you're involved in</p>
+                <h2>Team Retrospectives</h2>
+                <p>All retrospectives for {{ team.name }}</p>
             </div>
             <div class="retrospectives-grid">
                 {% for retrospective in retrospectives %}
@@ -90,10 +96,6 @@
                     </div>
                     <div class="retrospective-details">
                         <div class="detail">
-                            <span class="detail-label">Team:</span>
-                            <span class="detail-value">{{ retrospective.team.name }}</span>
-                        </div>
-                        <div class="detail">
                             <span class="detail-label">Facilitator:</span>
                             <span class="detail-value">{{ retrospective.facilitator.firstName }} {{ retrospective.facilitator.lastName }}</span>
                         </div>
@@ -101,6 +103,12 @@
                             <span class="detail-label">Scheduled:</span>
                             <span class="detail-value">{{ retrospective.scheduledAt|date('M d, Y H:i') }}</span>
                         </div>
+                        {% if retrospective.completedAt %}
+                        <div class="detail">
+                            <span class="detail-label">Completed:</span>
+                            <span class="detail-value">{{ retrospective.completedAt|date('M d, Y H:i') }}</span>
+                        </div>
+                        {% endif %}
                     </div>
                     <div class="retrospective-actions">
                         <a href="{{ path('app_retrospectives_show', {'id': retrospective.id}) }}" class="btn btn-sm btn-primary">
@@ -134,16 +142,14 @@
                 </svg>
             </div>
             <h3>No retrospectives yet</h3>
-            <p>Create your first retrospective to start improving your team's processes</p>
+            <p>{{ team.name }} hasn't conducted any retrospectives yet</p>
             {% if app.user.hasRole('ROLE_ADMIN') or app.user.hasRole('ROLE_TEAM_LEAD') or app.user.hasRole('ROLE_FACILITATOR') %}
             <a href="{{ path('app_retrospectives_create') }}" class="btn btn-primary">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
                 </svg>
-                Create Your First Retrospective
+                Create First Retrospective
             </a>
-            {% else %}
-            <p class="text-muted">Only Administrators, Team Leads, and Facilitators can create retrospectives.</p>
             {% endif %}
         </div>
         {% endif %}

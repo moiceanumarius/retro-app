@@ -1,0 +1,214 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ retrospective.title }}{% endblock %}
+
+{% block page_title %}{{ retrospective.title }}{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="retrospective-management">
+        <!-- Header Section -->
+        <div class="retrospective-header">
+            <div class="header-content">
+                <h1>{{ retrospective.title }}</h1>
+                <p>{{ retrospective.team.name }} • Facilitated by {{ retrospective.facilitator.firstName }} {{ retrospective.facilitator.lastName }}</p>
+            </div>
+            <div class="header-actions">
+                <span class="status-badge {{ retrospective.status }}">
+                    {{ retrospective.status|title }}
+                </span>
+                {% if retrospective.facilitator == app.user %}
+                    {% if retrospective.isPlanned() %}
+                        <a href="{{ path('app_retrospectives_start', {'id': retrospective.id}) }}" class="btn btn-success">
+                            Start Retrospective
+                        </a>
+                    {% elseif retrospective.isActive() %}
+                        <a href="{{ path('app_retrospectives_complete', {'id': retrospective.id}) }}" class="btn btn-warning">
+                            Complete Retrospective
+                        </a>
+                    {% endif %}
+                    <a href="{{ path('app_retrospectives_edit', {'id': retrospective.id}) }}" class="btn btn-secondary">
+                        Edit
+                    </a>
+                {% endif %}
+                <a href="{{ path('app_retrospectives') }}" class="btn btn-secondary">
+                    Back to Retrospectives
+                </a>
+            </div>
+        </div>
+
+        <!-- Retrospective Details -->
+        <div class="retrospective-details">
+            <div class="detail-card">
+                <h3>Retrospective Information</h3>
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <span class="detail-label">Team:</span>
+                        <span class="detail-value">{{ retrospective.team.name }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Facilitator:</span>
+                        <span class="detail-value">{{ retrospective.facilitator.firstName }} {{ retrospective.facilitator.lastName }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">Scheduled:</span>
+                        <span class="detail-value">{{ retrospective.scheduledAt|date('M d, Y H:i') }}</span>
+                    </div>
+                    {% if retrospective.startedAt %}
+                    <div class="detail-item">
+                        <span class="detail-label">Started:</span>
+                        <span class="detail-value">{{ retrospective.startedAt|date('M d, Y H:i') }}</span>
+                    </div>
+                    {% endif %}
+                    {% if retrospective.completedAt %}
+                    <div class="detail-item">
+                        <span class="detail-label">Completed:</span>
+                        <span class="detail-value">{{ retrospective.completedAt|date('M d, Y H:i') }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if retrospective.description %}
+                <div class="description">
+                    <h4>Description</h4>
+                    <p>{{ retrospective.description }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Retrospective Content -->
+        {% if retrospective.isActive() or retrospective.isCompleted() %}
+        <div class="retrospective-content">
+            <!-- What Went Well -->
+            <div class="category-section">
+                <div class="category-header">
+                    <h2>What Went Well</h2>
+                    <span class="item-count">{{ wellItems|length }} items</span>
+                </div>
+                <div class="items-grid">
+                    {% for item in wellItems %}
+                    <div class="retrospective-item well">
+                        <div class="item-content">
+                            <p>{{ item.content }}</p>
+                        </div>
+                        <div class="item-meta">
+                            <span class="item-author">{{ item.author.firstName }} {{ item.author.lastName }}</span>
+                            <span class="item-votes">{{ item.votes }} votes</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- What Could Be Improved -->
+            <div class="category-section">
+                <div class="category-header">
+                    <h2>What Could Be Improved</h2>
+                    <span class="item-count">{{ improveItems|length }} items</span>
+                </div>
+                <div class="items-grid">
+                    {% for item in improveItems %}
+                    <div class="retrospective-item improve">
+                        <div class="item-content">
+                            <p>{{ item.content }}</p>
+                        </div>
+                        <div class="item-meta">
+                            <span class="item-author">{{ item.author.firstName }} {{ item.author.lastName }}</span>
+                            <span class="item-votes">{{ item.votes }} votes</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Action Items -->
+            <div class="category-section">
+                <div class="category-header">
+                    <h2>Action Items</h2>
+                    <span class="item-count">{{ actionItems|length }} items</span>
+                </div>
+                <div class="items-grid">
+                    {% for item in actionItems %}
+                    <div class="retrospective-item action">
+                        <div class="item-content">
+                            <p>{{ item.content }}</p>
+                        </div>
+                        <div class="item-meta">
+                            <span class="item-author">{{ item.author.firstName }} {{ item.author.lastName }}</span>
+                            <span class="item-votes">{{ item.votes }} votes</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            {% if actions|length > 0 %}
+            <div class="category-section">
+                <div class="category-header">
+                    <h2>Assigned Actions</h2>
+                    <span class="item-count">{{ actions|length }} actions</span>
+                </div>
+                <div class="actions-grid">
+                    {% for action in actions %}
+                    <div class="retrospective-action {{ action.status }}">
+                        <div class="action-content">
+                            <p>{{ action.description }}</p>
+                        </div>
+                        <div class="action-meta">
+                            <div class="action-assignment">
+                                <span class="assigned-to">Assigned to: {{ action.assignedTo.firstName }} {{ action.assignedTo.lastName }}</span>
+                                {% if action.dueDate %}
+                                <span class="due-date">Due: {{ action.dueDate|date('M d, Y') }}</span>
+                                {% endif %}
+                            </div>
+                            <span class="action-status {{ action.status }}">{{ action.status|title }}</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Actions for Active Retrospectives -->
+        {% if retrospective.isActive() %}
+        <div class="retrospective-actions">
+            <div class="action-buttons">
+                <a href="{{ path('app_retrospectives_add_item', {'id': retrospective.id}) }}" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Add Item
+                </a>
+                {% if retrospective.facilitator == app.user or retrospective.team.owner == app.user %}
+                <a href="{{ path('app_retrospectives_add_action', {'id': retrospective.id}) }}" class="btn btn-success">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                    Add Action
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Planned Retrospective -->
+        <div class="retrospective-planned">
+            <div class="planned-message">
+                <h3>This retrospective is planned</h3>
+                <p>It will be available once the facilitator starts the session.</p>
+                {% if retrospective.facilitator == app.user %}
+                <a href="{{ path('app_retrospectives_start', {'id': retrospective.id}) }}" class="btn btn-primary">
+                    Start Retrospective
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+{% endblock %}
