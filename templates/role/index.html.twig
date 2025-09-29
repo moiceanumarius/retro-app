@@ -270,6 +270,12 @@
                 padding: 0;
                 box-shadow: 0 4px 20px rgba(0,0,0,0.08);
                 overflow: hidden;
+                width: 100%;
+            }
+            
+            #userRolesTable {
+                width: 100% !important;
+                table-layout: fixed;
             }
             
             .dataTables_wrapper .dataTables_length,
@@ -284,6 +290,17 @@
                 padding: 15px 20px;
                 background: #f8f9fa;
                 border-top: 1px solid #e9ecef;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            
+            .dataTables_wrapper .dataTables_info {
+                flex: 1;
+            }
+            
+            .dataTables_wrapper .dataTables_paginate {
+                flex: 0 0 auto;
             }
             
             .dataTables_wrapper .dataTables_filter input {
@@ -375,7 +392,16 @@
                 text-transform: uppercase;
                 letter-spacing: 0.5px;
                 position: relative;
+                width: auto;
             }
+            
+            table.dataTable thead th:nth-child(1) { width: 15%; } /* User */
+            table.dataTable thead th:nth-child(2) { width: 20%; } /* Email */
+            table.dataTable thead th:nth-child(3) { width: 12%; } /* Role */
+            table.dataTable thead th:nth-child(4) { width: 15%; } /* Assigned At */
+            table.dataTable thead th:nth-child(5) { width: 15%; } /* Assigned By */
+            table.dataTable thead th:nth-child(6) { width: 8%; }  /* Status */
+            table.dataTable thead th:nth-child(7) { width: 15%; } /* Actions */
             
             table.dataTable thead th:first-child {
                 border-top-left-radius: 0;
@@ -416,6 +442,8 @@
                 border-bottom: 1px solid #e9ecef;
                 vertical-align: middle;
                 font-size: 14px;
+                word-wrap: break-word;
+                overflow: hidden;
             }
             
             table.dataTable tbody tr {
@@ -536,10 +564,9 @@
                     }
                 },
                 responsive: true,
-                dom: 'Bfrtip',
-                buttons: [
-                    'copy', 'csv', 'excel', 'pdf', 'print'
-                ]
+                dom: 'lfrtip',
+                scrollX: true,
+                autoWidth: false
             });
         });
         </script>
