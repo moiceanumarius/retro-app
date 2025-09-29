@@ -283,6 +283,9 @@ final class TeamController extends AbstractController
     #[Route('/teams/{id}/create-invitation', name: 'app_teams_create_invitation', methods: ['GET', 'POST'], requirements: ['id' => '\d+'])]
     public function createInvitation(Request $request, int $id): Response
     {
+        // Debug: Log that we reached the controller
+        error_log("createInvitation called for team ID: $id, method: " . $request->getMethod());
+        
         $team = $this->entityManager->getRepository(Team::class)->find($id);
         
         if (!$team || !$team->isActive()) {
@@ -297,11 +300,7 @@ final class TeamController extends AbstractController
         if ($request->isMethod('POST')) {
             // Validate CSRF token
             if (!$this->isCsrfTokenValid('create_invitation', $request->request->get('_token'))) {
-                if ($request->isXmlHttpRequest()) {
-                    return $this->json(['success' => false, 'message' => 'Invalid CSRF token'], 400);
-                }
-                $this->addFlash('error', 'Invalid CSRF token');
-                return $this->redirectToRoute('app_teams_show', ['id' => $team->getId()]);
+                return $this->json(['success' => false, 'message' => 'Invalid CSRF token'], 400);
             }
             
             $email = $request->request->get('email');
