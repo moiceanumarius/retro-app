@@ -300,11 +300,19 @@
             }
             
             .dataTables_wrapper .dataTables_paginate {
-                float: right;
-                text-align: right;
+                float: left;
+                margin-left: 20px;
             }
             
-            .dataTables_wrapper .dataTables_paginate:after {
+            .dataTables_wrapper .dataTables_length {
+                float: right;
+                padding: 15px 20px;
+                background: #f8f9fa;
+                border-top: 1px solid #e9ecef;
+            }
+            
+            .dataTables_wrapper .dataTables_paginate:after,
+            .dataTables_wrapper .dataTables_length:after {
                 content: "";
                 display: table;
                 clear: both;
