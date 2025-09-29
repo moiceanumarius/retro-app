@@ -294,6 +294,7 @@
                 padding: 15px 20px;
                 background: #f8f9fa;
                 border-top: 1px solid #e9ecef;
+                position: relative;
             }
             
             .dataTables_wrapper .dataTables_info {
@@ -304,8 +305,10 @@
             }
             
             .dataTables_wrapper .dataTables_paginate {
-                float: left;
-                margin-left: 20px;
+                position: absolute;
+                left: 50%;
+                transform: translateX(-50%);
+                text-align: center;
             }
             
             /* Custom length selector in footer */
