@@ -267,7 +267,9 @@
             formData.append('_token', '{{ csrf_token('create_invitation') }}');
 
             // Send AJAX request
-            fetch(`/teams/${teamId}/create-invitation`, {
+            const url = `/teams/${teamId}/create-invitation`;
+            console.log('Making request to:', url);
+            fetch(url, {
                 method: 'POST',
                 body: formData,
                 headers: {
