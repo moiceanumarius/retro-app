@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\Retrospective;
 use App\Entity\RetrospectiveItem;
 use App\Entity\RetrospectiveAction;
+use App\Entity\RetrospectiveGroup;
 use App\Entity\Team;
 use App\Form\RetrospectiveType;
 use App\Form\RetrospectiveItemType;
@@ -14,11 +15,17 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\Security\Csrf\CsrfToken;
+use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
+use Symfony\Component\Mercure\HubInterface;
+use Symfony\Component\Mercure\Update;
 
 class RetrospectiveController extends AbstractController
 {
     public function __construct(
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private HubInterface $hub
     ) {
     }
 
@@ -113,23 +120,41 @@ class RetrospectiveController extends AbstractController
         }
 
         // Get items grouped by category
-        $items = $this->entityManager->getRepository(RetrospectiveItem::class)
-            ->findBy(['retrospective' => $retrospective], ['createdAt' => 'ASC']);
+        $currentUser = $this->getUser();
+        
+        // In feedback step, users only see their own posts
+        if ($retrospective->isInStep('feedback')) {
+            $items = $this->entityManager->getRepository(RetrospectiveItem::class)
+                ->findBy([
+                    'retrospective' => $retrospective,
+                    'author' => $currentUser
+                ], ['createdAt' => 'ASC']);
+        } else {
+            // In other steps, users see all posts
+            $items = $this->entityManager->getRepository(RetrospectiveItem::class)
+                ->findBy(['retrospective' => $retrospective], ['createdAt' => 'ASC']);
+        }
 
-        $wellItems = array_filter($items, fn($item) => $item->isWell());
-        $improveItems = array_filter($items, fn($item) => $item->isImprove());
-        $actionItems = array_filter($items, fn($item) => $item->isAction());
+        $wrongItems = array_filter($items, fn($item) => $item->isWrong());
+        $goodItems = array_filter($items, fn($item) => $item->isGood());
+        $improvedItems = array_filter($items, fn($item) => $item->isImproved());
+        $randomItems = array_filter($items, fn($item) => $item->isRandom());
 
         // Get actions
         $actions = $this->entityManager->getRepository(RetrospectiveAction::class)
             ->findBy(['retrospective' => $retrospective], ['createdAt' => 'ASC']);
 
+        // Get connected users (simplified - in real app you'd use Redis or similar)
+        $connectedUsers = $this->getConnectedUsers($id);
+
         return $this->render('retrospective/show.html.twig', [
             'retrospective' => $retrospective,
-            'wellItems' => $wellItems,
-            'improveItems' => $improveItems,
-            'actionItems' => $actionItems,
+            'wrongItems' => $wrongItems,
+            'goodItems' => $goodItems,
+            'improvedItems' => $improvedItems,
+            'randomItems' => $randomItems,
             'actions' => $actions,
+            'connectedUsers' => $connectedUsers,
         ]);
     }
 
@@ -181,6 +206,7 @@ class RetrospectiveController extends AbstractController
 
         $retrospective->setStatus('active');
         $retrospective->setStartedAt(new \DateTime());
+        $retrospective->setCurrentStep('feedback');
         $retrospective->setUpdatedAt(new \DateTime());
         
         $this->entityManager->flush();
@@ -229,9 +255,9 @@ class RetrospectiveController extends AbstractController
             throw $this->createAccessDeniedException('You do not have access to this retrospective');
         }
 
-        // Only active retrospectives can have items added
-        if (!$retrospective->isActive()) {
-            throw $this->createAccessDeniedException('Items can only be added to active retrospectives');
+        // Only active retrospectives in feedback step can have items added
+        if (!$retrospective->isActive() || !$retrospective->isInStep('feedback')) {
+            throw $this->createAccessDeniedException('Items can only be added during the feedback phase');
         }
 
         $item = new RetrospectiveItem();
@@ -297,6 +323,793 @@ class RetrospectiveController extends AbstractController
         ]);
     }
 
+    #[Route('/retrospectives/{id}/start-timer', name: 'app_retrospectives_start_timer', methods: ['POST'])]
+    public function startTimer(Request $request, int $id): Response
+    {
+        
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            // error_log("Retrospective not found for ID: $id");
+            throw $this->createNotFoundException('Retrospective not found');
+        }
+
+        $user = $this->getUser();
+        // error_log("Current user: " . ($user ? $user->getEmail() : 'null'));
+        // error_log("Facilitator: " . $retrospective->getFacilitator()->getEmail());
+
+        // Only facilitator can start timer
+        if ($retrospective->getFacilitator() !== $user) {
+            // error_log("Access denied: user is not facilitator");
+            throw $this->createAccessDeniedException('Only the facilitator can start the timer');
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $duration = $data['duration'] ?? 10; // default 10 minutes
+        
+        // error_log("Duration: $duration");
+        
+        $retrospective->setTimerDuration((int)$duration);
+        $retrospective->setTimerStartedAt(new \DateTime());
+        $retrospective->setUpdatedAt(new \DateTime());
+        
+        $this->entityManager->flush();
+        
+        // Broadcast timer start to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/timer",
+            json_encode([
+                'type' => 'timer_started',
+                'duration' => $duration,
+                'startedAt' => $retrospective->getTimerStartedAt()->format('Y-m-d H:i:s')
+            ])
+        );
+        $this->hub->publish($update);
+        
+        // error_log("Timer started successfully");
+        
+        return $this->json([
+            'success' => true,
+            'duration' => $duration,
+            'startedAt' => $retrospective->getTimerStartedAt()->format('Y-m-d H:i:s')
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/stop-timer', name: 'app_retrospectives_stop_timer', methods: ['POST'])]
+    public function stopTimer(Request $request, int $id): Response
+    {
+        // error_log("stopTimer called for retrospective ID: $id");
+        
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            // error_log("Retrospective not found for ID: $id");
+            throw $this->createNotFoundException('Retrospective not found');
+        }
+
+        $user = $this->getUser();
+        // error_log("Current user: " . ($user ? $user->getEmail() : 'null'));
+        // error_log("Facilitator: " . $retrospective->getFacilitator()->getEmail());
+
+        // Only facilitator can stop timer
+        if ($retrospective->getFacilitator() !== $user) {
+            // error_log("Access denied: user is not facilitator");
+            throw $this->createAccessDeniedException('Only the facilitator can stop the timer');
+        }
+
+        // Clear timer data
+        $retrospective->setTimerDuration(null);
+        $retrospective->setTimerStartedAt(null);
+        $retrospective->setUpdatedAt(new \DateTime());
+        
+        $this->entityManager->flush();
+        
+        // Broadcast timer stop to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/timer",
+            json_encode([
+                'type' => 'timer_stopped',
+                'message' => 'Timer stopped by facilitator'
+            ])
+        );
+        $this->hub->publish($update);
+        
+        // error_log("Timer stopped successfully");
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Timer stopped successfully'
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/next-step', name: 'app_retrospectives_next_step', methods: ['POST'])]
+    public function nextStep(int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        // Only facilitator can move to next step
+        if ($retrospective->getFacilitator() !== $this->getUser()) {
+            return $this->json(['success' => false, 'message' => 'Only the facilitator can move to the next step'], 403);
+        }
+
+        // Define step progression
+        $stepProgression = [
+            'feedback' => 'review',
+            'review' => 'discussion',
+            'discussion' => 'actions',
+            'actions' => 'completed'
+        ];
+
+        $currentStep = $retrospective->getCurrentStep();
+        $nextStep = $stepProgression[$currentStep] ?? 'completed';
+
+        $retrospective->setCurrentStep($nextStep);
+        $retrospective->setUpdatedAt(new \DateTime());
+
+        // If moving to completed, mark retrospective as completed
+        if ($nextStep === 'completed') {
+            $retrospective->setStatus('completed');
+            $retrospective->setCompletedAt(new \DateTime());
+        }
+        
+        $this->entityManager->flush();
+        
+        // Broadcast step change to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/step",
+            json_encode([
+                'type' => 'step_changed',
+                'nextStep' => $nextStep,
+                'message' => 'Moved to next step: ' . ucfirst($nextStep)
+            ])
+        );
+        $this->hub->publish($update);
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Moved to next step: ' . ucfirst($nextStep),
+            'nextStep' => $nextStep
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/add-item-ajax', name: 'app_retrospectives_add_item_ajax', methods: ['POST'])]
+    public function addItemAjax(Request $request, int $id): Response
+    {
+        // error_log("addItemAjax called for retrospective ID: $id");
+        
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            // error_log("Retrospective not found: $id");
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        // Check access
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            // error_log("Access denied for retrospective: $id");
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // Only active retrospectives in feedback step can have items added
+        if (!$retrospective->isActive() || !$retrospective->isInStep('feedback')) {
+            // error_log("Retrospective not active or not in feedback step. Active: " . ($retrospective->isActive() ? 'yes' : 'no') . ", Step: " . $retrospective->getCurrentStep());
+            return $this->json(['success' => false, 'message' => 'Items can only be added during the feedback phase'], 400);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $content = $data['content'] ?? null;
+        $category = $data['category'] ?? null;
+
+        // error_log("Request data: " . json_encode($data));
+        // error_log("Content: $content, Category: $category");
+
+        if (!$content || !$category) {
+            // error_log("Missing content or category");
+            return $this->json(['success' => false, 'message' => 'Content and category are required'], 400);
+        }
+
+        $item = new RetrospectiveItem();
+        $item->setRetrospective($retrospective);
+        $item->setAuthor($this->getUser());
+        $item->setContent($content);
+        $item->setCategory($category);
+        
+        // Set position to the end of the column
+        $existingItems = $this->entityManager->getRepository(RetrospectiveItem::class)
+            ->findBy(['retrospective' => $retrospective, 'category' => $category], ['position' => 'DESC'], 1);
+        $item->setPosition($existingItems ? $existingItems[0]->getPosition() + 1 : 0);
+        
+        // error_log("Creating item with content: $content, category: $category");
+        
+        try {
+            $this->entityManager->persist($item);
+            $this->entityManager->flush();
+            // error_log("Item created successfully with ID: " . $item->getId());
+        } catch (\Exception $e) {
+            // error_log("Error creating item: " . $e->getMessage());
+            return $this->json(['success' => false, 'message' => 'Failed to create item'], 500);
+        }
+        
+        // Broadcast new item to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/items",
+            json_encode([
+                'type' => 'item_added',
+                'item' => [
+                    'id' => $item->getId(),
+                    'content' => $item->getContent(),
+                    'category' => $item->getCategory(),
+                    'author' => [
+                        'firstName' => $item->getAuthor()->getFirstName(),
+                        'lastName' => $item->getAuthor()->getLastName()
+                    ],
+                    'createdAt' => $item->getCreatedAt()->format('H:i')
+                ]
+            ])
+        );
+        $this->hub->publish($update);
+        
+        return $this->json([
+            'success' => true,
+            'item' => [
+                'id' => $item->getId(),
+                'content' => $item->getContent(),
+                'category' => $item->getCategory(),
+                'author' => [
+                    'firstName' => $item->getAuthor()->getFirstName(),
+                    'lastName' => $item->getAuthor()->getLastName()
+                ],
+                'createdAt' => $item->getCreatedAt()->format('H:i')
+            ]
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/update-item-ajax', name: 'app_retrospectives_update_item_ajax', methods: ['POST'])]
+    public function updateItemAjax(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        // Check access
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $itemId = $data['itemId'] ?? null;
+        $content = $data['content'] ?? null;
+
+        if (!$itemId || !$content) {
+            return $this->json(['success' => false, 'message' => 'Item ID and content are required'], 400);
+        }
+
+        $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
+        
+        if (!$item) {
+            return $this->json(['success' => false, 'message' => 'Item not found'], 404);
+        }
+
+        // Only the author can edit their item
+        $currentUser = $this->getUser();
+        $itemAuthor = $item->getAuthor();
+        
+        // error_log("Update item - Current user ID: " . ($currentUser ? $currentUser->getId() : 'null'));
+        // error_log("Update item - Item author ID: " . ($itemAuthor ? $itemAuthor->getId() : 'null'));
+        // error_log("Update item - Users match: " . ($currentUser && $itemAuthor && $currentUser->getId() === $itemAuthor->getId() ? 'yes' : 'no'));
+        
+        if (!$currentUser || !$itemAuthor || $currentUser->getId() !== $itemAuthor->getId()) {
+            return $this->json(['success' => false, 'message' => 'You can only edit your own items'], 403);
+        }
+
+        $item->setContent($content);
+        $item->setUpdatedAt(new \DateTime());
+        
+        $this->entityManager->flush();
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Item updated successfully'
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/delete-item-ajax', name: 'app_retrospectives_delete_item_ajax', methods: ['POST'])]
+    public function deleteItemAjax(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        // Check access
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $itemId = $data['itemId'] ?? null;
+
+        if (!$itemId) {
+            return $this->json(['success' => false, 'message' => 'Item ID is required'], 400);
+        }
+
+        $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
+        
+        if (!$item) {
+            return $this->json(['success' => false, 'message' => 'Item not found'], 404);
+        }
+
+        // Only the author can delete their item
+        $currentUser = $this->getUser();
+        $itemAuthor = $item->getAuthor();
+        
+        // error_log("Delete item - Current user ID: " . ($currentUser ? $currentUser->getId() : 'null'));
+        // error_log("Delete item - Item author ID: " . ($itemAuthor ? $itemAuthor->getId() : 'null'));
+        // error_log("Delete item - Users match: " . ($currentUser && $itemAuthor && $currentUser->getId() === $itemAuthor->getId() ? 'yes' : 'no'));
+        
+        if (!$currentUser || !$itemAuthor || $currentUser->getId() !== $itemAuthor->getId()) {
+            return $this->json(['success' => false, 'message' => 'You can only delete your own items'], 403);
+        }
+
+        $this->entityManager->remove($item);
+        $this->entityManager->flush();
+        
+        return $this->json([
+            'success' => true,
+            'message' => 'Item deleted successfully'
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/review-data', name: 'app_retrospectives_review_data', methods: ['GET'])]
+    public function getReviewData(int $id): Response
+    {
+        // error_log("getReviewData called for retrospective ID: $id");
+        // error_log("Current user: " . ($this->getUser() ? $this->getUser()->getEmail() : 'null'));
+
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+
+        if (!$retrospective) {
+            // error_log("Retrospective not found for ID: $id");
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            // error_log("Access denied for retrospective ID: $id");
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // error_log("Getting items and groups for retrospective ID: $id");
+
+        // Get all items and groups for the review step, ordered by position
+        $items = $this->entityManager->getRepository(RetrospectiveItem::class)
+            ->findBy(['retrospective' => $retrospective], ['position' => 'ASC']);
+
+        // error_log("Found " . count($items) . " items");
+
+        $groups = $this->entityManager->getRepository(RetrospectiveGroup::class)
+            ->findBy(['retrospective' => $retrospective], ['position' => 'ASC']);
+
+        // error_log("Found " . count($groups) . " groups");
+
+        // Debug: log items by category
+        $itemsByCategory = ['wrong' => 0, 'good' => 0, 'improved' => 0, 'random' => 0];
+        foreach ($items as $item) {
+            if (isset($itemsByCategory[$item->getCategory()])) {
+                $itemsByCategory[$item->getCategory()]++;
+            }
+        }
+        // error_log("Items by category: " . json_encode($itemsByCategory));
+
+        // error_log("About to return JSON response");
+
+        return $this->json([
+            'success' => true,
+            'items' => array_map(function($item) {
+                return [
+                    'id' => $item->getId(),
+                    'content' => $item->getContent(),
+                    'category' => $item->getCategory(),
+                    'position' => $item->getPosition(),
+                    'group_id' => $item->getGroup() ? $item->getGroup()->getId() : null,
+                ];
+            }, $items),
+               'groups' => array_map(function($group) {
+                   return [
+                       'id' => $group->getId(),
+                       'title' => $group->getTitle(),
+                       'description' => $group->getDescription(),
+                       'position' => $group->getPosition(),
+                       'display_category' => $group->getDisplayCategory(),
+                       'item_count' => $group->getItems()->count(),
+                       'items' => array_map(function($item) {
+                           return [
+                               'id' => $item->getId(),
+                               'content' => $item->getContent(),
+                               'category' => $item->getCategory(),
+                           ];
+                       }, $group->getItems()->toArray())
+                   ];
+               }, $groups)
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/create-group', name: 'app_retrospectives_create_group', methods: ['POST'])]
+    public function createGroup(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        // Manual CSRF validation
+        $data = json_decode($request->getContent(), true);
+        $token = $data['_token'] ?? $request->headers->get('X-CSRF-Token');
+        
+        if (!$token || !$this->isCsrfTokenValid('authenticate', $token)) {
+            return $this->json(['success' => false, 'message' => 'Invalid CSRF token'], 403);
+        }
+
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // Only facilitator can create groups
+        if ($retrospective->getFacilitator() !== $this->getUser()) {
+            return $this->json(['success' => false, 'message' => 'Only facilitator can create groups'], 403);
+        }
+        $itemIds = $data['itemIds'] ?? [];
+        $category = $data['category'] ?? '';
+
+        if (empty($itemIds) || count($itemIds) < 2) {
+            return $this->json(['success' => false, 'message' => 'At least 2 items are required to create a group'], 400);
+        }
+
+        // Create new group
+        $group = new RetrospectiveGroup();
+        $group->setRetrospective($retrospective);
+        $group->setPositionX(0); // Not used in column-based layout
+        $group->setPositionY(0); // Not used in column-based layout
+        $group->setTitle('Group ' . (count($retrospective->getGroups()) + 1));
+        $group->setDisplayCategory($category); // Set the display category to the target column
+        
+        // Set position to the end of the column
+        $existingGroups = $this->entityManager->getRepository(RetrospectiveGroup::class)
+            ->findBy(['retrospective' => $retrospective, 'displayCategory' => $category], ['position' => 'DESC'], 1);
+        $group->setPosition($existingGroups ? $existingGroups[0]->getPosition() + 1 : 0);
+
+        $this->entityManager->persist($group);
+
+        // Add items to group
+        foreach ($itemIds as $itemId) {
+            $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
+            if ($item && $item->getRetrospective() === $retrospective) {
+                $group->addItem($item);
+            }
+        }
+
+        $this->entityManager->flush();
+
+        // Broadcast update to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/review",
+            json_encode([
+                'type' => 'group_created',
+                'group' => [
+                    'id' => $group->getId(),
+                    'title' => $group->getTitle(),
+                    'position_x' => $group->getPositionX(),
+                    'position_y' => $group->getPositionY(),
+                    'item_count' => $group->getItems()->count(),
+                ],
+                'item_ids' => $itemIds
+            ])
+        );
+        $this->hub->publish($update);
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Group created successfully',
+            'group' => [
+                'id' => $group->getId(),
+                'title' => $group->getTitle(),
+                'position_x' => $group->getPositionX(),
+                'position_y' => $group->getPositionY(),
+                'item_count' => $group->getItems()->count(),
+            ]
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/update-group-position', name: 'app_retrospectives_update_group_position', methods: ['POST'])]
+    public function updateGroupPosition(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // Only facilitator can update group positions
+        if ($retrospective->getFacilitator() !== $this->getUser()) {
+            return $this->json(['success' => false, 'message' => 'Only facilitator can update group positions'], 403);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $groupId = $data['groupId'] ?? null;
+        $positionX = $data['positionX'] ?? null;
+        $positionY = $data['positionY'] ?? null;
+
+        if (!$groupId || $positionX === null || $positionY === null) {
+            return $this->json(['success' => false, 'message' => 'Group ID and positions are required'], 400);
+        }
+
+        $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($groupId);
+        if (!$group || $group->getRetrospective() !== $retrospective) {
+            return $this->json(['success' => false, 'message' => 'Group not found'], 404);
+        }
+
+        $group->setPositionX($positionX);
+        $group->setPositionY($positionY);
+        $group->setUpdatedAt(new \DateTimeImmutable());
+
+        $this->entityManager->flush();
+
+        // Broadcast update to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/review",
+            json_encode([
+                'type' => 'group_moved',
+                'group_id' => $groupId,
+                'position_x' => $positionX,
+                'position_y' => $positionY
+            ])
+        );
+        $this->hub->publish($update);
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Group position updated successfully'
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/separate-item', name: 'app_retrospectives_separate_item', methods: ['POST'])]
+    public function separateItem(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // Only facilitators can separate items
+        if ($retrospective->getFacilitator() !== $this->getUser()) {
+            return $this->json(['success' => false, 'message' => 'Only facilitators can separate items'], 403);
+        }
+
+        // Manual CSRF validation
+        $data = json_decode($request->getContent(), true);
+        $token = $data['_token'] ?? $request->headers->get('X-CSRF-Token');
+        
+        if (!$token || !$this->isCsrfTokenValid('authenticate', $token)) {
+            return $this->json(['success' => false, 'message' => 'Invalid CSRF token'], 403);
+        }
+        $itemId = $data['itemId'] ?? null;
+
+        if (!$itemId) {
+            return $this->json(['success' => false, 'message' => 'Item ID is required'], 400);
+        }
+
+        $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
+        if (!$item || $item->getRetrospective() !== $retrospective) {
+            return $this->json(['success' => false, 'message' => 'Item not found'], 404);
+        }
+
+        $group = $item->getGroup();
+        if (!$group) {
+            return $this->json(['success' => false, 'message' => 'Item is not in a group'], 400);
+        }
+
+        // Remove item from group
+        $group->removeItem($item);
+        $item->setGroup(null);
+
+        // If group has no more items, delete it
+        // If group has only one item left, also delete it (groups need at least 2 items)
+        if ($group->getItems()->count() <= 1) {
+            // If there's one item left, remove it from the group too
+            if ($group->getItems()->count() === 1) {
+                $remainingItem = $group->getItems()->first();
+                $group->removeItem($remainingItem);
+                $remainingItem->setGroup(null);
+            }
+            $this->entityManager->remove($group);
+        }
+
+        $this->entityManager->flush();
+
+        // Broadcast update to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/review",
+            json_encode([
+                'type' => 'item_separated',
+                'item_id' => $itemId,
+                'group_id' => $group->getId()
+            ])
+        );
+        $this->hub->publish($update);
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Item separated successfully'
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/add-item-to-group', name: 'app_retrospectives_add_item_to_group', methods: ['POST'])]
+    public function addItemToGroup(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // Only facilitators can add items to groups
+        if ($retrospective->getFacilitator() !== $this->getUser()) {
+            return $this->json(['success' => false, 'message' => 'Only facilitators can add items to groups'], 403);
+        }
+
+        // Manual CSRF validation
+        $data = json_decode($request->getContent(), true);
+        $token = $data['_token'] ?? $request->headers->get('X-CSRF-Token');
+        
+        if (!$token || !$this->isCsrfTokenValid('authenticate', $token)) {
+            return $this->json(['success' => false, 'message' => 'Invalid CSRF token'], 403);
+        }
+        $itemId = $data['itemId'] ?? null;
+        $groupId = $data['groupId'] ?? null;
+
+        if (!$itemId || !$groupId) {
+            return $this->json(['success' => false, 'message' => 'Item ID and Group ID are required'], 400);
+        }
+
+        $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
+        if (!$item || $item->getRetrospective() !== $retrospective) {
+            return $this->json(['success' => false, 'message' => 'Item not found'], 404);
+        }
+
+        $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($groupId);
+        if (!$group || $group->getRetrospective() !== $retrospective) {
+            return $this->json(['success' => false, 'message' => 'Group not found'], 404);
+        }
+
+        // Add item to group
+        $group->addItem($item);
+        $item->setGroup($group);
+
+        $this->entityManager->flush();
+
+        // Broadcast update to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/review",
+            json_encode([
+                'type' => 'item_added_to_group',
+                'item_id' => $itemId,
+                'group_id' => $groupId
+            ])
+        );
+        $this->hub->publish($update);
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Item added to group successfully'
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/reorder-items', name: 'app_retrospectives_reorder_items', methods: ['POST'])]
+    public function reorderItems(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // Only facilitators can reorder items
+        if ($retrospective->getFacilitator() !== $this->getUser()) {
+            return $this->json(['success' => false, 'message' => 'Only facilitators can reorder items'], 403);
+        }
+
+        // Manual CSRF validation
+        $data = json_decode($request->getContent(), true);
+        $token = $data['_token'] ?? $request->headers->get('X-CSRF-Token');
+        
+        if (!$token || !$this->isCsrfTokenValid('authenticate', $token)) {
+            return $this->json(['success' => false, 'message' => 'Invalid CSRF token'], 403);
+        }
+        $category = $data['category'] ?? '';
+        $itemIds = $data['itemIds'] ?? [];
+        $groupIds = $data['groupIds'] ?? [];
+
+        if (empty($category)) {
+            return $this->json(['success' => false, 'message' => 'Category is required'], 400);
+        }
+
+        // Update positions for individual items
+        foreach ($itemIds as $index => $itemId) {
+            $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
+            if ($item && $item->getRetrospective() === $retrospective && $item->getCategory() === $category) {
+                $item->setPosition($index);
+            }
+        }
+
+        // Update positions for groups
+        foreach ($groupIds as $index => $groupId) {
+            $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($groupId);
+            if ($group && $group->getRetrospective() === $retrospective && $group->getDisplayCategory() === $category) {
+                $group->setPosition($index);
+            }
+        }
+
+        $this->entityManager->flush();
+
+        // Broadcast update to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/review",
+            json_encode([
+                'type' => 'items_reordered',
+                'category' => $category,
+                'item_ids' => $itemIds,
+                'group_ids' => $groupIds
+            ])
+        );
+        $this->hub->publish($update);
+
+        return $this->json([
+            'success' => true,
+            'message' => 'Items reordered successfully'
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/timer-status', name: 'app_retrospectives_timer_status', methods: ['GET'])]
+    public function timerStatus(int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        return $this->json([
+            'success' => true,
+            'isActive' => $retrospective->isTimerActive(),
+            'remainingSeconds' => $retrospective->getTimerRemainingSeconds(),
+            'currentStep' => $retrospective->getCurrentStep()
+        ]);
+    }
+
     private function hasTeamAccess(Team $team): bool
     {
         $user = $this->getUser();
@@ -308,5 +1121,165 @@ class RetrospectiveController extends AbstractController
         
         // Team members have access
         return $team->hasMember($user);
+    }
+
+    #[Route('/retrospectives/{id}/join', name: 'app_retrospectives_join', methods: ['POST'])]
+    public function join(int $id): Response
+    {
+        // error_log("join() called for retrospective ID: $id");
+        
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            // error_log("Retrospective not found for ID: $id");
+            throw $this->createNotFoundException('Retrospective not found');
+        }
+
+        // Check if user has access to the team
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            // error_log("Access denied for retrospective ID: $id");
+            throw $this->createAccessDeniedException('You do not have access to this retrospective');
+        }
+
+        $user = $this->getUser();
+        // error_log("User joining: " . ($user ? $user->getEmail() : 'null'));
+        
+        // Store user as connected (in a real app, use Redis or similar)
+        $this->addConnectedUser($id, $user);
+        
+        // error_log("User added to connected users for retrospective: $id");
+        
+        return $this->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->getId(),
+                'firstName' => $user->getFirstName(),
+                'lastName' => $user->getLastName(),
+                'email' => $user->getEmail(),
+                'avatar' => $user->getAvatar(),
+            ]
+        ]);
+    }
+
+    #[Route('/retrospectives/{id}/leave', name: 'app_retrospectives_leave', methods: ['POST'])]
+    public function leave(int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            throw $this->createNotFoundException('Retrospective not found');
+        }
+
+        $user = $this->getUser();
+        
+        // Remove user from connected list
+        $this->removeConnectedUser($id, $user);
+        
+        return $this->json(['success' => true]);
+    }
+
+    #[Route('/retrospectives/{id}/connected-users', name: 'app_retrospectives_connected_users', methods: ['GET'])]
+    public function getConnectedUsersEndpoint(int $id): Response
+    {
+        // error_log("getConnectedUsersEndpoint() called for retrospective ID: $id");
+        
+        // Update current user's lastSeen timestamp
+        $this->updateUserLastSeen($id, $this->getUser());
+        
+        $connectedUsers = $this->getConnectedUsers($id);
+        // error_log("Found " . count($connectedUsers) . " connected users");
+        
+        return $this->json([
+            'success' => true,
+            'users' => $connectedUsers
+        ]);
+    }
+
+    private function getConnectedUsers(int $retrospectiveId): array
+    {
+        // In a real application, you would use Redis or a similar solution
+        // For now, we'll use a simple file-based approach
+        $file = sys_get_temp_dir() . "/retrospective_{$retrospectiveId}_users.json";
+        // error_log("Getting connected users from file: $file");
+        
+        if (!file_exists($file)) {
+            // error_log("File does not exist: $file");
+            return [];
+        }
+        
+        $data = json_decode(file_get_contents($file), true);
+        // error_log("Raw file data: " . json_encode($data));
+        
+        // Filter out users that haven't been active in the last 3 hours
+        $activeUsers = [];
+        $now = time();
+        
+        foreach ($data as $userId => $userData) {
+            $timeDiff = $now - $userData['lastSeen'];
+            // error_log("User {$userId}: lastSeen={$userData['lastSeen']}, now={$now}, diff={$timeDiff}");
+            if ($timeDiff < 10800) { // 3 hours = 10800 seconds
+                $activeUsers[] = $userData;
+                // error_log("User {$userId} is active");
+            } else {
+                // error_log("User {$userId} is inactive (diff={$timeDiff})");
+            }
+        }
+        
+        // error_log("Active users: " . json_encode($activeUsers));
+        return $activeUsers;
+    }
+
+    private function addConnectedUser(int $retrospectiveId, $user): void
+    {
+        $file = sys_get_temp_dir() . "/retrospective_{$retrospectiveId}_users.json";
+        // error_log("Adding user to file: $file");
+        
+        $data = [];
+        if (file_exists($file)) {
+            $data = json_decode(file_get_contents($file), true) ?: [];
+        }
+        
+        $data[$user->getId()] = [
+            'id' => $user->getId(),
+            'firstName' => $user->getFirstName(),
+            'lastName' => $user->getLastName(),
+            'email' => $user->getEmail(),
+            'avatar' => $user->getAvatar(),
+            'lastSeen' => time(),
+        ];
+        
+        $result = file_put_contents($file, json_encode($data));
+        // error_log("File write result: " . ($result !== false ? 'success' : 'failed'));
+        // error_log("File contents: " . json_encode($data));
+    }
+
+    private function updateUserLastSeen(int $retrospectiveId, $user): void
+    {
+        $file = sys_get_temp_dir() . "/retrospective_{$retrospectiveId}_users.json";
+        
+        if (!file_exists($file)) {
+            return;
+        }
+        
+        $data = json_decode(file_get_contents($file), true) ?: [];
+        
+        if (isset($data[$user->getId()])) {
+            $data[$user->getId()]['lastSeen'] = time();
+            file_put_contents($file, json_encode($data));
+        }
+    }
+
+    private function removeConnectedUser(int $retrospectiveId, $user): void
+    {
+        $file = sys_get_temp_dir() . "/retrospective_{$retrospectiveId}_users.json";
+        
+        if (!file_exists($file)) {
+            return;
+        }
+        
+        $data = json_decode(file_get_contents($file), true) ?: [];
+        unset($data[$user->getId()]);
+        
+        file_put_contents($file, json_encode($data));
     }
 }

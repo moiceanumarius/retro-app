@@ -37,11 +37,18 @@ class RetrospectiveItem
     #[ORM\Column]
     private ?int $votes = null;
 
+    #[ORM\ManyToOne(inversedBy: 'items')]
+    private ?RetrospectiveGroup $group = null;
+
+    #[ORM\Column]
+    private ?int $position = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
         $this->votes = 0;
+        $this->position = 0;
     }
 
     public function getId(): ?int
@@ -153,5 +160,49 @@ class RetrospectiveItem
     public function isAction(): bool
     {
         return $this->category === 'action';
+    }
+
+    public function isWrong(): bool
+    {
+        return $this->category === 'wrong';
+    }
+
+    public function isGood(): bool
+    {
+        return $this->category === 'good';
+    }
+
+    public function isImproved(): bool
+    {
+        return $this->category === 'improved';
+    }
+
+    public function isRandom(): bool
+    {
+        return $this->category === 'random';
+    }
+
+    public function getGroup(): ?RetrospectiveGroup
+    {
+        return $this->group;
+    }
+
+    public function setGroup(?RetrospectiveGroup $group): static
+    {
+        $this->group = $group;
+
+        return $this;
+    }
+
+    public function getPosition(): ?int
+    {
+        return $this->position;
+    }
+
+    public function setPosition(int $position): static
+    {
+        $this->position = $position;
+
+        return $this;
     }
 }

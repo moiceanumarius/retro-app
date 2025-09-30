@@ -13,6 +13,9 @@ services:
     environment:
       - APP_ENV=dev
       - APP_DEBUG=true
+      - MERCURE_URL=http://mercure/.well-known/mercure
+      - MERCURE_PUBLIC_URL=http://localhost:3000/.well-known/mercure
+      - MERCURE_JWT_SECRET=PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=
     depends_on:
       - mysql
     networks:
@@ -68,6 +71,21 @@ services:
     ports:
       - "1025:1025"  # SMTP
       - "8025:8025"  # Web UI
+    networks:
+      - retro_network
+
+  mercure:
+    image: dunglas/mercure
+    container_name: retro_app_mercure_dev
+    environment:
+      - MERCURE_PUBLISHER_JWT_KEY=PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=
+      - MERCURE_SUBSCRIBER_JWT_KEY=PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=
+      - MERCURE_EXTRA_DIRECTIVES=cors_origins http://localhost:8080
+      - SERVER_NAME=:80
+      - MERCURE_DEVELOPMENT=true
+      - CADDY_SERVER_NAME=:80
+    ports:
+      - "3000:80"
     networks:
       - retro_network
 

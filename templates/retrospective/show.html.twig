@@ -6,6 +6,14 @@
 
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/retrospective-board.css') }}">
+{% endblock %}
+
+{% block head %}
+    <meta name="csrf-token" content="{{ csrf_token('authenticate') }}">
+    <meta name="csrf-token-add-item" content="{{ csrf_token('authenticate') }}">
+    <meta name="csrf-token-reorder" content="{{ csrf_token('authenticate') }}">
+    <meta name="csrf-token-separate" content="{{ csrf_token('authenticate') }}">
 {% endblock %}
 
 {% block body %}
@@ -14,187 +22,340 @@
         <div class="retrospective-header">
             <div class="header-content">
                 <h1>{{ retrospective.title }}</h1>
-                <p>{{ retrospective.team.name }} • Facilitated by {{ retrospective.facilitator.firstName }} {{ retrospective.facilitator.lastName }}</p>
+                <p>{{ retrospective.team.name }} • Step: {{ retrospective.currentStep|title }}</p>
             </div>
             <div class="header-actions">
                 <span class="status-badge {{ retrospective.status }}">
                     {{ retrospective.status|title }}
                 </span>
-                {% if retrospective.facilitator == app.user %}
-                    {% if retrospective.isPlanned() %}
-                        <a href="{{ path('app_retrospectives_start', {'id': retrospective.id}) }}" class="btn btn-success">
-                            Start Retrospective
-                        </a>
-                    {% elseif retrospective.isActive() %}
-                        <a href="{{ path('app_retrospectives_complete', {'id': retrospective.id}) }}" class="btn btn-warning">
-                            Complete Retrospective
-                        </a>
+                
+                {% if retrospective.facilitator == app.user and retrospective.isActive() %}
+                    {% if retrospective.currentStep != 'completed' %}
+                        <button id="nextStepBtn" class="btn btn-warning">
+                            Next Step
+                        </button>
                     {% endif %}
-                    <a href="{{ path('app_retrospectives_edit', {'id': retrospective.id}) }}" class="btn btn-secondary">
-                        Edit
-                    </a>
                 {% endif %}
+                
                 <a href="{{ path('app_retrospectives') }}" class="btn btn-secondary">
                     Back to Retrospectives
                 </a>
             </div>
         </div>
 
-        <!-- Retrospective Details -->
-        <div class="retrospective-details">
-            <div class="detail-card">
-                <h3>Retrospective Information</h3>
-                <div class="detail-grid">
-                    <div class="detail-item">
-                        <span class="detail-label">Team:</span>
-                        <span class="detail-value">{{ retrospective.team.name }}</span>
+        <!-- DEBUG: isActive: {{ retrospective.isActive() ? 'true' : 'false' }}, currentStep: {{ retrospective.currentStep }}, isInStep('feedback'): {{ retrospective.isInStep('feedback') ? 'true' : 'false' }}, isInStep('review'): {{ retrospective.isInStep('review') ? 'true' : 'false' }} -->
+        {% if retrospective.isActive() and retrospective.isInStep('feedback') %}
+        <!-- Interactive Retrospective Board -->
+        <div class="retrospective-board">
+
+            <!-- Feedback Columns -->
+            <div class="feedback-columns">
+                <div class="feedback-column" data-category="wrong">
+                    <div class="column-header wrong">
+                        <h3>What went wrong</h3>
+                        <span class="item-count">{{ wrongItems|length }}</span>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Facilitator:</span>
-                        <span class="detail-value">{{ retrospective.facilitator.firstName }} {{ retrospective.facilitator.lastName }}</span>
+                    
+                    <div class="add-item-form" style="display: none;">
+                        <textarea placeholder="Add your feedback..." data-category="wrong" class="item-input"></textarea>
+                        <button class="add-item-btn" data-category="wrong">Add</button>
                     </div>
-                    <div class="detail-item">
-                        <span class="detail-label">Scheduled:</span>
-                        <span class="detail-value">{{ retrospective.scheduledAt|date('M d, Y H:i') }}</span>
+                    
+                    <div class="items-container" id="wrongItems">
+                        {% for item in wrongItems %}
+                        <div class="post-it wrong" data-id="{{ item.id }}">
+                            <div class="post-it-content">{{ item.content }}</div>
+                        </div>
+                        {% endfor %}
                     </div>
-                    {% if retrospective.startedAt %}
-                    <div class="detail-item">
-                        <span class="detail-label">Started:</span>
-                        <span class="detail-value">{{ retrospective.startedAt|date('M d, Y H:i') }}</span>
-                    </div>
-                    {% endif %}
-                    {% if retrospective.completedAt %}
-                    <div class="detail-item">
-                        <span class="detail-label">Completed:</span>
-                        <span class="detail-value">{{ retrospective.completedAt|date('M d, Y H:i') }}</span>
-                    </div>
-                    {% endif %}
                 </div>
-                {% if retrospective.description %}
-                <div class="description">
-                    <h4>Description</h4>
-                    <p>{{ retrospective.description }}</p>
+
+                <div class="feedback-column" data-category="good">
+                    <div class="column-header good">
+                        <h3>What went good</h3>
+                        <span class="item-count">{{ goodItems|length }}</span>
+                    </div>
+                    
+                    <div class="add-item-form" style="display: none;">
+                        <textarea placeholder="Add your feedback..." data-category="good" class="item-input"></textarea>
+                        <button class="add-item-btn" data-category="good">Add</button>
+                    </div>
+                    
+                    <div class="items-container" id="goodItems">
+                        {% for item in goodItems %}
+                        <div class="post-it good" data-id="{{ item.id }}">
+                            <div class="post-it-content">{{ item.content }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
-                {% endif %}
+
+                <div class="feedback-column" data-category="improved">
+                    <div class="column-header improved">
+                        <h3>What can be improved</h3>
+                        <span class="item-count">{{ improvedItems|length }}</span>
+                    </div>
+                    
+                    <div class="add-item-form" style="display: none;">
+                        <textarea placeholder="Add your feedback..." data-category="improved" class="item-input"></textarea>
+                        <button class="add-item-btn" data-category="improved">Add</button>
+                    </div>
+                    
+                    <div class="items-container" id="improvedItems">
+                        {% for item in improvedItems %}
+                        <div class="post-it improved" data-id="{{ item.id }}">
+                            <div class="post-it-content">{{ item.content }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="feedback-column" data-category="random">
+                    <div class="column-header random">
+                        <h3>Random feedback</h3>
+                        <span class="item-count">{{ randomItems|length }}</span>
+                    </div>
+                    
+                    <div class="add-item-form" style="display: none;">
+                        <textarea placeholder="Add your feedback..." data-category="random" class="item-input"></textarea>
+                        <button class="add-item-btn" data-category="random">Add</button>
+                    </div>
+                    
+                    <div class="items-container" id="randomItems">
+                        {% for item in randomItems %}
+                        <div class="post-it random" data-id="{{ item.id }}">
+                            <div class="post-it-content">{{ item.content }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Retrospective Content -->
-        {% if retrospective.isActive() or retrospective.isCompleted() %}
-        <div class="retrospective-content">
-            <!-- What Went Well -->
-            <div class="category-section">
-                <div class="category-header">
-                    <h2>What Went Well</h2>
-                    <span class="item-count">{{ wellItems|length }} items</span>
-                </div>
-                <div class="items-grid">
-                    {% for item in wellItems %}
-                    <div class="retrospective-item well">
-                        <div class="item-content">
-                            <p>{{ item.content }}</p>
-                        </div>
-                        <div class="item-meta">
-                            <span class="item-author">{{ item.author.firstName }} {{ item.author.lastName }}</span>
-                            <span class="item-votes">{{ item.votes }} votes</span>
-                        </div>
+        {% elseif retrospective.isActive() and retrospective.isInStep('review') %}
+        <!-- Review Phase -->
+        <div class="review-phase">
+            <div class="review-header">
+                <h2>Review & Group Similar Items</h2>
+                <p>Drag and drop similar items within columns to create groups</p>
+            </div>
+            
+            <!-- Review Columns -->
+            <div class="feedback-columns review-columns">
+                <div class="feedback-column" data-category="wrong">
+                    <div class="column-header wrong">
+                        <h3>What went wrong</h3>
+                        <span class="item-count" id="wrongCount">0</span>
                     </div>
-                    {% endfor %}
+                    <div class="items-container review-container" id="wrongItems">
+                        <!-- Items will be loaded here via JavaScript -->
+                    </div>
+                </div>
+
+                <div class="feedback-column" data-category="good">
+                    <div class="column-header good">
+                        <h3>What went good</h3>
+                        <span class="item-count" id="goodCount">0</span>
+                    </div>
+                    <div class="items-container review-container" id="goodItems">
+                        <!-- Items will be loaded here via JavaScript -->
+                    </div>
+                </div>
+
+                <div class="feedback-column" data-category="improved">
+                    <div class="column-header improved">
+                        <h3>What can be improved</h3>
+                        <span class="item-count" id="improvedCount">0</span>
+                    </div>
+                    <div class="items-container review-container" id="improvedItems">
+                        <!-- Items will be loaded here via JavaScript -->
+                    </div>
+                </div>
+
+                <div class="feedback-column" data-category="random">
+                    <div class="column-header random">
+                        <h3>Random feedback</h3>
+                        <span class="item-count" id="randomCount">0</span>
+                    </div>
+                    <div class="items-container review-container" id="randomItems">
+                        <!-- Items will be loaded here via JavaScript -->
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- What Could Be Improved -->
-            <div class="category-section">
-                <div class="category-header">
-                    <h2>What Could Be Improved</h2>
-                    <span class="item-count">{{ improveItems|length }} items</span>
-                </div>
-                <div class="items-grid">
-                    {% for item in improveItems %}
-                    <div class="retrospective-item improve">
-                        <div class="item-content">
-                            <p>{{ item.content }}</p>
-                        </div>
-                        <div class="item-meta">
-                            <span class="item-author">{{ item.author.firstName }} {{ item.author.lastName }}</span>
-                            <span class="item-votes">{{ item.votes }} votes</span>
-                        </div>
+        {% elseif retrospective.isActive() and retrospective.isInStep('discussion') %}
+        <!-- Discussion Phase -->
+        <div class="discussion-phase">
+            <h2>Discussion Phase</h2>
+            <p>Review and discuss the feedback items collected.</p>
+            
+            <div class="feedback-columns readonly">
+                <div class="feedback-column">
+                    <div class="column-header wrong">
+                        <h3>What went wrong</h3>
+                        <span class="item-count">{{ wrongItems|length }}</span>
                     </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Action Items -->
-            <div class="category-section">
-                <div class="category-header">
-                    <h2>Action Items</h2>
-                    <span class="item-count">{{ actionItems|length }} items</span>
-                </div>
-                <div class="items-grid">
-                    {% for item in actionItems %}
-                    <div class="retrospective-item action">
-                        <div class="item-content">
-                            <p>{{ item.content }}</p>
-                        </div>
-                        <div class="item-meta">
-                            <span class="item-author">{{ item.author.firstName }} {{ item.author.lastName }}</span>
-                            <span class="item-votes">{{ item.votes }} votes</span>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-
-            <!-- Actions -->
-            {% if actions|length > 0 %}
-            <div class="category-section">
-                <div class="category-header">
-                    <h2>Assigned Actions</h2>
-                    <span class="item-count">{{ actions|length }} actions</span>
-                </div>
-                <div class="actions-grid">
-                    {% for action in actions %}
-                    <div class="retrospective-action {{ action.status }}">
-                        <div class="action-content">
-                            <p>{{ action.description }}</p>
-                        </div>
-                        <div class="action-meta">
-                            <div class="action-assignment">
-                                <span class="assigned-to">Assigned to: {{ action.assignedTo.firstName }} {{ action.assignedTo.lastName }}</span>
-                                {% if action.dueDate %}
-                                <span class="due-date">Due: {{ action.dueDate|date('M d, Y') }}</span>
-                                {% endif %}
+                    <div class="items-container">
+                        {% for item in wrongItems %}
+                        <div class="post-it wrong readonly">
+                            <div class="post-it-content">{{ item.content }}</div>
+                            <div class="post-it-meta">
+                                <span class="author">{{ item.author.firstName }}</span>
+                                <span class="votes">{{ item.votes }} votes</span>
                             </div>
-                            <span class="action-status {{ action.status }}">{{ action.status|title }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="feedback-column">
+                    <div class="column-header good">
+                        <h3>What went good</h3>
+                        <span class="item-count">{{ goodItems|length }}</span>
+                    </div>
+                    <div class="items-container">
+                        {% for item in goodItems %}
+                        <div class="post-it good readonly">
+                            <div class="post-it-content">{{ item.content }}</div>
+                            <div class="post-it-meta">
+                                <span class="author">{{ item.author.firstName }}</span>
+                                <span class="votes">{{ item.votes }} votes</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="feedback-column">
+                    <div class="column-header improved">
+                        <h3>What can be improved</h3>
+                        <span class="item-count">{{ improvedItems|length }}</span>
+                    </div>
+                    <div class="items-container">
+                        {% for item in improvedItems %}
+                        <div class="post-it improved readonly">
+                            <div class="post-it-content">{{ item.content }}</div>
+                            <div class="post-it-meta">
+                                <span class="author">{{ item.author.firstName }}</span>
+                                <span class="votes">{{ item.votes }} votes</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="feedback-column">
+                    <div class="column-header random">
+                        <h3>Random feedback</h3>
+                        <span class="item-count">{{ randomItems|length }}</span>
+                    </div>
+                    <div class="items-container">
+                        {% for item in randomItems %}
+                        <div class="post-it random readonly">
+                            <div class="post-it-content">{{ item.content }}</div>
+                            <div class="post-it-meta">
+                                <span class="author">{{ item.author.firstName }}</span>
+                                <span class="votes">{{ item.votes }} votes</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {% elseif retrospective.isActive() and retrospective.isInStep('actions') %}
+        <!-- Actions Phase -->
+        <div class="actions-phase">
+            <h2>Action Items Phase</h2>
+            <p>Create action items based on the feedback.</p>
+            
+            {% if retrospective.facilitator == app.user or retrospective.team.owner == app.user %}
+            <div class="add-action-section">
+                <a href="{{ path('app_retrospectives_add_action', {'id': retrospective.id}) }}" class="btn btn-primary">
+                    Add Action Item
+                </a>
+            </div>
+            {% endif %}
+
+            {% if actions|length > 0 %}
+            <div class="actions-list">
+                {% for action in actions %}
+                <div class="action-item">
+                    <div class="action-content">
+                        <h4>{{ action.description }}</h4>
+                        <div class="action-details">
+                            <span class="assigned-to">Assigned to: {{ action.assignedTo.firstName }} {{ action.assignedTo.lastName }}</span>
+                            {% if action.dueDate %}
+                            <span class="due-date">Due: {{ action.dueDate|date('M d, Y') }}</span>
+                            {% endif %}
+                            <span class="status {{ action.status }}">{{ action.status|title }}</span>
                         </div>
                     </div>
-                    {% endfor %}
                 </div>
+                {% endfor %}
             </div>
             {% endif %}
         </div>
 
-        <!-- Actions for Active Retrospectives -->
-        {% if retrospective.isActive() %}
-        <div class="retrospective-actions">
-            <div class="action-buttons">
-                <a href="{{ path('app_retrospectives_add_item', {'id': retrospective.id}) }}" class="btn btn-primary">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                    </svg>
-                    Add Item
-                </a>
-                {% if retrospective.facilitator == app.user or retrospective.team.owner == app.user %}
-                <a href="{{ path('app_retrospectives_add_action', {'id': retrospective.id}) }}" class="btn btn-success">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    Add Action
-                </a>
+        {% elseif retrospective.isCompleted() %}
+        <!-- Completed Retrospective -->
+        <div class="completed-retrospective">
+            <h2>Retrospective Completed</h2>
+            <p>This retrospective was completed on {{ retrospective.completedAt|date('M d, Y H:i') }}</p>
+            
+            <!-- Show summary of all feedback and actions -->
+            <div class="summary-sections">
+                <div class="summary-section">
+                    <h3>Feedback Summary</h3>
+                    <div class="feedback-summary">
+                        <div class="summary-column">
+                            <h4>What went wrong ({{ wrongItems|length }})</h4>
+                            {% for item in wrongItems %}
+                            <div class="summary-item">{{ item.content }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="summary-column">
+                            <h4>What went good ({{ goodItems|length }})</h4>
+                            {% for item in goodItems %}
+                            <div class="summary-item">{{ item.content }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="summary-column">
+                            <h4>What can be improved ({{ improvedItems|length }})</h4>
+                            {% for item in improvedItems %}
+                            <div class="summary-item">{{ item.content }}</div>
+                            {% endfor %}
+                        </div>
+                        <div class="summary-column">
+                            <h4>Random feedback ({{ randomItems|length }})</h4>
+                            {% for item in randomItems %}
+                            <div class="summary-item">{{ item.content }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if actions|length > 0 %}
+                <div class="summary-section">
+                    <h3>Action Items ({{ actions|length }})</h3>
+                    <div class="actions-summary">
+                        {% for action in actions %}
+                        <div class="action-summary">
+                            <strong>{{ action.description }}</strong><br>
+                            Assigned to: {{ action.assignedTo.firstName }} {{ action.assignedTo.lastName }}<br>
+                            Status: {{ action.status|title }}
+                            {% if action.dueDate %}
+                            <br>Due: {{ action.dueDate|date('M d, Y') }}
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
-        {% endif %}
 
         {% else %}
         <!-- Planned Retrospective -->
@@ -211,4 +372,41 @@
         </div>
         {% endif %}
     </div>
+
+    <script>
+        window.retrospectiveId = {{ retrospective.id }};
+        window.isFacilitator = {{ retrospective.facilitator == app.user ? 'true' : 'false' }};
+        console.log('Template script executed');
+        console.log('window.retrospectiveId:', window.retrospectiveId);
+        console.log('window.isFacilitator:', window.isFacilitator);
+    </script>
+    
+    <!-- Floating Timer -->
+    <div class="floating-timer" id="floatingTimer">
+        {% if retrospective.facilitator == app.user %}
+        <div class="timer-label" style="font-size: 0.8rem; font-weight: bold; color: #6c757d; margin-bottom: 0.5rem; text-align: center;">Set timer</div>
+        <div class="timer-controls">
+            <input type="number" id="timerDuration" value="10" min="1" max="60" class="timer-input">
+            <span style="font-size: 0.8rem;">min</span>
+            <button id="startTimerBtn" class="btn btn-primary" style="padding: 0.4rem 0.6rem; font-size: 0.8rem;" title="Start Timer">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+            </button>
+        </div>
+        {% endif %}
+        <div id="timerDisplay" class="timer-display" style="display: none;">
+            <span id="timerTime">10:00</span>
+            <span class="timer-label" style="font-size: 0.8rem;">remaining</span>
+            {% if retrospective.facilitator == app.user %}
+            <button id="stopTimerBtn" class="stop-timer-btn" title="Stop Timer">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                    <rect x="6" y="6" width="12" height="12" rx="2"/>
+                </svg>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    
+    <script src="{{ asset('assets/js/retrospective-board.js') }}"></script>
 {% endblock %}

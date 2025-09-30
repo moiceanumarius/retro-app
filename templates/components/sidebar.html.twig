@@ -7,6 +7,51 @@
     </div>
     
     <nav class="sidebar-nav">
+        {% if app.request.get('_route') == 'app_retrospectives_show' %}
+            <!-- Connected Users Section for Retrospective Board -->
+            <div class="nav-section">
+                <div class="nav-section-title">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                    </svg>
+                    Connected Users
+                </div>
+                <div id="connectedUsers" class="connected-users">
+                    <div class="user-item current-user" data-user-id="{{ app.user.id }}">
+                        <div class="user-avatar">
+                            {% if app.user.avatar %}
+                                <img src="{{ asset('uploads/avatars/' ~ app.user.avatar) }}" alt="{{ app.user.firstName }}">
+                            {% else %}
+                                <div class="avatar-placeholder">{{ app.user.firstName|first|upper }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="user-info">
+                            <div class="user-name">{{ app.user.firstName }} {{ app.user.lastName }}</div>
+                            <div class="user-status online">You</div>
+                        </div>
+                    </div>
+                    <!-- Other connected users will be added here via JavaScript -->
+                    {% for user in connectedUsers %}
+                        {% if user.id != app.user.id %}
+                            <div class="user-item" data-user-id="{{ user.id }}">
+                                <div class="user-avatar">
+                                    {% if user.avatar %}
+                                        <img src="{{ asset('uploads/avatars/' ~ user.avatar) }}" alt="{{ user.firstName }}">
+                                    {% else %}
+                                        <div class="avatar-placeholder">{{ user.firstName|first|upper }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="user-info">
+                                    <div class="user-name">{{ user.firstName }} {{ user.lastName }}</div>
+                                    <div class="user-status online">Online</div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% else %}
+            <!-- Regular Navigation -->
             <div class="nav-item">
                 <a href="{{ path('app_dashboard') }}" class="nav-link">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
@@ -84,6 +129,8 @@
             </a>
         </div>
         #}
+        
+        {% endif %}
         
         <div class="nav-item" style="margin-top: auto; padding-top: 2rem; border-top: 1px solid rgba(255, 255, 255, 0.1);">
             <a href="{{ path('app_logout') }}" class="nav-link">

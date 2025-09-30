@@ -48,8 +48,20 @@ class Retrospective
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $updatedAt = null;
 
+    #[ORM\Column(length: 50)]
+    private ?string $currentStep = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $timerDuration = null;
+
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $timerStartedAt = null;
+
     #[ORM\OneToMany(mappedBy: 'retrospective', targetEntity: RetrospectiveItem::class, cascade: ['persist', 'remove'])]
     private Collection $items;
+
+    #[ORM\OneToMany(mappedBy: 'retrospective', targetEntity: RetrospectiveGroup::class, cascade: ['persist', 'remove'])]
+    private Collection $groups;
 
     #[ORM\OneToMany(mappedBy: 'retrospective', targetEntity: RetrospectiveAction::class, cascade: ['persist', 'remove'])]
     private Collection $actions;
@@ -57,10 +69,12 @@ class Retrospective
     public function __construct()
     {
         $this->items = new ArrayCollection();
+        $this->groups = new ArrayCollection();
         $this->actions = new ArrayCollection();
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
         $this->status = 'planned';
+        $this->currentStep = 'feedback';
     }
 
     public function getId(): ?int
@@ -250,5 +264,98 @@ class Retrospective
     public function isCancelled(): bool
     {
         return $this->status === 'cancelled';
+    }
+
+    public function getCurrentStep(): ?string
+    {
+        return $this->currentStep;
+    }
+
+    public function setCurrentStep(string $currentStep): static
+    {
+        $this->currentStep = $currentStep;
+        return $this;
+    }
+
+    public function getTimerDuration(): ?int
+    {
+        return $this->timerDuration;
+    }
+
+    public function setTimerDuration(?int $timerDuration): static
+    {
+        $this->timerDuration = $timerDuration;
+        return $this;
+    }
+
+    public function getTimerStartedAt(): ?\DateTimeInterface
+    {
+        return $this->timerStartedAt;
+    }
+
+    public function setTimerStartedAt(?\DateTimeInterface $timerStartedAt): static
+    {
+        $this->timerStartedAt = $timerStartedAt;
+        return $this;
+    }
+
+    public function isInStep(string $step): bool
+    {
+        return $this->currentStep === $step;
+    }
+
+    public function isTimerActive(): bool
+    {
+        if (!$this->timerStartedAt || !$this->timerDuration) {
+            return false;
+        }
+        
+        $now = new \DateTime();
+        $elapsed = $now->getTimestamp() - $this->timerStartedAt->getTimestamp();
+        
+        return $elapsed < ($this->timerDuration * 60); // duration is in minutes
+    }
+
+    public function getTimerRemainingSeconds(): int
+    {
+        if (!$this->timerStartedAt || !$this->timerDuration) {
+            return 0;
+        }
+        
+        $now = new \DateTime();
+        $elapsed = $now->getTimestamp() - $this->timerStartedAt->getTimestamp();
+        $totalSeconds = $this->timerDuration * 60;
+        
+        return max(0, $totalSeconds - $elapsed);
+    }
+
+    /**
+     * @return Collection<int, RetrospectiveGroup>
+     */
+    public function getGroups(): Collection
+    {
+        return $this->groups;
+    }
+
+    public function addGroup(RetrospectiveGroup $group): static
+    {
+        if (!$this->groups->contains($group)) {
+            $this->groups->add($group);
+            $group->setRetrospective($this);
+        }
+
+        return $this;
+    }
+
+    public function removeGroup(RetrospectiveGroup $group): static
+    {
+        if ($this->groups->removeElement($group)) {
+            // set the owning side to null (unless already changed)
+            if ($group->getRetrospective() === $this) {
+                $group->setRetrospective(null);
+            }
+        }
+
+        return $this;
     }
 }

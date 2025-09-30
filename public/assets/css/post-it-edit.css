@@ -1,0 +1,67 @@
+/* Post-it edit and delete styles */
+.post-it {
+    position: relative;
+}
+
+.post-it-delete {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    z-index: 10;
+}
+
+.post-it:hover .post-it-delete {
+    opacity: 1;
+}
+
+.post-it-edit-input {
+    width: 100%;
+    padding: 8px;
+    border: 2px solid #007bff;
+    border-radius: 4px;
+    font-size: 14px;
+    font-family: inherit;
+    background: white;
+    margin-bottom: 8px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+.post-it-ok-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.post-it-ok-btn:hover {
+    background: #218838;
+}
+
+.post-it-content {
+    cursor: pointer;
+    min-height: 20px;
+}
+
+.post-it-content:hover {
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+}

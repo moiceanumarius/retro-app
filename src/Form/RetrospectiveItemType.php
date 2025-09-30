@@ -25,9 +25,10 @@ class RetrospectiveItemType extends AbstractType
             ->add('category', ChoiceType::class, [
                 'label' => 'Category',
                 'choices' => [
-                    'What went well' => 'well',
-                    'What could be improved' => 'improve',
-                    'Action items' => 'action',
+                    'What went wrong' => 'wrong',
+                    'What went good' => 'good',
+                    'What can be improved' => 'improved',
+                    'Random feedback' => 'random',
                 ],
                 'attr' => [
                     'class' => 'form-control'
