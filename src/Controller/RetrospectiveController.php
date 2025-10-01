@@ -7,6 +7,7 @@ use App\Entity\RetrospectiveItem;
 use App\Entity\RetrospectiveAction;
 use App\Entity\RetrospectiveGroup;
 use App\Entity\Team;
+use App\Entity\Vote;
 use App\Form\RetrospectiveType;
 use App\Form\RetrospectiveItemType;
 use App\Form\RetrospectiveActionType;
@@ -1420,6 +1421,41 @@ class RetrospectiveController extends AbstractController
         file_put_contents($file, json_encode($data));
     }
 
+    #[Route('/retrospectives/{id}/votes', name: 'app_retrospectives_get_votes', methods: ['GET'])]
+    public function getVotes(int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        $user = $this->getUser();
+        if (!$retrospective->getTeam()->hasMember($user)) {
+            return $this->json(['success' => false, 'message' => 'You are not a participant'], 403);
+        }
+
+        // Get all votes for this user in this retrospective
+        $votes = $this->entityManager->getRepository(Vote::class)->findByUserAndRetrospective($user, $retrospective);
+        
+        $votesData = [];
+        $totalVotes = 0;
+        
+        foreach ($votes as $vote) {
+            $votesData[] = [
+                'itemId' => $vote->getRetrospectiveItem()->getId(),
+                'voteCount' => $vote->getVoteCount()
+            ];
+            $totalVotes += $vote->getVoteCount();
+        }
+
+        return $this->json([
+            'success' => true,
+            'votes' => $votesData,
+            'totalVotes' => $totalVotes
+        ]);
+    }
+
     #[Route('/retrospectives/{id}/vote', name: 'app_retrospectives_vote', methods: ['POST'])]
     public function vote(Request $request, int $id): Response
     {
@@ -1456,19 +1492,30 @@ class RetrospectiveController extends AbstractController
                     return $this->json(['success' => false, 'message' => 'Item not found'], 404);
                 }
                 
-                // Store vote count for this user (you might want to create a Vote entity later)
-                // For now, we'll just update the item's total votes
-                // This is a simplified implementation - you should track individual user votes
-                $item->setVotes($voteCount);
-                $this->entityManager->flush();
-            } else {
-                $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($targetId);
-                if (!$group || $group->getRetrospective() !== $retrospective) {
-                    return $this->json(['success' => false, 'message' => 'Group not found'], 404);
+                // Find or create vote record for this user and item
+                $vote = $this->entityManager->getRepository(Vote::class)->findOneBy([
+                    'user' => $user,
+                    'retrospectiveItem' => $item
+                ]);
+                
+                if (!$vote) {
+                    $vote = new Vote();
+                    $vote->setUser($user);
+                    $vote->setRetrospectiveItem($item);
+                    $this->entityManager->persist($vote);
                 }
                 
-                // Similar for groups - simplified implementation
-                // You should create a proper Vote tracking system
+                // Update vote count (0 means removing the vote)
+                if ($voteCount === 0 && $vote->getId()) {
+                    $this->entityManager->remove($vote);
+                } else {
+                    $vote->setVoteCount($voteCount);
+                }
+                
+                $this->entityManager->flush();
+            } else {
+                // Groups voting - to be implemented if needed
+                return $this->json(['success' => false, 'message' => 'Group voting not yet implemented'], 400);
             }
 
             // Broadcast vote update to all participants

@@ -2,9 +2,12 @@
 // VOTING SYSTEM for RetrospectiveBoard
 // ============================================
 
-RetrospectiveBoard.prototype.initVoting = function() {
+RetrospectiveBoard.prototype.initVoting = async function() {
     console.log('Initializing voting system...');
     this.votingActive = true;
+    
+    // Load existing votes from server
+    await this.loadUserVotes();
     
     // Show all voting controls
     const votingControls = document.querySelectorAll('.voting-controls');
@@ -14,6 +17,51 @@ RetrospectiveBoard.prototype.initVoting = function() {
     
     // Add event listeners to vote buttons
     this.attachVotingListeners();
+    
+    // Update button states based on loaded votes
+    this.updateVoteButtons();
+};
+
+RetrospectiveBoard.prototype.loadUserVotes = async function() {
+    try {
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/votes`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            credentials: 'include'
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            console.log('Loaded user votes:', data);
+            
+            // Reset vote tracking
+            this.userVotes = {};
+            this.totalVotes = 0;
+            
+            // Restore votes from server
+            data.votes.forEach(voteData => {
+                const key = `item-${voteData.itemId}`;
+                this.userVotes[key] = voteData.voteCount;
+                this.totalVotes += voteData.voteCount;
+                
+                // Update UI
+                const input = document.querySelector(`.vote-input[data-item-id="${voteData.itemId}"]`);
+                if (input) {
+                    input.value = voteData.voteCount;
+                }
+            });
+            
+            console.log(`Restored ${this.totalVotes} total votes`);
+        } else {
+            console.error('Failed to load votes:', response.status);
+        }
+    } catch (error) {
+        console.error('Error loading votes:', error);
+    }
 };
 
 RetrospectiveBoard.prototype.attachVotingListeners = function() {
