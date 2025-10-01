@@ -200,11 +200,16 @@
                     </div>
                     <div class="items-container">
                         {% for item in wrongItems %}
-                        <div class="post-it wrong readonly">
+                        <div class="post-it wrong readonly" data-item-id="{{ item.id }}">
                             <div class="post-it-content">{{ item.content }}</div>
                             <div class="post-it-meta">
                                 <span class="author">{{ item.author.firstName }}</span>
                                 <span class="votes">{{ item.votes }} votes</span>
+                            </div>
+                            <div class="voting-controls" style="display: none;">
+                                <button class="vote-btn vote-decrease" data-item-id="{{ item.id }}" data-action="decrease">-</button>
+                                <input type="number" class="vote-input" data-item-id="{{ item.id }}" value="0" readonly min="0" max="2">
+                                <button class="vote-btn vote-increase" data-item-id="{{ item.id }}" data-action="increase">+</button>
                             </div>
                         </div>
                         {% endfor %}
@@ -218,11 +223,16 @@
                     </div>
                     <div class="items-container">
                         {% for item in goodItems %}
-                        <div class="post-it good readonly">
+                        <div class="post-it good readonly" data-item-id="{{ item.id }}">
                             <div class="post-it-content">{{ item.content }}</div>
                             <div class="post-it-meta">
                                 <span class="author">{{ item.author.firstName }}</span>
                                 <span class="votes">{{ item.votes }} votes</span>
+                            </div>
+                            <div class="voting-controls" style="display: none;">
+                                <button class="vote-btn vote-decrease" data-item-id="{{ item.id }}" data-action="decrease">-</button>
+                                <input type="number" class="vote-input" data-item-id="{{ item.id }}" value="0" readonly min="0" max="2">
+                                <button class="vote-btn vote-increase" data-item-id="{{ item.id }}" data-action="increase">+</button>
                             </div>
                         </div>
                         {% endfor %}
@@ -236,11 +246,16 @@
                     </div>
                     <div class="items-container">
                         {% for item in improvedItems %}
-                        <div class="post-it improved readonly">
+                        <div class="post-it improved readonly" data-item-id="{{ item.id }}">
                             <div class="post-it-content">{{ item.content }}</div>
                             <div class="post-it-meta">
                                 <span class="author">{{ item.author.firstName }}</span>
                                 <span class="votes">{{ item.votes }} votes</span>
+                            </div>
+                            <div class="voting-controls" style="display: none;">
+                                <button class="vote-btn vote-decrease" data-item-id="{{ item.id }}" data-action="decrease">-</button>
+                                <input type="number" class="vote-input" data-item-id="{{ item.id }}" value="0" readonly min="0" max="2">
+                                <button class="vote-btn vote-increase" data-item-id="{{ item.id }}" data-action="increase">+</button>
                             </div>
                         </div>
                         {% endfor %}
@@ -254,11 +269,16 @@
                     </div>
                     <div class="items-container">
                         {% for item in randomItems %}
-                        <div class="post-it random readonly">
+                        <div class="post-it random readonly" data-item-id="{{ item.id }}">
                             <div class="post-it-content">{{ item.content }}</div>
                             <div class="post-it-meta">
                                 <span class="author">{{ item.author.firstName }}</span>
                                 <span class="votes">{{ item.votes }} votes</span>
+                            </div>
+                            <div class="voting-controls" style="display: none;">
+                                <button class="vote-btn vote-decrease" data-item-id="{{ item.id }}" data-action="decrease">-</button>
+                                <input type="number" class="vote-input" data-item-id="{{ item.id }}" value="0" readonly min="0" max="2">
+                                <button class="vote-btn vote-increase" data-item-id="{{ item.id }}" data-action="increase">+</button>
                             </div>
                         </div>
                         {% endfor %}

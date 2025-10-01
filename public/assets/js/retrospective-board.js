@@ -1029,16 +1029,25 @@ class RetrospectiveBoard {
             this.showAddItemForms();
             
             // Start voting if we're in discussion phase
-            if (this.isInDiscussionStep()) {
+            const inDiscussion = this.isInDiscussionStep();
+            console.log('Timer started - in discussion phase?', inDiscussion);
+            if (inDiscussion) {
                 console.log('Starting voting in discussion phase');
-                this.initVoting();
+                if (typeof this.initVoting === 'function') {
+                    this.initVoting();
+                } else {
+                    console.error('initVoting function not found!');
+                }
             }
         }
     }
     
     handleTimerStopped(data) {
         this.timerManuallyStopped = true;
-        this.stopTimer();
+        // Don't call stopTimer() - it would send another request to backend creating a loop!
+        // Just stop the local timer display
+        this.stopTimerDisplay();
+        this.hideAddItemForms();
         
         // Stop voting if we're in discussion phase
         if (this.isInDiscussionStep() && this.votingActive) {
