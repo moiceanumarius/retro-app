@@ -1132,24 +1132,43 @@ class RetrospectiveController extends AbstractController
         $category = $data['category'] ?? '';
         $itemIds = $data['itemIds'] ?? [];
         $groupIds = $data['groupIds'] ?? [];
+        $orderedElements = $data['orderedElements'] ?? [];
 
         if (empty($category)) {
             return $this->json(['success' => false, 'message' => 'Category is required'], 400);
         }
 
-        // Update positions for individual items
-        foreach ($itemIds as $index => $itemId) {
-            $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
-            if ($item && $item->getRetrospective() === $retrospective && $item->getCategory() === $category) {
-                $item->setPosition($index);
+        // If orderedElements is provided, use it to maintain relative order between items and groups
+        if (!empty($orderedElements)) {
+            foreach ($orderedElements as $index => $element) {
+                if ($element['type'] === 'item') {
+                    $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($element['id']);
+                    if ($item && $item->getRetrospective() === $retrospective && $item->getCategory() === $category) {
+                        $item->setPosition($index);
+                    }
+                } elseif ($element['type'] === 'group') {
+                    $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($element['id']);
+                    if ($group && $group->getRetrospective() === $retrospective && $group->getDisplayCategory() === $category) {
+                        $group->setPosition($index);
+                    }
+                }
             }
-        }
+        } else {
+            // Fallback to old logic if orderedElements not provided (backwards compatibility)
+            // Update positions for individual items
+            foreach ($itemIds as $index => $itemId) {
+                $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
+                if ($item && $item->getRetrospective() === $retrospective && $item->getCategory() === $category) {
+                    $item->setPosition($index);
+                }
+            }
 
-        // Update positions for groups
-        foreach ($groupIds as $index => $groupId) {
-            $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($groupId);
-            if ($group && $group->getRetrospective() === $retrospective && $group->getDisplayCategory() === $category) {
-                $group->setPosition($index);
+            // Update positions for groups
+            foreach ($groupIds as $index => $groupId) {
+                $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($groupId);
+                if ($group && $group->getRetrospective() === $retrospective && $group->getDisplayCategory() === $category) {
+                    $group->setPosition($index);
+                }
             }
         }
 

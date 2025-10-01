@@ -285,8 +285,7 @@
 /* Removed hover effect to prevent drag & drop issues */
 
 .review-item.dragging {
-    opacity: 0.5;
-    transform: rotate(2deg);
+    opacity: 0.4;
     z-index: 1000;
 }
 

@@ -1319,6 +1319,7 @@ RetrospectiveBoard.prototype.renderReviewBoard = function() {
                 
                 if (groupItems.length > 0) {
                     const element = this.createCombinedGroupElement(groupItems, category);
+                    element.id = `group-${group.id}`; // Set element ID
                     element.dataset.groupId = group.id; // Set group ID directly
                     allElements.push({
                         type: 'group',
@@ -1351,8 +1352,8 @@ RetrospectiveBoard.prototype.renderReviewBoard = function() {
         }
     });
     
-    // Re-initialize drag and drop after rendering
-    this.initReviewDragAndDrop();
+        // Re-initialize drag and drop after rendering
+        this.initReviewDragAndDrop();
 };
 
 RetrospectiveBoard.prototype.findItemsInGroup = function(groupElement) {
@@ -1396,6 +1397,191 @@ RetrospectiveBoard.prototype.getDragAfterElement = function(container, y) {
             return closest;
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
+};
+
+RetrospectiveBoard.prototype.showAllDropZones = function(container, draggedElement) {
+    console.log('=== SHOW ALL DROP ZONES ===');
+    console.log('Container:', container.id);
+    console.log('Dragged element:', draggedElement?.id);
+    
+    // Remove any existing placeholders first
+    this.hideAllDropZones();
+    
+    // Get all items AND groups in the container (including the dragged one for position calculation)
+    const allItems = [...container.querySelectorAll('.review-item, .combined-group')];
+    const draggedIndex = allItems.indexOf(draggedElement);
+    console.log('Dragged element index:', draggedIndex);
+    console.log('Total items/groups in container:', allItems.length);
+    
+    // Get all items excluding the dragged one
+    const items = allItems.filter(item => item !== draggedElement);
+    console.log('Items found (excluding dragged element):', items.length);
+    
+    // Create placeholder before first item (only if dragged is not at position 0)
+    if (draggedIndex !== 0) {
+        console.log('Creating placeholder before first item');
+        this.createDropZone(container, null);
+    }
+    
+    // Create placeholder after each item
+    items.forEach((item, index) => {
+        const itemIndexInAll = allItems.indexOf(item);
+        
+        // Skip creating placeholder if it would be at the dragged element's current position
+        // This happens when the placeholder would be right after the item before the dragged one
+        if (itemIndexInAll === draggedIndex - 1) {
+            console.log(`Skipping placeholder after item ${index} (current position of dragged item)`);
+            return;
+        }
+        
+        console.log(`Creating placeholder after item ${index}:`, item.id);
+        this.createDropZone(container, item);
+    });
+    
+    console.log('Total placeholders created:', container.querySelectorAll('.drop-placeholder').length);
+};
+
+RetrospectiveBoard.prototype.createDropZone = function(container, afterElement) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'drop-placeholder';
+    placeholder.style.height = '40px';
+    placeholder.style.backgroundColor = '#f0f0f0'; // Light gray background
+    placeholder.style.margin = '5px 0 13px 0';
+    placeholder.style.borderRadius = '4px';
+    placeholder.style.border = '2px dashed #999'; // Dark gray dashed border
+    placeholder.style.transition = 'background-color 0.2s, border-color 0.2s';
+    placeholder.style.pointerEvents = 'auto'; // Ensure placeholder can receive events
+    
+    // Highlight on hover - make it blue with opacity
+    placeholder.addEventListener('mouseenter', function() {
+        this.style.backgroundColor = 'rgba(0, 123, 255, 0.5)'; // Blue with 50% opacity
+        this.style.borderColor = '#007bff';
+    });
+    placeholder.addEventListener('mouseleave', function() {
+        this.style.backgroundColor = '#f0f0f0';
+        this.style.borderColor = '#999';
+    });
+    
+    // Allow drop on placeholder
+    placeholder.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        // Make it blue with opacity when dragging over
+        placeholder.style.backgroundColor = 'rgba(0, 123, 255, 0.5)'; // Blue with 50% opacity
+        placeholder.style.borderColor = '#007bff';
+    });
+    
+    placeholder.addEventListener('dragleave', (e) => {
+        // Reset to gray when leaving
+        placeholder.style.backgroundColor = '#f0f0f0';
+        placeholder.style.borderColor = '#999';
+    });
+    
+    placeholder.addEventListener('drop', (e) => {
+        console.log('DROP on PLACEHOLDER');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Set flag to indicate drop was executed
+        this.dropExecuted = true;
+        
+        const draggedItem = document.querySelector('.dragging');
+        if (!draggedItem) {
+            console.log('No dragged item on placeholder drop');
+            return;
+        }
+        
+        const category = container.id.replace('Items', '');
+        
+        // Calculate new order based on placeholder position
+        const newOrder = this.calculateOrderFromPlaceholder(container, placeholder, draggedItem);
+        console.log('New order calculated:', newOrder);
+        
+        const orderChanged = this.hasOrderChanged(category, newOrder.orderedElements);
+        console.log('Order changed?', orderChanged);
+        
+        if (orderChanged) {
+            console.log('Order changed via placeholder drop');
+            this.updateUIOrder(category, newOrder.orderedElements);
+            this.reorderItemsInColumn(category, newOrder.itemIds, newOrder.groupIds, newOrder.orderedElements);
+        } else {
+            console.log('Order NOT changed, skipping update');
+        }
+        
+        // Remove dragging class and cleanup
+        draggedItem.classList.remove('dragging');
+        this.hideAllDropZones();
+        container.classList.remove('drag-over');
+    });
+    
+    // Insert placeholder
+    if (afterElement === null) {
+        container.insertBefore(placeholder, container.firstChild);
+    } else {
+        afterElement.insertAdjacentElement('afterend', placeholder);
+    }
+};
+
+RetrospectiveBoard.prototype.hideAllDropZones = function() {
+    const allPlaceholders = document.querySelectorAll('.drop-placeholder');
+    allPlaceholders.forEach(p => p.remove());
+};
+
+RetrospectiveBoard.prototype.calculateOrderFromPlaceholder = function(container, placeholder, draggedItem) {
+    const orderedElements = []; // Array of {type: 'item'|'group', id: number}
+    
+    console.log('=== CALCULATE ORDER FROM PLACEHOLDER ===');
+    console.log('Dragged item:', draggedItem.id, 'is group?', draggedItem.classList.contains('combined-group'));
+    
+    // Get all children including placeholders
+    const children = [...container.children];
+    console.log('Total children in container:', children.length);
+    
+    // Find placeholder index
+    const placeholderIndex = children.indexOf(placeholder);
+    console.log('Placeholder index:', placeholderIndex);
+    
+    // Build order array
+    children.forEach((child, index) => {
+        console.log(`Child ${index}:`, child.id || child.className, 'is placeholder?', child.classList.contains('drop-placeholder'), 'is dragging?', child.classList.contains('dragging'));
+        
+        if (child.classList.contains('drop-placeholder')) {
+            // Insert dragged item at placeholder position
+            if (child === placeholder) {
+                console.log('  -> This is THE placeholder, inserting dragged item');
+                if (draggedItem.classList.contains('combined-group')) {
+                    const groupId = parseInt(draggedItem.dataset.groupId);
+                    console.log('  -> Adding group:', groupId);
+                    orderedElements.push({type: 'group', id: groupId});
+                } else {
+                    const itemId = parseInt(draggedItem.dataset.itemId);
+                    console.log('  -> Adding item:', itemId);
+                    orderedElements.push({type: 'item', id: itemId});
+                }
+            } else {
+                console.log('  -> Different placeholder, skipping');
+            }
+        } else if (!child.classList.contains('dragging')) {
+            // Add existing items/groups
+            if (child.classList.contains('combined-group')) {
+                const groupId = parseInt(child.dataset.groupId);
+                console.log('  -> Adding existing group:', groupId);
+                orderedElements.push({type: 'group', id: groupId});
+            } else if (child.dataset.itemId) {
+                const itemId = parseInt(child.dataset.itemId);
+                console.log('  -> Adding existing item:', itemId);
+                orderedElements.push({type: 'item', id: itemId});
+            }
+        } else {
+            console.log('  -> Skipping (is dragging)');
+        }
+    });
+    
+    // Separate into itemIds and groupIds for backwards compatibility with backend
+    const itemIds = orderedElements.filter(el => el.type === 'item').map(el => el.id);
+    const groupIds = orderedElements.filter(el => el.type === 'group').map(el => el.id);
+    
+    console.log('Final order calculated:', {itemIds, groupIds, orderedElements});
+    return { itemIds, groupIds, orderedElements };
 };
 
 RetrospectiveBoard.prototype.showDropPlaceholder = function(container, y) {
@@ -1491,45 +1677,47 @@ RetrospectiveBoard.prototype.storeInitialOrder = function() {
     categories.forEach(category => {
         const container = document.getElementById(`${category}Items`);
         if (container) {
-            const items = Array.from(container.querySelectorAll('.review-item'));
-            const itemIds = [];
-            const groupIds = [];
+            const items = Array.from(container.querySelectorAll('.review-item, .combined-group'));
+            const orderedElements = [];
             
             items.forEach(item => {
                 if (item.classList.contains('combined-group')) {
                     const groupId = item.dataset.groupId;
                     if (groupId) {
-                        groupIds.push(parseInt(groupId));
+                        orderedElements.push({type: 'group', id: parseInt(groupId)});
                     }
                 } else {
                     const itemId = item.dataset.itemId;
                     if (itemId) {
-                        itemIds.push(parseInt(itemId));
+                        orderedElements.push({type: 'item', id: parseInt(itemId)});
                     }
                 }
             });
             
             this.initialOrder[category] = {
-                itemIds: itemIds,
-                groupIds: groupIds
+                orderedElements: orderedElements
             };
             
         }
     });
 };
 
-RetrospectiveBoard.prototype.hasOrderChanged = function(category, newItemIds, newGroupIds) {
+RetrospectiveBoard.prototype.hasOrderChanged = function(category, newOrderedElements) {
     if (!this.initialOrder || !this.initialOrder[category]) {
+        console.log('No initial order stored, assuming changed');
         return true; // If no initial order stored, assume it changed
     }
     
     const initial = this.initialOrder[category];
+    console.log('Initial ordered elements for', category, ':', JSON.stringify(initial.orderedElements));
+    console.log('New ordered elements:', JSON.stringify(newOrderedElements));
     
-    // Compare arrays
-    const itemIdsChanged = JSON.stringify(initial.itemIds) !== JSON.stringify(newItemIds);
-    const groupIdsChanged = JSON.stringify(initial.groupIds) !== JSON.stringify(newGroupIds);
+    // Compare the ordered elements array
+    const orderChanged = JSON.stringify(initial.orderedElements) !== JSON.stringify(newOrderedElements);
     
-    return itemIdsChanged || groupIdsChanged;
+    console.log('Order changed?', orderChanged);
+    
+    return orderChanged;
 };
 
 RetrospectiveBoard.prototype.calculateNewOrder = function(container, draggedItem, clientY) {
@@ -1564,17 +1752,20 @@ RetrospectiveBoard.prototype.calculateNewOrder = function(container, draggedItem
     // Extract IDs in the new order
     const itemIds = [];
     const groupIds = [];
+    const orderedElements = []; // New: array of {type: 'item'|'group', id: number}
     
     newItems.forEach(item => {
         if (item.classList.contains('combined-group')) {
             const groupId = item.dataset.groupId;
             if (groupId) {
                 groupIds.push(parseInt(groupId));
+                orderedElements.push({type: 'group', id: parseInt(groupId)});
             }
         } else {
             const itemId = item.dataset.itemId;
             if (itemId) {
                 itemIds.push(parseInt(itemId));
+                orderedElements.push({type: 'item', id: parseInt(itemId)});
             }
         }
     });
@@ -1582,9 +1773,9 @@ RetrospectiveBoard.prototype.calculateNewOrder = function(container, draggedItem
     console.log('calculateNewOrder - draggedItemId:', draggedItemId, 'draggedGroupId:', draggedGroupId);
     console.log('calculateNewOrder - afterElement:', afterElement);
     console.log('calculateNewOrder - newItems length:', newItems.length);
-    console.log('calculateNewOrder - result:', { itemIds, groupIds });
+    console.log('calculateNewOrder - result:', { itemIds, groupIds, orderedElements });
     
-    return { itemIds, groupIds };
+    return { itemIds, groupIds, orderedElements };
 };
 
 RetrospectiveBoard.prototype.isInGroupingZone = function(e, dropTarget) {
@@ -1641,61 +1832,59 @@ RetrospectiveBoard.prototype.hideAllFeedback = function() {
     });
 };
 
-RetrospectiveBoard.prototype.updateUIOrder = function(category, itemIds, groupIds) {
+RetrospectiveBoard.prototype.updateUIOrder = function(category, orderedElements) {
     const container = document.getElementById(`${category}Items`);
     if (!container) {
         console.log('Container not found for category:', category);
         return;
     }
     
-    console.log('Updating UI order for category:', category, 'itemIds:', itemIds, 'groupIds:', groupIds);
+    console.log('Updating UI order for category:', category, 'orderedElements:', orderedElements);
     
-    // Get all current items in the container
-    const allItems = Array.from(container.querySelectorAll('.review-item'));
+    // Validate orderedElements
+    if (!orderedElements || orderedElements.length === 0) {
+        console.warn('No elements to reorder, skipping UI update');
+        return;
+    }
+    
+    // Get all current items and groups in the container
+    const allItems = Array.from(container.querySelectorAll('.review-item, .combined-group'));
     
     // Create a map for quick lookup
-    const itemMap = new Map();
-    const groupMap = new Map();
+    const elementMap = new Map();
     
     allItems.forEach(item => {
         if (item.classList.contains('combined-group')) {
             const groupId = item.dataset.groupId;
             if (groupId) {
-                groupMap.set(parseInt(groupId), item);
+                elementMap.set(`group-${groupId}`, item);
             }
         } else {
             const itemId = item.dataset.itemId;
             if (itemId) {
-                itemMap.set(parseInt(itemId), item);
+                elementMap.set(`item-${itemId}`, item);
             }
         }
     });
     
-    // Clear container
-    container.innerHTML = '';
+    // Remove only items/groups, not placeholders or other elements
+    allItems.forEach(item => item.remove());
     
-    // Add items in the new order
+    // Add elements in the new order
     let index = 0;
-    
-    // Add individual items first
-    itemIds.forEach(itemId => {
-        const item = itemMap.get(itemId);
-        if (item) {
-            container.appendChild(item);
+    orderedElements.forEach(element => {
+        const key = `${element.type}-${element.id}`;
+        const domElement = elementMap.get(key);
+        if (domElement) {
+            container.appendChild(domElement);
             index++;
+            console.log(`Added ${element.type} ${element.id} to position ${index}`);
+        } else {
+            console.log(`Element not found in map: ${key}`);
         }
     });
     
-    // Add groups
-    groupIds.forEach(groupId => {
-        const group = groupMap.get(groupId);
-        if (group) {
-            container.appendChild(group);
-            index++;
-        }
-    });
-    
-    console.log('UI order updated for category:', category, 'with', index, 'items');
+    console.log('UI order updated for category:', category, 'with', index, 'elements');
 };
 
 RetrospectiveBoard.prototype.initDragHandlers = function() {
@@ -1709,21 +1898,15 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
         
         if (e.target.classList.contains('review-item') || e.target.classList.contains('combined-group')) {
             this.draggedItem = e.target;
-            e.target.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
             this.dropExecuted = false; // Reset drop flag
             
+            // Add dragging class immediately (for the original element that stays in place)
+            e.target.classList.add('dragging');
             console.log('Dragging class added to:', e.target.id);
             
             // Store initial order when drag starts
             this.storeInitialOrder();
-            
-            // Clear any existing placeholders
-            const containers = document.querySelectorAll('.review-column');
-            containers.forEach(container => {
-                this.hideDropPlaceholder(container);
-                container.classList.remove('drag-over');
-            });
             
             // Set data for both items and groups
             if (e.target.classList.contains('combined-group')) {
@@ -1731,6 +1914,20 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
             } else {
                 e.dataTransfer.setData('text/plain', 'item');
             }
+            
+            // Show ALL drop zones AFTER dragstart completes (async)
+            const category = e.target.dataset.category;
+            const draggedElement = e.target;
+            setTimeout(() => {
+                console.log('Creating drop zones for category:', category);
+                const container = document.getElementById(`${category}Items`);
+                console.log('Container found:', container?.id);
+                if (container) {
+                    this.showAllDropZones(container, draggedElement);
+                } else {
+                    console.log('Container NOT found for category:', category);
+                }
+            }, 0);
         }
     };
 
@@ -1740,9 +1937,9 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
         console.log('Drop executed:', this.dropExecuted);
         
         // Immediate cleanup of placeholders and visual feedback
+        this.hideAllDropZones();
         const allContainers = document.querySelectorAll('.items-container');
         allContainers.forEach(container => {
-            this.hideDropPlaceholder(container);
             container.classList.remove('drag-over');
         });
         
@@ -1750,18 +1947,15 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
         setTimeout(() => {
             console.log('=== DRAG END TIMEOUT ===');
             
-            // Only remove dragging class if drop didn't handle it
-            if (!this.dropExecuted) {
-                const stillDragging = document.querySelector('.dragging');
-                if (stillDragging) {
-                    console.log('No drop executed, removing dragging class from:', stillDragging.id);
-                    stillDragging.classList.remove('dragging');
-                }
+            // Always remove dragging class to ensure UI cleanup
+            const stillDragging = document.querySelector('.dragging');
+            if (stillDragging) {
+                console.log('Removing dragging class from:', stillDragging.id, 'dropExecuted:', this.dropExecuted);
+                stillDragging.classList.remove('dragging');
             }
             
             // Final cleanup - remove any remaining placeholders
-            const remainingPlaceholders = document.querySelectorAll('.drop-placeholder');
-            remainingPlaceholders.forEach(p => p.remove());
+            this.hideAllDropZones();
             
             // Reset flags
             this.draggedItem = null;
@@ -1779,17 +1973,18 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
         const category = container.id.replace('Items', '');
         container.classList.add('drag-over');
         
-        // Show visual feedback for reordering
-        if (this.draggedItem) {
-            this.showDropPlaceholder(container, e.clientY);
-        }
+        // Placeholders are now shown at drag start, no need to show/hide dynamically
+        // if (this.draggedItem) {
+        //     this.showDropPlaceholder(container, e.clientY);
+        // }
     };
 
     this.handleDragLeave = (e) => {
         const container = e.currentTarget;
         if (!container.contains(e.relatedTarget)) {
             container.classList.remove('drag-over');
-            this.hideDropPlaceholder(container);
+            // Placeholders remain visible until drop or dragend
+            // this.hideDropPlaceholder(container);
         }
     };
 
@@ -1804,7 +1999,8 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
         const category = container.id.replace('Items', '');
         
         container.classList.remove('drag-over');
-        this.hideDropPlaceholder(container);
+        // Placeholders will be cleaned up in dragend
+        // this.hideDropPlaceholder(container);
 
         // Find the dragged item by class instead of this.draggedItem
         const draggedItem = document.querySelector('.dragging');
@@ -1850,14 +2046,14 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
             } else {
                 // This is reordering
                 const newOrder = this.calculateNewOrder(container, draggedItem, e.clientY);
-                const orderChanged = this.hasOrderChanged(category, newOrder.itemIds, newOrder.groupIds);
+                const orderChanged = this.hasOrderChanged(category, newOrder.orderedElements);
                 
                 if (orderChanged) {
                     console.log('Order changed, updating UI for category:', category);
                     // Update UI immediately
-                    this.updateUIOrder(category, newOrder.itemIds, newOrder.groupIds);
+                    this.updateUIOrder(category, newOrder.orderedElements);
                     // Send reorder request to server
-                    this.reorderItemsInColumn(category, newOrder.itemIds, newOrder.groupIds);
+                    this.reorderItemsInColumn(category, newOrder.itemIds, newOrder.groupIds, newOrder.orderedElements);
                 } else {
                     console.log('Order unchanged for category:', category);
                 }
@@ -1892,7 +2088,7 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
     };
 };
 
-    RetrospectiveBoard.prototype.reorderItemsInColumn = async function(category, itemIds, groupIds) {
+    RetrospectiveBoard.prototype.reorderItemsInColumn = async function(category, itemIds, groupIds, orderedElements) {
         try {
             // Get CSRF token
             const csrfToken = document.querySelector('meta[name="csrf-token-reorder"]')?.getAttribute('content');
@@ -1910,6 +2106,7 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
                 category: category,
                 itemIds: itemIds,
                 groupIds: groupIds,
+                orderedElements: orderedElements || [], // Send the full ordered array
                 _token: csrfToken
             })
         });
@@ -2058,7 +2255,7 @@ RetrospectiveBoard.prototype.initReviewDragAndDrop = function() {
             // Also add drop listener to items - for grouping
             item.addEventListener('drop', (e) => {
                 console.log('DROP on ITEM:', item.id);
-                e.preventDefault();
+            e.preventDefault();
                 e.stopPropagation(); // Don't let it bubble to container
                 
                 // Set flag to indicate drop was executed
@@ -2079,23 +2276,35 @@ RetrospectiveBoard.prototype.initReviewDragAndDrop = function() {
                 const isDraggedGroup = draggedItem.classList.contains('combined-group');
                 const isTargetGroup = item.classList.contains('combined-group');
                 
-                console.log('Grouping:', draggedItemId, 'with', targetItemId);
+                console.log('Grouping - draggedItemId:', draggedItemId, 'targetItemId:', targetItemId, 'isDraggedGroup:', isDraggedGroup, 'isTargetGroup:', isTargetGroup);
                 
                 if (!isDraggedGroup && draggedItemId && targetItemId && !isTargetGroup) {
                     // Create group with these two individual items
+                    // Group should be at the position of the target item (the one we dropped on)
                     const targetPosition = this.getItemPositionInColumn(item, category);
+                    console.log('Creating group at target position:', targetPosition);
                     this.createGroupFromItems([draggedItemId, targetItemId], category, targetPosition);
-                }
-                
+                } else if (!isDraggedGroup && draggedItemId && isTargetGroup) {
+                    // Add individual item to existing group
+                    console.log('Adding item to existing group');
+                    this.addItemToExistingGroup(draggedItemId, item);
+                } else if (isDraggedGroup && targetItemId && !isTargetGroup) {
+                    // Add individual target item to dragged group
+                    console.log('Adding target item to dragged group');
+                    this.addItemToExistingGroup(targetItemId, draggedItem);
+                        } else {
+                    console.log('No valid grouping scenario');
+                        }
+
                 // Remove dragging class immediately after processing
                 draggedItem.classList.remove('dragging');
                 container.classList.remove('drag-over');
             });
-            
+
             // Add dragover to items to allow drop
             item.addEventListener('dragover', (e) => {
                 console.log('DRAGOVER on ITEM:', item.id);
-                e.preventDefault();
+            e.preventDefault();
                 // DON'T stop propagation - let it bubble to container
             });
         });
@@ -2107,13 +2316,13 @@ RetrospectiveBoard.prototype.updateItemOrder = function(category) {
     if (!container) return;
     
     const items = container.querySelectorAll('.review-item, .combined-group');
-    const itemIds = [];
-    const groupIds = [];
-    
-    items.forEach(item => {
-        if (item.classList.contains('combined-group')) {
+                    const itemIds = [];
+                    const groupIds = [];
+
+                    items.forEach(item => {
+                        if (item.classList.contains('combined-group')) {
             groupIds.push(parseInt(item.dataset.groupId));
-        } else {
+                        } else {
             itemIds.push(parseInt(item.dataset.itemId));
         }
     });
@@ -2162,15 +2371,20 @@ RetrospectiveBoard.prototype.checkForGrouping = function(item, x, y) {
 };
 
 RetrospectiveBoard.prototype.getItemPositionInColumn = function(targetElement, category) {
-    // Find the column container
-    const column = document.querySelector(`.review-column[data-category="${category}"]`);
-    if (!column) return 0;
+    // Find the items container (not the column)
+    const container = document.getElementById(`${category}Items`);
+    if (!container) {
+        console.log('Container not found for category:', category);
+        return 0;
+    }
     
-    // Get all items in the column
-    const items = Array.from(column.querySelectorAll('.review-item'));
+    // Get all items and groups in the container in DOM order
+    const items = Array.from(container.querySelectorAll('.review-item, .combined-group'));
     
     // Find the index of the target element
     const targetIndex = items.indexOf(targetElement);
+    
+    console.log('getItemPositionInColumn - target:', targetElement.id, 'index:', targetIndex, 'total items:', items.length);
     
     // Return the position (index) of the target element
     return targetIndex >= 0 ? targetIndex : items.length;
@@ -2281,15 +2495,20 @@ RetrospectiveBoard.prototype.checkForGrouping = function(item, x, y) {
 };
 
 RetrospectiveBoard.prototype.getItemPositionInColumn = function(targetElement, category) {
-    // Find the column container
-    const column = document.querySelector(`.review-column[data-category="${category}"]`);
-    if (!column) return 0;
+    // Find the items container (not the column)
+    const container = document.getElementById(`${category}Items`);
+    if (!container) {
+        console.log('Container not found for category:', category);
+        return 0;
+    }
     
-    // Get all items in the column
-    const items = Array.from(column.querySelectorAll('.review-item'));
+    // Get all items and groups in the container in DOM order
+    const items = Array.from(container.querySelectorAll('.review-item, .combined-group'));
     
     // Find the index of the target element
     const targetIndex = items.indexOf(targetElement);
+    
+    console.log('getItemPositionInColumn - target:', targetElement.id, 'index:', targetIndex, 'total items:', items.length);
     
     // Return the position (index) of the target element
     return targetIndex >= 0 ? targetIndex : items.length;

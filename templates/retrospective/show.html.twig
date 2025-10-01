@@ -10,10 +10,12 @@
 {% endblock %}
 
 {% block head %}
-    <meta name="csrf-token" content="{{ csrf_token('authenticate') }}">
-    <meta name="csrf-token-add-item" content="{{ csrf_token('authenticate') }}">
-    <meta name="csrf-token-reorder" content="{{ csrf_token('authenticate') }}">
-    <meta name="csrf-token-separate" content="{{ csrf_token('authenticate') }}">
+    {# Generate a unique CSRF token for this retrospective session #}
+    {% set csrfToken = csrf_token('retrospective_action') %}
+    <meta name="csrf-token" content="{{ csrfToken }}">
+    <meta name="csrf-token-add-item" content="{{ csrfToken }}">
+    <meta name="csrf-token-reorder" content="{{ csrfToken }}">
+    <meta name="csrf-token-separate" content="{{ csrfToken }}">
 {% endblock %}
 
 {% block body %}

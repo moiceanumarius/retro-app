@@ -77,13 +77,11 @@ services:
   mercure:
     image: dunglas/mercure
     container_name: retro_app_mercure_dev
+    command: ["caddy", "run", "--config", "/etc/caddy/dev.Caddyfile"]
     environment:
       - MERCURE_PUBLISHER_JWT_KEY=PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=
       - MERCURE_SUBSCRIBER_JWT_KEY=PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=
-      - MERCURE_EXTRA_DIRECTIVES=cors_origins http://localhost:8080
       - SERVER_NAME=:80
-      - MERCURE_DEVELOPMENT=true
-      - CADDY_SERVER_NAME=:80
     ports:
       - "3000:80"
     networks:
