@@ -367,18 +367,6 @@ class RetrospectiveController extends AbstractController
         );
         $this->hub->publish($update);
         
-        // Also broadcast to general retrospective topic
-        $update2 = new Update(
-            "retrospective/{$id}",
-            json_encode([
-                'type' => 'timer_started',
-                'duration' => $duration,
-                'remainingSeconds' => $duration * 60,
-                'startedAt' => $retrospective->getTimerStartedAt()->format('Y-m-d H:i:s')
-            ])
-        );
-        $this->hub->publish($update2);
-        
         // error_log("Timer started successfully");
         
         return $this->json([
@@ -426,16 +414,6 @@ class RetrospectiveController extends AbstractController
             ])
         );
         $this->hub->publish($update);
-        
-        // Also broadcast to general retrospective topic
-        $update2 = new Update(
-            "retrospective/{$id}",
-            json_encode([
-                'type' => 'timer_stopped',
-                'message' => 'Timer stopped by facilitator'
-            ])
-        );
-        $this->hub->publish($update2);
         
         // error_log("Timer stopped successfully");
         
