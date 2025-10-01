@@ -28,6 +28,11 @@
     opacity: 1;
 }
 
+/* Hide delete button in discussion phase (readonly cards) */
+.post-it.readonly .post-it-delete {
+    display: none !important;
+}
+
 .post-it-edit-input {
     width: 100%;
     padding: 8px;
