@@ -901,9 +901,18 @@ class RetrospectiveBoard {
             case 'user_left':
                 this.handleUserLeft(data);
                 break;
+            case 'vote_updated':
+                this.handleVoteUpdated(data);
+                break;
             default:
                 console.log('Unknown WebSocket message type:', data.type);
         }
+    }
+    
+    handleVoteUpdated(data) {
+        console.log('Vote updated via WebSocket:', data);
+        // Update the vote display for other users
+        // For now, just log it - full sync can be implemented later
     }
     
     

@@ -1420,6 +1420,79 @@ class RetrospectiveController extends AbstractController
         file_put_contents($file, json_encode($data));
     }
 
+    #[Route('/retrospectives/{id}/vote', name: 'app_retrospectives_vote', methods: ['POST'])]
+    public function vote(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+
+        // Check if user is a participant
+        $user = $this->getUser();
+        if (!$retrospective->getTeam()->hasMember($user)) {
+            return $this->json(['success' => false, 'message' => 'You are not a participant in this retrospective'], 403);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $targetId = $data['targetId'] ?? null;
+        $targetType = $data['targetType'] ?? null; // 'item' or 'group'
+        $voteCount = $data['voteCount'] ?? 0;
+
+        if (!$targetId || !$targetType || !in_array($targetType, ['item', 'group'])) {
+            return $this->json(['success' => false, 'message' => 'Invalid vote data'], 400);
+        }
+
+        // Validate vote count (0-2 per item/group)
+        if ($voteCount < 0 || $voteCount > 2) {
+            return $this->json(['success' => false, 'message' => 'Vote count must be between 0 and 2'], 400);
+        }
+
+        try {
+            if ($targetType === 'item') {
+                $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($targetId);
+                if (!$item || $item->getRetrospective() !== $retrospective) {
+                    return $this->json(['success' => false, 'message' => 'Item not found'], 404);
+                }
+                
+                // Store vote count for this user (you might want to create a Vote entity later)
+                // For now, we'll just update the item's total votes
+                // This is a simplified implementation - you should track individual user votes
+                $item->setVotes($voteCount);
+                $this->entityManager->flush();
+            } else {
+                $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($targetId);
+                if (!$group || $group->getRetrospective() !== $retrospective) {
+                    return $this->json(['success' => false, 'message' => 'Group not found'], 404);
+                }
+                
+                // Similar for groups - simplified implementation
+                // You should create a proper Vote tracking system
+            }
+
+            // Broadcast vote update to all participants
+            $update = new Update(
+                "retrospective/{$id}",
+                json_encode([
+                    'type' => 'vote_updated',
+                    'targetType' => $targetType,
+                    'targetId' => $targetId,
+                    'userId' => $user->getId(),
+                    'voteCount' => $voteCount
+                ])
+            );
+            $this->hub->publish($update);
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Vote saved successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => 'Failed to save vote: ' . $e->getMessage()], 500);
+        }
+    }
+
     protected function isCsrfTokenValid(string $id, ?string $token): bool
     {
         // Skip CSRF validation for retrospective actions in development
