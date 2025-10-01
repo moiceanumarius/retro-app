@@ -23,6 +23,7 @@
     min-width: 140px;
     cursor: move;
     user-select: none;
+    display: none; /* Hidden */
 }
 
 .floating-timer.dragging {
