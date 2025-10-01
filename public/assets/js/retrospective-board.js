@@ -705,6 +705,16 @@ class RetrospectiveBoard {
             this.timerManuallyStopped = false;
             this.startTimerDisplayFromServer(data.remainingSeconds);
             this.showAddItemForms();
+            
+            // If in discussion phase, activate voting
+            if (this.isInDiscussionStep()) {
+                console.log('Restoring voting in discussion phase after page refresh');
+                if (typeof this.initVoting === 'function') {
+                    this.initVoting();
+                } else {
+                    console.error('initVoting function not found!');
+                }
+            }
         } else {
             this.timerManuallyStopped = true;
         }
