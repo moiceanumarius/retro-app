@@ -14,6 +14,13 @@ class RetrospectiveBoard {
         this.draggedItem = null;
         this.dragStartPosition = { x: 0, y: 0 };
         
+        // Voting system
+        this.userVotes = {}; // {itemId: voteCount} or {groupId: voteCount}
+        this.totalVotes = 0;
+        this.maxTotalVotes = 10;
+        this.maxVotesPerItem = 2;
+        this.votingActive = false;
+        
         this.init();
     }
     
@@ -1020,12 +1027,24 @@ class RetrospectiveBoard {
             this.timerManuallyStopped = false;
             this.startTimerDisplayFromServer(data.remainingSeconds);
             this.showAddItemForms();
+            
+            // Start voting if we're in discussion phase
+            if (this.isInDiscussionStep()) {
+                console.log('Starting voting in discussion phase');
+                this.initVoting();
+            }
         }
     }
     
     handleTimerStopped(data) {
         this.timerManuallyStopped = true;
         this.stopTimer();
+        
+        // Stop voting if we're in discussion phase
+        if (this.isInDiscussionStep() && this.votingActive) {
+            console.log('Stopping voting in discussion phase');
+            this.stopVoting();
+        }
     }
     
     handleTimerUpdated(data) {
@@ -1214,6 +1233,11 @@ if (document.readyState === 'loading') {
 RetrospectiveBoard.prototype.isInReviewStep = function() {
     const isReview = document.querySelector('.review-phase') !== null;
     return isReview;
+};
+
+RetrospectiveBoard.prototype.isInDiscussionStep = function() {
+    const isDiscussion = document.querySelector('.discussion-phase') !== null;
+    return isDiscussion;
 };
 
 RetrospectiveBoard.prototype.initReviewPhase = function() {
@@ -1943,24 +1967,16 @@ RetrospectiveBoard.prototype.initDragHandlers = function() {
             container.classList.remove('drag-over');
         });
         
-        // Cleanup after drop has had time to execute
-        setTimeout(() => {
-            console.log('=== DRAG END TIMEOUT ===');
-            
-            // Always remove dragging class to ensure UI cleanup
-            const stillDragging = document.querySelector('.dragging');
-            if (stillDragging) {
-                console.log('Removing dragging class from:', stillDragging.id, 'dropExecuted:', this.dropExecuted);
-                stillDragging.classList.remove('dragging');
-            }
-            
-            // Final cleanup - remove any remaining placeholders
-            this.hideAllDropZones();
-            
-            // Reset flags
-            this.draggedItem = null;
-            this.dropExecuted = false;
-        }, 100);
+        // Always remove dragging class to ensure UI cleanup
+        const stillDragging = document.querySelector('.dragging');
+        if (stillDragging) {
+            console.log('Removing dragging class from:', stillDragging.id);
+            stillDragging.classList.remove('dragging');
+        }
+        
+        // Reset flags
+        this.draggedItem = null;
+        this.dropExecuted = false;
     };
 
     this.handleDragOver = (e) => {
@@ -2176,8 +2192,16 @@ RetrospectiveBoard.prototype.createCombinedGroupElement = function(groupItems, c
         return `<div class="item-paragraph">${item.content}${separateBtn}</div>${separator}`;
     }).join('');
     
+    // Get group ID from the first item (will be set properly by caller)
+    const groupId = groupItems[0]?.group_id || 'temp';
+    
     itemDiv.innerHTML = `
         <div class="review-item-content">${contentHtml}</div>
+        <div class="voting-controls" style="display: none;">
+            <button class="vote-btn vote-decrease" data-group-id="${groupId}" data-action="decrease">-</button>
+            <input type="number" class="vote-input" data-group-id="${groupId}" value="0" readonly min="0" max="2">
+            <button class="vote-btn vote-increase" data-group-id="${groupId}" data-action="increase">+</button>
+        </div>
     `;
 
     // Add event listeners for separate buttons (only for facilitators)
@@ -2205,6 +2229,11 @@ RetrospectiveBoard.prototype.createReviewItemElement = function(item) {
 
     itemDiv.innerHTML = `
         <div class="review-item-content">${item.content}</div>
+        <div class="voting-controls" style="display: none;">
+            <button class="vote-btn vote-decrease" data-item-id="${item.id}" data-action="decrease">-</button>
+            <input type="number" class="vote-input" data-item-id="${item.id}" value="0" readonly min="0" max="2">
+            <button class="vote-btn vote-increase" data-item-id="${item.id}" data-action="increase">+</button>
+        </div>
     `;
 
     return itemDiv;

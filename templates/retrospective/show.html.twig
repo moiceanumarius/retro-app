@@ -411,4 +411,23 @@
     </div>
     
     <script src="{{ asset('assets/js/retrospective-board.js') }}"></script>
+    <script src="{{ asset('assets/js/voting-system.js') }}"></script>
+    
+    <!-- Temporary: Test voting button -->
+    <script>
+        // Add a test button to start voting
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.retrospectiveBoard) {
+                // Create test button
+                const testBtn = document.createElement('button');
+                testBtn.textContent = 'Start Voting (Test)';
+                testBtn.className = 'btn btn-success';
+                testBtn.style.cssText = 'position: fixed; bottom: 20px; left: 20px; z-index: 1001;';
+                testBtn.addEventListener('click', () => {
+                    window.retrospectiveBoard.initVoting();
+                });
+                document.body.appendChild(testBtn);
+            }
+        });
+    </script>
 {% endblock %}

@@ -1,0 +1,190 @@
+// ============================================
+// VOTING SYSTEM for RetrospectiveBoard
+// ============================================
+
+RetrospectiveBoard.prototype.initVoting = function() {
+    console.log('Initializing voting system...');
+    this.votingActive = true;
+    
+    // Show all voting controls
+    const votingControls = document.querySelectorAll('.voting-controls');
+    votingControls.forEach(control => {
+        control.style.display = 'flex';
+    });
+    
+    // Add event listeners to vote buttons
+    this.attachVotingListeners();
+};
+
+RetrospectiveBoard.prototype.attachVotingListeners = function() {
+    // Remove existing listeners to prevent duplicates
+    document.querySelectorAll('.vote-btn').forEach(btn => {
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+    });
+    
+    // Add new listeners
+    document.querySelectorAll('.vote-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent drag and drop interference
+            const action = btn.dataset.action;
+            const itemId = btn.dataset.itemId;
+            const groupId = btn.dataset.groupId;
+            
+            if (action === 'increase') {
+                this.increaseVote(itemId, groupId);
+            } else if (action === 'decrease') {
+                this.decreaseVote(itemId, groupId);
+            }
+        });
+    });
+};
+
+RetrospectiveBoard.prototype.increaseVote = function(itemId, groupId) {
+    const targetId = itemId || groupId;
+    const targetType = itemId ? 'item' : 'group';
+    const key = `${targetType}-${targetId}`;
+    
+    const currentVotes = this.userVotes[key] || 0;
+    
+    // Check if max votes per item reached
+    if (currentVotes >= this.maxVotesPerItem) {
+        alert(`You can only vote ${this.maxVotesPerItem} times for this ${targetType}!`);
+        return;
+    }
+    
+    // Check if total votes limit reached
+    if (this.totalVotes >= this.maxTotalVotes) {
+        alert('You don\'t have any more votes!');
+        return;
+    }
+    
+    // Increment vote
+    this.userVotes[key] = currentVotes + 1;
+    this.totalVotes++;
+    
+    // Update UI
+    this.updateVoteDisplay(itemId, groupId);
+    this.updateVoteButtons();
+    
+    // Save to backend
+    this.saveVote(targetId, targetType, this.userVotes[key]);
+};
+
+RetrospectiveBoard.prototype.decreaseVote = function(itemId, groupId) {
+    const targetId = itemId || groupId;
+    const targetType = itemId ? 'item' : 'group';
+    const key = `${targetType}-${targetId}`;
+    
+    const currentVotes = this.userVotes[key] || 0;
+    
+    if (currentVotes === 0) {
+        return; // Can't decrease below 0
+    }
+    
+    // Decrement vote
+    this.userVotes[key] = currentVotes - 1;
+    this.totalVotes--;
+    
+    // Update UI
+    this.updateVoteDisplay(itemId, groupId);
+    this.updateVoteButtons();
+    
+    // Save to backend
+    this.saveVote(targetId, targetType, this.userVotes[key]);
+};
+
+RetrospectiveBoard.prototype.updateVoteDisplay = function(itemId, groupId) {
+    const targetId = itemId || groupId;
+    const targetType = itemId ? 'item' : 'group';
+    const key = `${targetType}-${targetId}`;
+    
+    const input = itemId 
+        ? document.querySelector(`.vote-input[data-item-id="${itemId}"]`)
+        : document.querySelector(`.vote-input[data-group-id="${groupId}"]`);
+    
+    if (input) {
+        input.value = this.userVotes[key] || 0;
+    }
+};
+
+RetrospectiveBoard.prototype.updateVoteButtons = function() {
+    // Update all increase buttons based on total votes
+    document.querySelectorAll('.vote-increase').forEach(btn => {
+        const itemId = btn.dataset.itemId;
+        const groupId = btn.dataset.groupId;
+        const targetId = itemId || groupId;
+        const targetType = itemId ? 'item' : 'group';
+        const key = `${targetType}-${targetId}`;
+        
+        const currentVotes = this.userVotes[key] || 0;
+        
+        // Disable if max per item reached or total votes reached
+        if (currentVotes >= this.maxVotesPerItem || this.totalVotes >= this.maxTotalVotes) {
+            btn.disabled = true;
+        } else {
+            btn.disabled = false;
+        }
+    });
+    
+    // Update all decrease buttons based on current votes
+    document.querySelectorAll('.vote-decrease').forEach(btn => {
+        const itemId = btn.dataset.itemId;
+        const groupId = btn.dataset.groupId;
+        const targetId = itemId || groupId;
+        const targetType = itemId ? 'item' : 'group';
+        const key = `${targetType}-${targetId}`;
+        
+        const currentVotes = this.userVotes[key] || 0;
+        
+        // Disable if no votes
+        if (currentVotes === 0) {
+            btn.disabled = true;
+        } else {
+            btn.disabled = false;
+        }
+    });
+};
+
+RetrospectiveBoard.prototype.saveVote = async function(targetId, targetType, voteCount) {
+    try {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/vote`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-Token': csrfToken || ''
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                targetId: targetId,
+                targetType: targetType,
+                voteCount: voteCount,
+                _token: csrfToken
+            })
+        });
+
+        if (response.ok) {
+            console.log(`Vote saved: ${targetType} ${targetId} = ${voteCount}`);
+        } else {
+            console.error('Failed to save vote:', response.status);
+        }
+    } catch (error) {
+        console.error('Error saving vote:', error);
+    }
+};
+
+RetrospectiveBoard.prototype.stopVoting = function() {
+    console.log('Stopping voting system...');
+    this.votingActive = false;
+    
+    // Hide all voting controls
+    const votingControls = document.querySelectorAll('.voting-controls');
+    votingControls.forEach(control => {
+        control.style.display = 'none';
+    });
+};
+
