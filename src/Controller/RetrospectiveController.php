@@ -146,10 +146,10 @@ class RetrospectiveController extends AbstractController
         $groups = $this->entityManager->getRepository(RetrospectiveGroup::class)
             ->findBy(['retrospective' => $retrospective], ['positionY' => 'ASC']);
 
-        $wrongGroups = array_filter($groups, fn($group) => $group->getPositionX() === 0);
-        $goodGroups = array_filter($groups, fn($group) => $group->getPositionX() === 1);
-        $improvedGroups = array_filter($groups, fn($group) => $group->getPositionX() === 2);
-        $randomGroups = array_filter($groups, fn($group) => $group->getPositionX() === 3);
+        $wrongGroups = array_filter($groups, fn($group) => $group->getPositionX() == 0);
+        $goodGroups = array_filter($groups, fn($group) => $group->getPositionX() == 1);
+        $improvedGroups = array_filter($groups, fn($group) => $group->getPositionX() == 2);
+        $randomGroups = array_filter($groups, fn($group) => $group->getPositionX() == 3);
 
         // Combine and sort items and groups by positionY for each category
         $wrongCombined = $this->combineAndSortByPosition($wrongItems, $wrongGroups);
@@ -828,8 +828,17 @@ class RetrospectiveController extends AbstractController
         // Create new group
         $group = new RetrospectiveGroup();
         $group->setRetrospective($retrospective);
-        $group->setPositionX(0); // Not used in column-based layout
-        $group->setPositionY(0); // Not used in column-based layout
+        
+        // Set positionX based on category
+        $positionX = match($category) {
+            'wrong' => 0,
+            'good' => 1,
+            'improved' => 2,
+            'random' => 3,
+            default => 0
+        };
+        $group->setPositionX($positionX);
+        $group->setPositionY(0); // Will be set later based on position in column
         $group->setTitle('Group ' . (count($retrospective->getGroups()) + 1));
         $group->setDisplayCategory($category); // Set the display category to the target column
         

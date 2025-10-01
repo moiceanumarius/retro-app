@@ -7,6 +7,9 @@ class RetrospectiveBoard {
         this.timerEndTime = null;
         this.eventSource = null;
         this.timerManuallyStopped = false;
+        this.reconnectTimeout = null;
+        this.isReconnecting = false;
+        this.timerExpiredMessageShown = false;
         this.isDragging = false;
         this.dragOffset = { x: 0, y: 0 };
         this.reviewItems = [];
@@ -45,8 +48,8 @@ class RetrospectiveBoard {
             }
         }
         
-        // Hide timer in action phase
-        if (this.isInActionStep()) {
+        // Hide timer in review and action phases
+        if (this.isInReviewStep() || this.isInActionStep()) {
             const floatingTimer = document.getElementById('floatingTimer');
             if (floatingTimer) {
                 floatingTimer.style.display = 'none';
@@ -260,7 +263,14 @@ class RetrospectiveBoard {
         
         if (remaining === 0) {
             clearInterval(this.timerInterval);
-            this.showMessage('Timer expired!', 'error');
+            this.timerInterval = null;
+            
+            // Show message only once
+            if (!this.timerExpiredMessageShown) {
+                this.showMessage('Timer expired!', 'error');
+                this.timerExpiredMessageShown = true;
+            }
+            
             // Keep showing 0:00 instead of hiding the timer
             timerTime.textContent = '0:00';
         }
@@ -916,6 +926,7 @@ class RetrospectiveBoard {
             url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/timer`);
             url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/review`);
             url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/connected-users`);
+            url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/step`);
             url.searchParams.append('Authorization', mercureToken);
             
             this.eventSource = new EventSource(url.toString());
@@ -938,10 +949,25 @@ class RetrospectiveBoard {
                 console.error('WebSocket error:', error);
                 this.showConnectionStatus('error');
                 
-                // Fallback to polling if WebSocket fails
-                setTimeout(() => {
-                    this.connectToMercure();
-                }, 5000);
+                // Close the failed connection
+                if (this.eventSource) {
+                    this.eventSource.close();
+                    this.eventSource = null;
+                }
+                
+                // Clear any existing reconnect timeout
+                if (this.reconnectTimeout) {
+                    clearTimeout(this.reconnectTimeout);
+                }
+                
+                // Reconnect after 5 seconds if not already reconnecting
+                if (!this.isReconnecting) {
+                    this.isReconnecting = true;
+                    this.reconnectTimeout = setTimeout(() => {
+                        this.isReconnecting = false;
+                        this.connectToMercure();
+                    }, 5000);
+                }
             };
             
         } catch (error) {
@@ -1003,6 +1029,9 @@ class RetrospectiveBoard {
             case 'vote_updated':
                 this.handleVoteUpdated(data);
                 break;
+            case 'step_changed':
+                this.handleStepChanged(data);
+                break;
             default:
                 console.log('Unknown WebSocket message type:', data.type);
         }
@@ -1012,6 +1041,16 @@ class RetrospectiveBoard {
         console.log('Vote updated via WebSocket:', data);
         // Update the vote display for other users
         // For now, just log it - full sync can be implemented later
+    }
+    
+    handleStepChanged(data) {
+        console.log('Step changed via WebSocket:', data);
+        this.showMessage(data.message || 'Moving to next step...', 'info');
+        
+        // Reload page after a short delay to show the new step
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
     }
     
     
@@ -1133,6 +1172,7 @@ class RetrospectiveBoard {
     handleTimerStarted(data) {
         if (data.remainingSeconds > 0) {
             this.timerManuallyStopped = false;
+            this.timerExpiredMessageShown = false;
             this.startTimerDisplayFromServer(data.remainingSeconds);
             this.showAddItemForms();
             
@@ -1358,8 +1398,8 @@ RetrospectiveBoard.prototype.isInActionStep = function() {
 };
 
 RetrospectiveBoard.prototype.shouldShowTimer = function() {
-    // Don't show timer in action phase
-    return !this.isInActionStep();
+    // Don't show timer in review phase and action phase
+    return !this.isInReviewStep() && !this.isInActionStep();
 };
 
 RetrospectiveBoard.prototype.initReviewPhase = function() {
