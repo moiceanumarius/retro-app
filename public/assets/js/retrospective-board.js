@@ -36,6 +36,14 @@ class RetrospectiveBoard {
         if (this.isInReviewStep()) {
             this.initReviewPhase();
         }
+        
+        // Load user votes if we're in voting phase (to show vote badges)
+        if (this.isInDiscussionStep()) {
+            console.log('In voting phase, loading user votes for badges...');
+            if (typeof this.loadUserVotes === 'function') {
+                this.loadUserVotes();
+            }
+        }
     }
     
     bindEvents() {
@@ -186,6 +194,7 @@ class RetrospectiveBoard {
         const timerControls = document.querySelector('.timer-controls');
         const floatingTimer = document.getElementById('floatingTimer');
         const setTimerLabel = floatingTimer ? floatingTimer.querySelector('.timer-label') : null;
+        const timerStopped = document.getElementById('timerStopped');
         
         if (timerDisplay && timerTime) {
             // Show floating timer
@@ -196,6 +205,11 @@ class RetrospectiveBoard {
             // Hide "Set timer" label
             if (setTimerLabel) {
                 setTimerLabel.style.display = 'none';
+            }
+            
+            // Hide "Timer stopped" message
+            if (timerStopped) {
+                timerStopped.style.display = 'none';
             }
             
             timerDisplay.style.display = 'flex';
@@ -268,6 +282,7 @@ class RetrospectiveBoard {
         const timerControls = document.querySelector('.timer-controls');
         const floatingTimer = document.getElementById('floatingTimer');
         const setTimerLabel = floatingTimer ? floatingTimer.querySelector('.timer-label') : null;
+        const timerStopped = document.getElementById('timerStopped');
         
         if (timerDisplay) {
             timerDisplay.style.display = 'none';
@@ -282,8 +297,22 @@ class RetrospectiveBoard {
             setTimerLabel.style.display = 'block';
         }
         
+        // For members: show "Timer stopped" message
+        if (timerStopped) {
+            if (window.isFacilitator) {
+                timerStopped.style.display = 'none';
+            } else {
+                timerStopped.style.display = 'block';
+            }
+        }
+        
         // Keep floating timer visible for facilitator
         if (floatingTimer && window.isFacilitator) {
+            floatingTimer.style.display = 'block';
+        }
+        
+        // For members: show floating timer with "Timer stopped" message
+        if (floatingTimer && !window.isFacilitator) {
             floatingTimer.style.display = 'block';
         }
     }
@@ -706,9 +735,9 @@ class RetrospectiveBoard {
             this.startTimerDisplayFromServer(data.remainingSeconds);
             this.showAddItemForms();
             
-            // If in discussion phase, activate voting
+            // If in voting phase, activate voting
             if (this.isInDiscussionStep()) {
-                console.log('Restoring voting in discussion phase after page refresh');
+                console.log('Restoring voting in voting phase after page refresh');
                 if (typeof this.initVoting === 'function') {
                     this.initVoting();
                 } else {
@@ -717,6 +746,8 @@ class RetrospectiveBoard {
             }
         } else {
             this.timerManuallyStopped = true;
+            // Show "Timer stopped" message for members
+            this.stopTimerDisplay();
         }
     }
     
@@ -1047,11 +1078,11 @@ class RetrospectiveBoard {
             this.startTimerDisplayFromServer(data.remainingSeconds);
             this.showAddItemForms();
             
-            // Start voting if we're in discussion phase
+            // Start voting if we're in voting phase
             const inDiscussion = this.isInDiscussionStep();
-            console.log('Timer started - in discussion phase?', inDiscussion);
+            console.log('Timer started - in voting phase?', inDiscussion);
             if (inDiscussion) {
-                console.log('Starting voting in discussion phase');
+                console.log('Starting voting in voting phase');
                 if (typeof this.initVoting === 'function') {
                     this.initVoting();
                 } else {
@@ -1068,9 +1099,9 @@ class RetrospectiveBoard {
         this.stopTimerDisplay();
         this.hideAddItemForms();
         
-        // Stop voting if we're in discussion phase
+        // Stop voting if we're in voting phase
         if (this.isInDiscussionStep() && this.votingActive) {
-            console.log('Stopping voting in discussion phase');
+            console.log('Stopping voting in voting phase');
             this.stopVoting();
         }
     }
@@ -1264,7 +1295,7 @@ RetrospectiveBoard.prototype.isInReviewStep = function() {
 };
 
 RetrospectiveBoard.prototype.isInDiscussionStep = function() {
-    const isDiscussion = document.querySelector('.discussion-phase') !== null;
+    const isDiscussion = document.querySelector('.voting-phase') !== null;
     return isDiscussion;
 };
 

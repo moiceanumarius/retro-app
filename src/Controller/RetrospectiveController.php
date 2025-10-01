@@ -136,10 +136,26 @@ class RetrospectiveController extends AbstractController
                 ->findBy(['retrospective' => $retrospective], ['createdAt' => 'ASC']);
         }
 
-        $wrongItems = array_filter($items, fn($item) => $item->isWrong());
-        $goodItems = array_filter($items, fn($item) => $item->isGood());
-        $improvedItems = array_filter($items, fn($item) => $item->isImproved());
-        $randomItems = array_filter($items, fn($item) => $item->isRandom());
+        // Filter items that are not in groups
+        $wrongItems = array_filter($items, fn($item) => $item->isWrong() && !$item->getGroup());
+        $goodItems = array_filter($items, fn($item) => $item->isGood() && !$item->getGroup());
+        $improvedItems = array_filter($items, fn($item) => $item->isImproved() && !$item->getGroup());
+        $randomItems = array_filter($items, fn($item) => $item->isRandom() && !$item->getGroup());
+
+        // Get groups
+        $groups = $this->entityManager->getRepository(RetrospectiveGroup::class)
+            ->findBy(['retrospective' => $retrospective], ['positionY' => 'ASC']);
+
+        $wrongGroups = array_filter($groups, fn($group) => $group->getPositionX() === 0);
+        $goodGroups = array_filter($groups, fn($group) => $group->getPositionX() === 1);
+        $improvedGroups = array_filter($groups, fn($group) => $group->getPositionX() === 2);
+        $randomGroups = array_filter($groups, fn($group) => $group->getPositionX() === 3);
+
+        // Combine and sort items and groups by positionY for each category
+        $wrongCombined = $this->combineAndSortByPosition($wrongItems, $wrongGroups);
+        $goodCombined = $this->combineAndSortByPosition($goodItems, $goodGroups);
+        $improvedCombined = $this->combineAndSortByPosition($improvedItems, $improvedGroups);
+        $randomCombined = $this->combineAndSortByPosition($randomItems, $randomGroups);
 
         // Get actions
         $actions = $this->entityManager->getRepository(RetrospectiveAction::class)
@@ -154,6 +170,14 @@ class RetrospectiveController extends AbstractController
             'goodItems' => $goodItems,
             'improvedItems' => $improvedItems,
             'randomItems' => $randomItems,
+            'wrongGroups' => $wrongGroups,
+            'goodGroups' => $goodGroups,
+            'improvedGroups' => $improvedGroups,
+            'randomGroups' => $randomGroups,
+            'wrongCombined' => $wrongCombined,
+            'goodCombined' => $goodCombined,
+            'improvedCombined' => $improvedCombined,
+            'randomCombined' => $randomCombined,
             'actions' => $actions,
             'connectedUsers' => $connectedUsers,
         ]);
@@ -441,8 +465,8 @@ class RetrospectiveController extends AbstractController
         // Define step progression
         $stepProgression = [
             'feedback' => 'review',
-            'review' => 'discussion',
-            'discussion' => 'actions',
+            'review' => 'voting',
+            'voting' => 'actions',
             'actions' => 'completed'
         ];
 
@@ -1198,6 +1222,34 @@ class RetrospectiveController extends AbstractController
             'remainingSeconds' => $retrospective->getTimerRemainingSeconds(),
             'currentStep' => $retrospective->getCurrentStep()
         ]);
+    }
+
+    private function combineAndSortByPosition(array $items, array $groups): array
+    {
+        $combined = [];
+        
+        // Add items with their position
+        foreach ($items as $item) {
+            $combined[] = [
+                'type' => 'item',
+                'entity' => $item,
+                'position' => $item->getPosition()
+            ];
+        }
+        
+        // Add groups with their position
+        foreach ($groups as $group) {
+            $combined[] = [
+                'type' => 'group',
+                'entity' => $group,
+                'position' => $group->getPositionY()
+            ];
+        }
+        
+        // Sort by position
+        usort($combined, fn($a, $b) => $a['position'] <=> $b['position']);
+        
+        return $combined;
     }
 
     private function hasTeamAccess(Team $team): bool

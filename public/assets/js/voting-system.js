@@ -42,16 +42,28 @@ RetrospectiveBoard.prototype.loadUserVotes = async function() {
             this.userVotes = {};
             this.totalVotes = 0;
             
+            // Reset all vote badges to 0
+            document.querySelectorAll('.votes[data-item-id], .votes[data-group-id]').forEach(badge => {
+                badge.textContent = '0 votes';
+            });
+            
             // Restore votes from server
             data.votes.forEach(voteData => {
                 const key = `item-${voteData.itemId}`;
                 this.userVotes[key] = voteData.voteCount;
                 this.totalVotes += voteData.voteCount;
                 
-                // Update UI
+                // Update vote input
                 const input = document.querySelector(`.vote-input[data-item-id="${voteData.itemId}"]`);
                 if (input) {
                     input.value = voteData.voteCount;
+                }
+                
+                // Update vote badge (visible all the time)
+                const voteBadge = document.querySelector(`.votes[data-item-id="${voteData.itemId}"]`);
+                if (voteBadge) {
+                    const voteText = voteData.voteCount === 1 ? 'vote' : 'votes';
+                    voteBadge.textContent = `${voteData.voteCount} ${voteText}`;
                 }
             });
             
@@ -146,13 +158,25 @@ RetrospectiveBoard.prototype.updateVoteDisplay = function(itemId, groupId) {
     const targetId = itemId || groupId;
     const targetType = itemId ? 'item' : 'group';
     const key = `${targetType}-${targetId}`;
+    const voteCount = this.userVotes[key] || 0;
     
+    // Update vote input (in voting controls)
     const input = itemId 
         ? document.querySelector(`.vote-input[data-item-id="${itemId}"]`)
         : document.querySelector(`.vote-input[data-group-id="${groupId}"]`);
     
     if (input) {
-        input.value = this.userVotes[key] || 0;
+        input.value = voteCount;
+    }
+    
+    // Update vote badge (visible all the time)
+    const voteBadge = itemId
+        ? document.querySelector(`.votes[data-item-id="${itemId}"]`)
+        : document.querySelector(`.votes[data-group-id="${groupId}"]`);
+    
+    if (voteBadge) {
+        const voteText = voteCount === 1 ? 'vote' : 'votes';
+        voteBadge.textContent = `${voteCount} ${voteText}`;
     }
 };
 
