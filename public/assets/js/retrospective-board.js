@@ -778,48 +778,127 @@ class RetrospectiveBoard {
     }
     
     connectToMercure() {
-        this.showConnectionStatus('polling');
+        this.showConnectionStatus('connecting');
         
-        // Use polling instead of WebSocket for now
-        this.startPolling();
+        // Connect to Mercure WebSocket
+        this.connectToWebSocket();
     }
     
-    startPolling() {
-        // Poll every 2 seconds for updates
-        this.pollInterval = setInterval(() => {
-            this.checkForUpdates();
-        }, 2000);
-    }
-    
-    stopPolling() {
-        if (this.pollInterval) {
-            clearInterval(this.pollInterval);
-            this.pollInterval = null;
-        }
-    }
-    
-    async checkForUpdates() {
+    async connectToWebSocket() {
         try {
-            const response = await fetch(`/retrospectives/${this.retrospectiveId}/timer-status`, {
-                credentials: 'same-origin'
+            // Get Mercure JWT token
+            const response = await fetch(`/retrospectives/${this.retrospectiveId}/mercure-token`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                },
+                credentials: 'include'
             });
             
-            if (response.ok) {
-                const data = await response.json();
-                this.updateTimerFromServer(data);
+            if (!response.ok) {
+                throw new Error('Failed to get Mercure token');
             }
+            
+            const data = await response.json();
+            const mercureToken = data.token;
+            
+            // Create EventSource connection to Mercure with JWT token
+            const url = new URL('/.well-known/mercure', window.location.origin);
+            url.searchParams.append('topic', `retrospective/${this.retrospectiveId}`);
+            url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/timer`);
+            url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/review`);
+            url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/connected-users`);
+            url.searchParams.append('Authorization', mercureToken);
+            
+            this.eventSource = new EventSource(url.toString());
+            
+            this.eventSource.onopen = () => {
+                console.log('WebSocket connected');
+                this.showConnectionStatus('connected');
+            };
+            
+            this.eventSource.onmessage = (event) => {
+                try {
+                    const data = JSON.parse(event.data);
+                    this.handleWebSocketMessage(data);
+                } catch (error) {
+                    console.error('Error parsing WebSocket message:', error);
+                }
+            };
+            
+            this.eventSource.onerror = (error) => {
+                console.error('WebSocket error:', error);
+                this.showConnectionStatus('error');
+                
+                // Fallback to polling if WebSocket fails
+                setTimeout(() => {
+                    this.connectToMercure();
+                }, 5000);
+            };
+            
         } catch (error) {
-            console.error('Error checking for updates:', error);
-        }
-        
-        // Also check for connected users
-        this.checkConnectedUsers();
-        
-        // If in review step, check for review updates
-        if (this.isInReviewStep()) {
-            this.checkReviewUpdates();
+            console.error('Error connecting to WebSocket:', error);
+            this.showConnectionStatus('error');
         }
     }
+    
+    disconnectFromWebSocket() {
+        if (this.eventSource) {
+            this.eventSource.close();
+            this.eventSource = null;
+        }
+    }
+    
+    handleWebSocketMessage(data) {
+        console.log('WebSocket message received:', data);
+        
+        switch (data.type) {
+            case 'timer_started':
+                this.handleTimerStarted(data);
+                break;
+            case 'timer_stopped':
+                this.handleTimerStopped(data);
+                break;
+            case 'timer_updated':
+                this.handleTimerUpdated(data);
+                break;
+            case 'item_added':
+                this.handleItemAdded(data);
+                break;
+            case 'item_updated':
+                this.handleItemUpdated(data);
+                break;
+            case 'item_deleted':
+                this.handleItemDeleted(data);
+                break;
+            case 'group_created':
+                this.handleGroupCreated(data);
+                break;
+            case 'group_updated':
+                this.handleGroupUpdated(data);
+                break;
+            case 'item_added_to_group':
+                this.handleItemAddedToGroup(data);
+                break;
+            case 'items_reordered':
+                this.handleItemsReordered(data);
+                break;
+            case 'connected_users_updated':
+                this.handleConnectedUsersUpdated(data);
+                break;
+            case 'user_joined':
+                this.handleUserJoined(data);
+                break;
+            case 'user_left':
+                this.handleUserLeft(data);
+                break;
+            default:
+                console.log('Unknown WebSocket message type:', data.type);
+        }
+    }
+    
     
     async checkConnectedUsers() {
         try {
@@ -935,39 +1014,92 @@ class RetrospectiveBoard {
         }
     }
     
-    handleMercureMessage(data) {
-        
-        switch (data.type) {
-            case 'timer_started':
-                this.handleTimerStarted(data);
-                break;
-            case 'timer_stopped':
-                this.handleTimerStopped(data);
-                break;
-            case 'step_changed':
-                this.handleStepChanged(data);
-                break;
-            case 'item_added':
-                this.handleItemAdded(data);
-                break;
-            default:
-        }
-    }
     
     handleTimerStarted(data) {
-        if (!this.isFacilitator) {
-            // Only show timer for non-facilitators
-            this.startTimerDisplay(data.duration);
+        if (data.remainingSeconds > 0) {
+            this.timerManuallyStopped = false;
+            this.startTimerDisplayFromServer(data.remainingSeconds);
             this.showAddItemForms();
         }
     }
-
+    
     handleTimerStopped(data) {
         this.timerManuallyStopped = true;
-        this.stopTimerDisplay();
-        this.hideAddItemForms();
-        this.showMessage('Timer stopped by facilitator', 'info');
+        this.stopTimer();
     }
+    
+    handleTimerUpdated(data) {
+        if (data.remainingSeconds > 0 && !this.timerManuallyStopped) {
+            this.timerEndTime = Date.now() + (data.remainingSeconds * 1000);
+        }
+    }
+    
+    handleItemAdded(data) {
+        if (this.isInFeedbackStep()) {
+            this.loadFeedbackData();
+        }
+    }
+    
+    handleItemUpdated(data) {
+        if (this.isInFeedbackStep()) {
+            this.loadFeedbackData();
+        }
+    }
+    
+    handleItemDeleted(data) {
+        if (this.isInFeedbackStep()) {
+            this.loadFeedbackData();
+        }
+    }
+    
+    handleGroupCreated(data) {
+        console.log('Group created via WebSocket, reloading data');
+        if (this.isInReviewStep()) {
+            this.loadReviewData();
+        }
+    }
+    
+    handleGroupUpdated(data) {
+        console.log('Group updated via WebSocket, reloading data');
+        if (this.isInReviewStep()) {
+            this.loadReviewData();
+        }
+    }
+    
+    handleItemAddedToGroup(data) {
+        if (this.isInReviewStep()) {
+            this.loadReviewData();
+        }
+    }
+    
+    handleItemsReordered(data) {
+        if (this.isInReviewStep()) {
+            // Update initial order after successful reorder from server
+            const category = data.category;
+            if (this.initialOrder && this.initialOrder[category]) {
+                this.initialOrder[category] = {
+                    itemIds: data.item_ids || [],
+                    groupIds: data.group_ids || []
+                };
+                console.log('Updated initial order for', category, ':', this.initialOrder[category]);
+            }
+            // Don't reload data if this reorder was triggered by our own action
+            // The UI should already be in the correct state
+        }
+    }
+    
+    handleConnectedUsersUpdated(data) {
+        this.updateConnectedUsers(data.users);
+    }
+    
+    handleUserJoined(data) {
+        this.updateConnectedUsers(data.users);
+    }
+    
+    handleUserLeft(data) {
+        this.updateConnectedUsers(data.users);
+    }
+
     
     handleStepChanged(data) {
         this.showMessage(data.message, 'success');
@@ -1086,7 +1218,8 @@ RetrospectiveBoard.prototype.isInReviewStep = function() {
 
 RetrospectiveBoard.prototype.initReviewPhase = function() {
     this.loadReviewData();
-    this.initReviewDragAndDrop();
+    // Don't call initReviewDragAndDrop here - it will be called after rendering
+    // Don't store initial order here - it will be stored on first drag
 };
 
 RetrospectiveBoard.prototype.loadReviewData = async function() {
@@ -1218,8 +1351,8 @@ RetrospectiveBoard.prototype.renderReviewBoard = function() {
         }
     });
     
-        // Re-initialize drag and drop after rendering
-        this.initReviewDragAndDrop();
+    // Re-initialize drag and drop after rendering
+    this.initReviewDragAndDrop();
 };
 
 RetrospectiveBoard.prototype.findItemsInGroup = function(groupElement) {
@@ -1251,14 +1384,512 @@ RetrospectiveBoard.prototype.getDragAfterElement = function(container, y) {
     
     return draggableElements.reduce((closest, child) => {
         const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
+        // Check if cursor is in the gap between items (not over an item)
+        // This gives priority to grouping (drop on item) over reordering (drop in gap)
+        const centerY = box.top + box.height / 2;
+        const offset = y - centerY;
         
+        // Only consider this position if we're past the center of the item
         if (offset < 0 && offset > closest.offset) {
             return { offset: offset, element: child };
         } else {
             return closest;
         }
     }, { offset: Number.NEGATIVE_INFINITY }).element;
+};
+
+RetrospectiveBoard.prototype.showDropPlaceholder = function(container, y) {
+    // Check if cursor is over an item (for grouping) - if so, don't show placeholder
+    const items = [...container.querySelectorAll('.review-item:not(.dragging)')];
+    const overItem = items.find(item => {
+        const box = item.getBoundingClientRect();
+        return y >= box.top && y <= box.bottom;
+    });
+    
+    // If over an item, hide placeholder to allow grouping
+    if (overItem) {
+        this.hideDropPlaceholder(container);
+        return;
+    }
+    
+    // Remove existing placeholder
+    this.hideDropPlaceholder(container);
+    
+    const afterElement = this.getDragAfterElement(container, y);
+    
+    // Create placeholder element
+    const placeholder = document.createElement('div');
+    placeholder.className = 'drop-placeholder';
+    placeholder.style.height = '100px';
+    placeholder.style.backgroundColor = '#007bff';
+    placeholder.style.margin = '15px 0';
+    placeholder.style.borderRadius = '4px';
+    placeholder.style.opacity = '0.5';
+    
+    // IMPORTANT: Allow drop on placeholder
+    placeholder.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        console.log('DRAGOVER on PLACEHOLDER');
+    });
+    
+    placeholder.addEventListener('drop', (e) => {
+        console.log('DROP on PLACEHOLDER');
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Set flag to indicate drop was executed
+        this.dropExecuted = true;
+        
+        // Manually call drop logic since we can't easily pass modified event
+        const draggedItem = document.querySelector('.dragging');
+        if (!draggedItem) {
+            console.log('No dragged item on placeholder drop');
+            return;
+        }
+        
+        const category = container.id.replace('Items', '');
+        
+        // This is reordering (drop on placeholder)
+        const newOrder = this.calculateNewOrder(container, draggedItem, e.clientY);
+        const orderChanged = this.hasOrderChanged(category, newOrder.itemIds, newOrder.groupIds);
+        
+        if (orderChanged) {
+            console.log('Order changed via placeholder drop');
+            this.updateUIOrder(category, newOrder.itemIds, newOrder.groupIds);
+            this.reorderItemsInColumn(category, newOrder.itemIds, newOrder.groupIds);
+        }
+        
+        // Remove dragging class immediately after processing
+        draggedItem.classList.remove('dragging');
+        this.hideDropPlaceholder(container);
+        container.classList.remove('drag-over');
+    });
+    
+    // Insert placeholder at the correct position
+    if (afterElement == null) {
+        container.appendChild(placeholder);
+    } else {
+        container.insertBefore(placeholder, afterElement);
+    }
+    
+    // Store reference for later removal
+    container._dropPlaceholder = placeholder;
+};
+
+RetrospectiveBoard.prototype.hideDropPlaceholder = function(container) {
+    if (container._dropPlaceholder) {
+        container._dropPlaceholder.remove();
+        container._dropPlaceholder = null;
+    }
+};
+
+RetrospectiveBoard.prototype.storeInitialOrder = function() {
+    // Store the initial order of items and groups for each category
+    this.initialOrder = {};
+    const categories = ['wrong', 'good', 'improved', 'random'];
+    
+    categories.forEach(category => {
+        const container = document.getElementById(`${category}Items`);
+        if (container) {
+            const items = Array.from(container.querySelectorAll('.review-item'));
+            const itemIds = [];
+            const groupIds = [];
+            
+            items.forEach(item => {
+                if (item.classList.contains('combined-group')) {
+                    const groupId = item.dataset.groupId;
+                    if (groupId) {
+                        groupIds.push(parseInt(groupId));
+                    }
+                } else {
+                    const itemId = item.dataset.itemId;
+                    if (itemId) {
+                        itemIds.push(parseInt(itemId));
+                    }
+                }
+            });
+            
+            this.initialOrder[category] = {
+                itemIds: itemIds,
+                groupIds: groupIds
+            };
+            
+        }
+    });
+};
+
+RetrospectiveBoard.prototype.hasOrderChanged = function(category, newItemIds, newGroupIds) {
+    if (!this.initialOrder || !this.initialOrder[category]) {
+        return true; // If no initial order stored, assume it changed
+    }
+    
+    const initial = this.initialOrder[category];
+    
+    // Compare arrays
+    const itemIdsChanged = JSON.stringify(initial.itemIds) !== JSON.stringify(newItemIds);
+    const groupIdsChanged = JSON.stringify(initial.groupIds) !== JSON.stringify(newGroupIds);
+    
+    return itemIdsChanged || groupIdsChanged;
+};
+
+RetrospectiveBoard.prototype.calculateNewOrder = function(container, draggedItem, clientY) {
+    const items = Array.from(container.querySelectorAll('.review-item'));
+    const draggedItemId = draggedItem.dataset.itemId ? parseInt(draggedItem.dataset.itemId) : null;
+    const draggedGroupId = draggedItem.dataset.groupId ? parseInt(draggedItem.dataset.groupId) : null;
+    const isDraggedGroup = draggedItem.classList.contains('combined-group');
+    
+    // Remove the dragged item from the list
+    const otherItems = items.filter(item => item !== draggedItem);
+    
+    // Find where to insert the dragged item based on the drop position
+    const afterElement = this.getDragAfterElement(container, clientY);
+    
+    let newItems = [];
+    let inserted = false;
+    
+    for (let item of otherItems) {
+        if (item === afterElement && !inserted) {
+            // Insert dragged item before this element
+            newItems.push(draggedItem);
+            inserted = true;
+        }
+        newItems.push(item);
+    }
+    
+    // If not inserted yet, add at the end
+    if (!inserted) {
+        newItems.push(draggedItem);
+    }
+    
+    // Extract IDs in the new order
+    const itemIds = [];
+    const groupIds = [];
+    
+    newItems.forEach(item => {
+        if (item.classList.contains('combined-group')) {
+            const groupId = item.dataset.groupId;
+            if (groupId) {
+                groupIds.push(parseInt(groupId));
+            }
+        } else {
+            const itemId = item.dataset.itemId;
+            if (itemId) {
+                itemIds.push(parseInt(itemId));
+            }
+        }
+    });
+    
+    console.log('calculateNewOrder - draggedItemId:', draggedItemId, 'draggedGroupId:', draggedGroupId);
+    console.log('calculateNewOrder - afterElement:', afterElement);
+    console.log('calculateNewOrder - newItems length:', newItems.length);
+    console.log('calculateNewOrder - result:', { itemIds, groupIds });
+    
+    return { itemIds, groupIds };
+};
+
+RetrospectiveBoard.prototype.isInGroupingZone = function(e, dropTarget) {
+    if (!dropTarget) return false;
+    
+    const rect = dropTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Define grouping zone as the center 50% of the item (both width and height)
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const groupingZoneWidth = rect.width * 0.5; // 50% of width
+    const groupingZoneHeight = rect.height * 0.5; // 50% of height
+    
+    const isInCenterX = Math.abs(x - centerX) < (groupingZoneWidth / 2);
+    const isInCenterY = Math.abs(y - centerY) < (groupingZoneHeight / 2);
+    
+    // Only consider it grouping if drop is in the center zone
+    return isInCenterX && isInCenterY;
+};
+
+RetrospectiveBoard.prototype.showGroupingFeedback = function(targetItem) {
+    // Remove any existing feedback
+    this.hideAllFeedback();
+    
+    // Add grouping visual feedback
+    targetItem.classList.add('grouping-target');
+    targetItem.style.border = '3px solid #28a745';
+    targetItem.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+};
+
+RetrospectiveBoard.prototype.showReorderingFeedback = function(container, clientY) {
+    // Remove any existing feedback
+    this.hideAllFeedback();
+    
+    // Show reordering placeholder
+    this.showDropPlaceholder(container, clientY);
+};
+
+RetrospectiveBoard.prototype.hideAllFeedback = function() {
+    // Remove grouping feedback
+    const groupingTargets = document.querySelectorAll('.grouping-target');
+    groupingTargets.forEach(item => {
+        item.classList.remove('grouping-target');
+        item.style.border = '';
+        item.style.backgroundColor = '';
+    });
+    
+    // Remove reordering feedback
+    const containers = document.querySelectorAll('.review-column');
+    containers.forEach(container => {
+        this.hideDropPlaceholder(container);
+    });
+};
+
+RetrospectiveBoard.prototype.updateUIOrder = function(category, itemIds, groupIds) {
+    const container = document.getElementById(`${category}Items`);
+    if (!container) {
+        console.log('Container not found for category:', category);
+        return;
+    }
+    
+    console.log('Updating UI order for category:', category, 'itemIds:', itemIds, 'groupIds:', groupIds);
+    
+    // Get all current items in the container
+    const allItems = Array.from(container.querySelectorAll('.review-item'));
+    
+    // Create a map for quick lookup
+    const itemMap = new Map();
+    const groupMap = new Map();
+    
+    allItems.forEach(item => {
+        if (item.classList.contains('combined-group')) {
+            const groupId = item.dataset.groupId;
+            if (groupId) {
+                groupMap.set(parseInt(groupId), item);
+            }
+        } else {
+            const itemId = item.dataset.itemId;
+            if (itemId) {
+                itemMap.set(parseInt(itemId), item);
+            }
+        }
+    });
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Add items in the new order
+    let index = 0;
+    
+    // Add individual items first
+    itemIds.forEach(itemId => {
+        const item = itemMap.get(itemId);
+        if (item) {
+            container.appendChild(item);
+            index++;
+        }
+    });
+    
+    // Add groups
+    groupIds.forEach(groupId => {
+        const group = groupMap.get(groupId);
+        if (group) {
+            container.appendChild(group);
+            index++;
+        }
+    });
+    
+    console.log('UI order updated for category:', category, 'with', index, 'items');
+};
+
+RetrospectiveBoard.prototype.initDragHandlers = function() {
+    // Only initialize handlers once
+    if (this.dragHandlersInitialized) return;
+    this.dragHandlersInitialized = true;
+    
+    this.handleDragStart = (e) => {
+        console.log('=== DRAG START ===');
+        console.log('Target:', e.target.id);
+        
+        if (e.target.classList.contains('review-item') || e.target.classList.contains('combined-group')) {
+            this.draggedItem = e.target;
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            this.dropExecuted = false; // Reset drop flag
+            
+            console.log('Dragging class added to:', e.target.id);
+            
+            // Store initial order when drag starts
+            this.storeInitialOrder();
+            
+            // Clear any existing placeholders
+            const containers = document.querySelectorAll('.review-column');
+            containers.forEach(container => {
+                this.hideDropPlaceholder(container);
+                container.classList.remove('drag-over');
+            });
+            
+            // Set data for both items and groups
+            if (e.target.classList.contains('combined-group')) {
+                e.dataTransfer.setData('text/plain', 'group');
+            } else {
+                e.dataTransfer.setData('text/plain', 'item');
+            }
+        }
+    };
+
+    this.handleDragEnd = (e) => {
+        console.log('=== DRAG END ===');
+        console.log('Element with dragging class:', document.querySelector('.dragging')?.id);
+        console.log('Drop executed:', this.dropExecuted);
+        
+        // Immediate cleanup of placeholders and visual feedback
+        const allContainers = document.querySelectorAll('.items-container');
+        allContainers.forEach(container => {
+            this.hideDropPlaceholder(container);
+            container.classList.remove('drag-over');
+        });
+        
+        // Cleanup after drop has had time to execute
+        setTimeout(() => {
+            console.log('=== DRAG END TIMEOUT ===');
+            
+            // Only remove dragging class if drop didn't handle it
+            if (!this.dropExecuted) {
+                const stillDragging = document.querySelector('.dragging');
+                if (stillDragging) {
+                    console.log('No drop executed, removing dragging class from:', stillDragging.id);
+                    stillDragging.classList.remove('dragging');
+                }
+            }
+            
+            // Final cleanup - remove any remaining placeholders
+            const remainingPlaceholders = document.querySelectorAll('.drop-placeholder');
+            remainingPlaceholders.forEach(p => p.remove());
+            
+            // Reset flags
+            this.draggedItem = null;
+            this.dropExecuted = false;
+        }, 100);
+    };
+
+    this.handleDragOver = (e) => {
+        // console.log('DRAGOVER on:', e.currentTarget.id); // Too verbose
+        e.preventDefault();
+        // e.stopPropagation(); // DON'T stop propagation
+        e.dataTransfer.dropEffect = 'move';
+        
+        const container = e.currentTarget;
+        const category = container.id.replace('Items', '');
+        container.classList.add('drag-over');
+        
+        // Show visual feedback for reordering
+        if (this.draggedItem) {
+            this.showDropPlaceholder(container, e.clientY);
+        }
+    };
+
+    this.handleDragLeave = (e) => {
+        const container = e.currentTarget;
+        if (!container.contains(e.relatedTarget)) {
+            container.classList.remove('drag-over');
+            this.hideDropPlaceholder(container);
+        }
+    };
+
+    this.handleDrop = (e) => {
+        console.log('=== DROP EVENT ===');
+        console.log('Drop on container:', e.currentTarget.id);
+        console.log('Drop target:', e.target.id);
+        
+        e.preventDefault();
+        e.stopPropagation();
+        const container = e.currentTarget;
+        const category = container.id.replace('Items', '');
+        
+        container.classList.remove('drag-over');
+        this.hideDropPlaceholder(container);
+
+        // Find the dragged item by class instead of this.draggedItem
+        const draggedItem = document.querySelector('.dragging');
+        console.log('Found dragged item:', draggedItem?.id);
+        console.log('Elements with .dragging class:', document.querySelectorAll('.dragging').length);
+        
+        if (!draggedItem) {
+            console.log('No dragged item found, returning');
+            return;
+        }
+
+        const draggedItemId = draggedItem.dataset.itemId ? parseInt(draggedItem.dataset.itemId) : null;
+        const draggedCategory = draggedItem.dataset.category;
+        const isDraggedGroup = draggedItem.classList.contains('combined-group');
+
+        // Check if we're reordering within the same column
+        if (draggedCategory === category) {
+            // Check if we're dropping on another item (grouping) or empty space (reordering)
+            const dropTarget = e.target.closest('.review-item');
+            
+            if (dropTarget && dropTarget !== draggedItem) {
+                // This is grouping
+                const targetItemId = dropTarget.dataset.itemId ? parseInt(dropTarget.dataset.itemId) : null;
+                const isTargetGroup = dropTarget.classList.contains('combined-group');
+                
+                if (!isDraggedGroup && draggedItemId && targetItemId && !isTargetGroup) {
+                    // Create group with these two individual items
+                    const targetPosition = this.getItemPositionInColumn(dropTarget, category);
+                    this.createGroupFromItems([draggedItemId, targetItemId], category, targetPosition);
+                } else if (!isDraggedGroup && draggedItemId && isTargetGroup) {
+                    // Add individual item to existing group
+                    const groupElement = dropTarget.closest('.review-item.combined-group');
+                    if (groupElement) {
+                        this.addItemToExistingGroup(draggedItemId, groupElement);
+                    }
+                } else if (isDraggedGroup && targetItemId && !isTargetGroup) {
+                    // Add individual item to dragged group
+                    const groupElement = draggedItem;
+                    if (groupElement) {
+                        this.addItemToExistingGroup(targetItemId, groupElement);
+                    }
+                }
+            } else {
+                // This is reordering
+                const newOrder = this.calculateNewOrder(container, draggedItem, e.clientY);
+                const orderChanged = this.hasOrderChanged(category, newOrder.itemIds, newOrder.groupIds);
+                
+                if (orderChanged) {
+                    console.log('Order changed, updating UI for category:', category);
+                    // Update UI immediately
+                    this.updateUIOrder(category, newOrder.itemIds, newOrder.groupIds);
+                    // Send reorder request to server
+                    this.reorderItemsInColumn(category, newOrder.itemIds, newOrder.groupIds);
+                } else {
+                    console.log('Order unchanged for category:', category);
+                }
+            }
+        } else {
+            // Cross-column grouping
+            const dropTarget = e.target.closest('.review-item');
+            
+            if (dropTarget && dropTarget !== draggedItem) {
+                const targetItemId = dropTarget.dataset.itemId ? parseInt(dropTarget.dataset.itemId) : null;
+                const isTargetGroup = dropTarget.classList.contains('combined-group');
+                
+                if (!isDraggedGroup && draggedItemId && targetItemId && !isTargetGroup) {
+                    const targetPosition = this.getItemPositionInColumn(dropTarget, category);
+                    this.createGroupFromItems([draggedItemId, targetItemId], category, targetPosition);
+                } else if (!isDraggedGroup && draggedItemId && isTargetGroup) {
+                    const groupElement = dropTarget.closest('.review-item.combined-group');
+                    if (groupElement) {
+                        this.addItemToExistingGroup(draggedItemId, groupElement);
+                    }
+                } else if (isDraggedGroup && targetItemId && !isTargetGroup) {
+                    const groupElement = draggedItem;
+                    if (groupElement) {
+                        this.addItemToExistingGroup(targetItemId, groupElement);
+                    }
+                }
+            }
+        }
+        
+        // Remove dragging class immediately after drop
+        draggedItem.classList.remove('dragging');
+    };
 };
 
     RetrospectiveBoard.prototype.reorderItemsInColumn = async function(category, itemIds, groupIds) {
@@ -1285,8 +1916,9 @@ RetrospectiveBoard.prototype.getDragAfterElement = function(container, y) {
 
         if (response.ok) {
             const data = await response.json();
-            // Reload review data to show the new order
-            this.loadReviewData();
+            console.log('Reorder successful for category:', category);
+            // Don't reload data - the UI should already be in the correct state
+            // The WebSocket message will handle updates for other clients
         } else {
             console.error('Failed to reorder items:', response.status);
         }
@@ -1336,6 +1968,8 @@ RetrospectiveBoard.prototype.createCombinedGroupElement = function(groupItems, c
     itemDiv.className = `review-item ${category} combined-group`;
     itemDiv.draggable = this.isFacilitator; // Make groups draggable for facilitators
     
+    // Set dataset properties for groups
+    itemDiv.dataset.category = category;
     // Group ID will be set by the caller
     
     // Create content with paragraphs separated by dotted line
@@ -1380,7 +2014,16 @@ RetrospectiveBoard.prototype.createReviewItemElement = function(item) {
 };
 
 RetrospectiveBoard.prototype.initReviewDragAndDrop = function() {
+    console.log('=== INIT REVIEW DRAG AND DROP ===');
+    console.log('isFacilitator:', this.isFacilitator);
+    
     if (!this.isFacilitator) return;
+
+    // Initialize drag handlers once
+    if (!this.dragHandlersInitialized) {
+        console.log('Initializing drag handlers...');
+        this.initDragHandlers();
+    }
 
     const categories = ['wrong', 'good', 'improved', 'random'];
     
@@ -1389,172 +2032,228 @@ RetrospectiveBoard.prototype.initReviewDragAndDrop = function() {
         if (!container) return;
         
         // Remove existing event listeners to prevent duplicates
-        container.removeEventListener('dragstart', this.handleDragStart);
-        container.removeEventListener('dragend', this.handleDragEnd);
         container.removeEventListener('dragover', this.handleDragOver);
         container.removeEventListener('dragleave', this.handleDragLeave);
         container.removeEventListener('drop', this.handleDrop);
 
-        // Add drag event listeners to items in this column
-        this.handleDragStart = (e) => {
-            if (e.target.classList.contains('review-item')) {
-                this.draggedItem = e.target;
-                e.target.classList.add('dragging');
-                e.dataTransfer.effectAllowed = 'move';
-                
-                // Set data for both items and groups
-                if (e.target.classList.contains('combined-group')) {
-                    e.dataTransfer.setData('text/plain', 'group');
-                } else {
-                    e.dataTransfer.setData('text/plain', 'item');
-                }
-            }
-        };
-
-        this.handleDragEnd = (e) => {
-            if (e.target.classList.contains('review-item')) {
-                e.target.classList.remove('dragging');
-                this.draggedItem = null;
-            }
-        };
-
-        this.handleDragOver = (e) => {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            container.classList.add('drag-over');
-            
-            // If reordering within the same column, show visual feedback
-            if (this.draggedItem && this.draggedItem.dataset.category === category) {
-                // Check if we're hovering over another item (grouping) or empty space (reordering)
-                const dropTarget = e.target.closest('.review-item');
-                
-                if (dropTarget && dropTarget !== this.draggedItem) {
-                    // This is grouping - don't move the element visually
-                    return;
-                } else {
-                    // This is reordering - show visual feedback for both items and groups
-                    const afterElement = this.getDragAfterElement(container, e.clientY);
-                    const dragging = this.draggedItem;
-                    
-                    if (dragging && dragging instanceof Node) {
-                        if (afterElement == null) {
-                            container.appendChild(dragging);
-                        } else {
-                            container.insertBefore(dragging, afterElement);
-                        }
-                    }
-                }
-            }
-        };
-
-        this.handleDragLeave = (e) => {
-            if (!container.contains(e.relatedTarget)) {
-                container.classList.remove('drag-over');
-            }
-        };
-
-        this.handleDrop = (e) => {
-            e.preventDefault();
-            container.classList.remove('drag-over');
-
-            if (!this.draggedItem) return;
-
-            const draggedItemId = parseInt(this.draggedItem.dataset.itemId);
-            const draggedCategory = this.draggedItem.dataset.category;
-            const isDraggedGroup = this.draggedItem.classList.contains('combined-group');
-
-            // Check if we're reordering within the same column
-            if (draggedCategory === category) {
-                // Check if we're dropping on another item (grouping) or empty space (reordering)
-                const dropTarget = e.target.closest('.review-item');
-                
-                if (dropTarget && dropTarget !== this.draggedItem) {
-                    // This is grouping within the same column
-                    const targetItemId = parseInt(dropTarget.dataset.itemId);
-                    const isTargetGroup = dropTarget.classList.contains('combined-group');
-                    
-                    if (!isDraggedGroup && !isNaN(targetItemId) && !isTargetGroup) {
-                        // Create group with these two individual items
-                        this.createGroupFromItems([draggedItemId, targetItemId], category);
-                    } else if (!isDraggedGroup && isTargetGroup) {
-                        // Add individual item to existing group
-                        const groupElement = dropTarget.closest('.review-item.combined-group');
-                        if (groupElement) {
-                            const groupItems = this.findItemsInGroup(groupElement);
-                            if (groupItems.length > 0) {
-                                this.addItemToExistingGroup(draggedItemId, groupElement);
-                            }
-                        }
-                    } else if (isDraggedGroup && !isTargetGroup && !isNaN(targetItemId)) {
-                        // Add individual item to dragged group
-                        const groupElement = this.draggedItem;
-                        if (groupElement) {
-                            this.addItemToExistingGroup(targetItemId, groupElement);
-                        }
-                    }
-                    // Note: Group-to-group merging is not implemented to avoid complexity
-                } else {
-                    // This is reordering within the same column (dropped on empty space)
-                    const items = Array.from(container.querySelectorAll('.review-item'));
-                    const itemIds = [];
-                    const groupIds = [];
-
-                    items.forEach(item => {
-                        if (item.classList.contains('combined-group')) {
-                            const groupId = item.dataset.groupId;
-                            if (groupId) {
-                                groupIds.push(parseInt(groupId));
-                            }
-                        } else {
-                            const itemId = item.dataset.itemId;
-                            if (itemId) {
-                                itemIds.push(parseInt(itemId));
-                            }
-                        }
-                    });
-
-                    // Send reorder request to server
-                    this.reorderItemsInColumn(category, itemIds, groupIds);
-                }
-                return;
-            }
-
-            // Allow dropping on any column (cross-column grouping)
-            // Find the drop target (another item in the target column)
-            const dropTarget = e.target.closest('.review-item');
-            
-            if (dropTarget && dropTarget !== this.draggedItem) {
-                const targetItemId = parseInt(dropTarget.dataset.itemId);
-                
-                // Only proceed if targetItemId is valid (not NaN)
-                if (!isNaN(targetItemId)) {
-                    // Create group with these two items in the target column's category
-                    this.createGroupFromItems([draggedItemId, targetItemId], category);
-                } else {
-                    // Dropped on a group - add the dragged item to the existing group
-                    const groupElement = dropTarget.closest('.review-item.combined-group');
-                    if (groupElement) {
-                        // Find all items in this group
-                        const groupItems = this.findItemsInGroup(groupElement);
-                        if (groupItems.length > 0) {
-                            // Add the dragged item to the existing group
-                            this.addItemToExistingGroup(draggedItemId, groupElement);
-                        }
-                    }
-                }
-            } else if (!dropTarget) {
-                // Dropped on empty space in the column - this should not create a group
-                // Just return without doing anything
-                return;
-            }
-        };
-
-        container.addEventListener('dragstart', this.handleDragStart);
-        container.addEventListener('dragend', this.handleDragEnd);
+        // Add event listeners to container
         container.addEventListener('dragover', this.handleDragOver);
         container.addEventListener('dragleave', this.handleDragLeave);
         container.addEventListener('drop', this.handleDrop);
+        
+        // Debug: test if drop event is being registered
+        container.addEventListener('drop', (e) => {
+            console.log('DROP EVENT CAPTURED on:', container.id);
+        }, true);
+        
+        // Add drag listeners to individual items
+        const items = container.querySelectorAll('.review-item, .combined-group');
+        console.log(`Found ${items.length} items in ${category}`);
+        items.forEach(item => {
+            item.removeEventListener('dragstart', this.handleDragStart);
+            item.removeEventListener('dragend', this.handleDragEnd);
+            item.addEventListener('dragstart', this.handleDragStart);
+            item.addEventListener('dragend', this.handleDragEnd);
+            
+            // Also add drop listener to items - for grouping
+            item.addEventListener('drop', (e) => {
+                console.log('DROP on ITEM:', item.id);
+                e.preventDefault();
+                e.stopPropagation(); // Don't let it bubble to container
+                
+                // Set flag to indicate drop was executed
+                this.dropExecuted = true;
+                
+                const draggedItem = document.querySelector('.dragging');
+                if (!draggedItem || draggedItem === item) {
+                    console.log('No valid dragged item for grouping');
+                    return;
+                }
+                
+                const container = item.closest('.items-container');
+                const category = container.id.replace('Items', '');
+                
+                // This is grouping (drop on another item)
+                const draggedItemId = draggedItem.dataset.itemId ? parseInt(draggedItem.dataset.itemId) : null;
+                const targetItemId = item.dataset.itemId ? parseInt(item.dataset.itemId) : null;
+                const isDraggedGroup = draggedItem.classList.contains('combined-group');
+                const isTargetGroup = item.classList.contains('combined-group');
+                
+                console.log('Grouping:', draggedItemId, 'with', targetItemId);
+                
+                if (!isDraggedGroup && draggedItemId && targetItemId && !isTargetGroup) {
+                    // Create group with these two individual items
+                    const targetPosition = this.getItemPositionInColumn(item, category);
+                    this.createGroupFromItems([draggedItemId, targetItemId], category, targetPosition);
+                }
+                
+                // Remove dragging class immediately after processing
+                draggedItem.classList.remove('dragging');
+                container.classList.remove('drag-over');
+            });
+            
+            // Add dragover to items to allow drop
+            item.addEventListener('dragover', (e) => {
+                console.log('DRAGOVER on ITEM:', item.id);
+                e.preventDefault();
+                // DON'T stop propagation - let it bubble to container
+            });
+        });
     });
+};
+
+RetrospectiveBoard.prototype.updateItemOrder = function(category) {
+    const container = document.getElementById(`${category}Items`);
+    if (!container) return;
+    
+    const items = container.querySelectorAll('.review-item, .combined-group');
+    const itemIds = [];
+    const groupIds = [];
+    
+    items.forEach(item => {
+        if (item.classList.contains('combined-group')) {
+            groupIds.push(parseInt(item.dataset.groupId));
+        } else {
+            itemIds.push(parseInt(item.dataset.itemId));
+        }
+    });
+    
+    // Send to backend
+    fetch(`/retrospective/${window.retrospectiveId}/reorder-items`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            category: category,
+            item_ids: itemIds,
+            group_ids: groupIds
+        })
+    }).then(response => response.json())
+    .then(data => {
+        console.log('Order updated:', data);
+    });
+};
+
+RetrospectiveBoard.prototype.checkForGrouping = function(item, x, y) {
+    const itemId = parseInt(item.id.replace('item-', ''));
+    const threshold = 100; // Distance threshold for grouping
+
+    // Find nearby items
+    const nearbyItems = this.reviewItems.filter(otherItem => {
+        if (otherItem.id === itemId) return false;
+        
+        const otherElement = document.getElementById(`item-${otherItem.id}`);
+        if (!otherElement) return false;
+
+        const otherRect = otherElement.getBoundingClientRect();
+        const distance = Math.sqrt(
+            Math.pow(otherRect.left - x, 2) + Math.pow(otherRect.top - y, 2)
+        );
+        
+        return distance < threshold;
+    });
+
+    if (nearbyItems.length > 0) {
+        // Create group with nearby items
+        this.createGroupFromItems([itemId, ...nearbyItems.map(i => i.id)], x, y);
+    }
+};
+
+RetrospectiveBoard.prototype.getItemPositionInColumn = function(targetElement, category) {
+    // Find the column container
+    const column = document.querySelector(`.review-column[data-category="${category}"]`);
+    if (!column) return 0;
+    
+    // Get all items in the column
+    const items = Array.from(column.querySelectorAll('.review-item'));
+    
+    // Find the index of the target element
+    const targetIndex = items.indexOf(targetElement);
+    
+    // Return the position (index) of the target element
+    return targetIndex >= 0 ? targetIndex : items.length;
+};
+
+RetrospectiveBoard.prototype.createGroupFromItems = async function(itemIds, category, targetPosition = null) {
+    try {
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
+        console.log('CSRF Token:', csrfToken);
+        console.log('Request data:', { itemIds, category });
+        console.log('All meta tags:', document.querySelectorAll('meta[name*="csrf"]'));
+        
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/create-group`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-Token': csrfToken || ''
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                itemIds: itemIds,
+                category: category,
+                targetPosition: targetPosition,
+                _token: csrfToken
+            })
+        });
+        
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.log('Response text:', errorText);
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        console.log('Group created successfully:', result);
+        
+        // Don't reload here - WebSocket will trigger reload via handleGroupCreated
+        // if (result.success) {
+        //     await this.loadReviewData();
+        // }
+        
+    } catch (error) {
+        console.error('Failed to create group:', error);
+    }
+};
+
+    RetrospectiveBoard.prototype.separateItemFromGroup = async function(itemId, category) {
+        try {
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name="csrf-token-separate"]')?.getAttribute('content');
+        
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/separate-item`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'X-CSRF-Token': csrfToken || ''
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                itemId: itemId,
+                _token: csrfToken
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            // Reload review data to show the separated item
+            this.loadReviewData();
+        } else {
+            console.error('Failed to separate item:', response.status);
+        }
+    } catch (error) {
+        console.error('Error separating item:', error);
+    }
 };
 
 RetrospectiveBoard.prototype.checkForGrouping = function(item, x, y) {
@@ -1581,7 +2280,22 @@ RetrospectiveBoard.prototype.checkForGrouping = function(item, x, y) {
     }
 };
 
-RetrospectiveBoard.prototype.createGroupFromItems = async function(itemIds, category) {
+RetrospectiveBoard.prototype.getItemPositionInColumn = function(targetElement, category) {
+    // Find the column container
+    const column = document.querySelector(`.review-column[data-category="${category}"]`);
+    if (!column) return 0;
+    
+    // Get all items in the column
+    const items = Array.from(column.querySelectorAll('.review-item'));
+    
+    // Find the index of the target element
+    const targetIndex = items.indexOf(targetElement);
+    
+    // Return the position (index) of the target element
+    return targetIndex >= 0 ? targetIndex : items.length;
+};
+
+RetrospectiveBoard.prototype.createGroupFromItems = async function(itemIds, category, targetPosition = null) {
     try {
         // Get CSRF token
         const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
@@ -1602,6 +2316,7 @@ RetrospectiveBoard.prototype.createGroupFromItems = async function(itemIds, cate
             body: JSON.stringify({
                 itemIds: itemIds,
                 category: category,
+                targetPosition: targetPosition,
                 _token: csrfToken
             })
         });
@@ -1658,33 +2373,3 @@ RetrospectiveBoard.prototype.createGroupFromItems = async function(itemIds, cate
     }
 };
 
-RetrospectiveBoard.prototype.checkReviewUpdates = async function() {
-    try {
-        const response = await fetch(`/retrospectives/${this.retrospectiveId}/review-data`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest',
-                'Accept': 'application/json'
-            },
-            credentials: 'same-origin'
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            const newItems = data.items || [];
-            const newGroups = data.groups || [];
-            
-            // Check if data has changed
-            if (JSON.stringify(newItems) !== JSON.stringify(this.reviewItems) ||
-                JSON.stringify(newGroups) !== JSON.stringify(this.reviewGroups)) {
-                
-                this.reviewItems = newItems;
-                this.reviewGroups = newGroups;
-                this.renderReviewBoard();
-            }
-        }
-    } catch (error) {
-        console.error('Error checking review updates:', error);
-    }
-};
