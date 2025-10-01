@@ -1,10 +1,11 @@
 /* Retrospective Board Styles */
 .retrospective-board {
-    background: #f8f9fa;
-    border-radius: 12px;
-    padding: 2rem;
-    margin: 2rem 0;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Remove background in feedback phase - let columns take full space */
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    margin: 0;
+    box-shadow: none;
 }
 
 /* Floating Timer */

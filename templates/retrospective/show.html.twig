@@ -7,6 +7,7 @@
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/retrospective-board.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/discussion-phase.css') }}">
 {% endblock %}
 
 {% block head %}
@@ -65,8 +66,9 @@
                     
                     <div class="items-container" id="wrongItems">
                         {% for item in wrongItems %}
-                        <div class="post-it wrong" data-id="{{ item.id }}">
+                        <div class="post-it wrong" data-item-id="{{ item.id }}">
                             <div class="post-it-content">{{ item.content }}</div>
+                            <div class="post-it-delete">×</div>
                         </div>
                         {% endfor %}
                     </div>
@@ -85,8 +87,9 @@
                     
                     <div class="items-container" id="goodItems">
                         {% for item in goodItems %}
-                        <div class="post-it good" data-id="{{ item.id }}">
+                        <div class="post-it good" data-item-id="{{ item.id }}">
                             <div class="post-it-content">{{ item.content }}</div>
+                            <div class="post-it-delete">×</div>
                         </div>
                         {% endfor %}
                     </div>
@@ -105,8 +108,9 @@
                     
                     <div class="items-container" id="improvedItems">
                         {% for item in improvedItems %}
-                        <div class="post-it improved" data-id="{{ item.id }}">
+                        <div class="post-it improved" data-item-id="{{ item.id }}">
                             <div class="post-it-content">{{ item.content }}</div>
+                            <div class="post-it-delete">×</div>
                         </div>
                         {% endfor %}
                     </div>
@@ -125,8 +129,9 @@
                     
                     <div class="items-container" id="randomItems">
                         {% for item in randomItems %}
-                        <div class="post-it random" data-id="{{ item.id }}">
+                        <div class="post-it random" data-item-id="{{ item.id }}">
                             <div class="post-it-content">{{ item.content }}</div>
+                            <div class="post-it-delete">×</div>
                         </div>
                         {% endfor %}
                     </div>
@@ -378,13 +383,55 @@
         </div>
 
         {% elseif retrospective.isActive() and retrospective.isInStep('actions') %}
-        <!-- Actions Phase -->
+        <!-- Action Phase -->
         <div class="actions-phase">
-            <h2>Action Items Phase</h2>
-            <p>Create action items based on the feedback.</p>
+            <div class="review-header">
+                <h2>Action Phase</h2>
+                <p>Review items sorted by votes and create action items</p>
+            </div>
             
+            <div class="discussion-container">
+                {% if sortedItemsWithVotes|length > 0 %}
+                    {% for element in sortedItemsWithVotes %}
+                        {% if element.type == 'item' %}
+                            {% set item = element.entity %}
+                            <div class="discussion-card {{ element.category }}">
+                                <div class="category-indicator {{ element.category }}"></div>
+                                <div class="card-content">
+                                    <div class="card-text">{{ item.content }}</div>
+                                    <div class="card-footer">
+                                        <span class="total-votes">{{ element.totalVotes }} {{ element.totalVotes == 1 ? 'vote' : 'votes' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            {% set group = element.entity %}
+                            <div class="discussion-card {{ element.category }} combined-group">
+                                <div class="category-indicator {{ element.category }}"></div>
+                                <div class="card-content">
+                                    <div class="card-text">
+                                        {% for groupItem in group.items %}
+                                            <div class="item-paragraph">{{ groupItem.content }}</div>
+                                            {% if not loop.last %}
+                                                <div class="item-separator"></div>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </div>
+                                    <div class="card-footer">
+                                        <span class="group-count">{{ group.items|length }} items</span>
+                                        <span class="total-votes">{{ element.totalVotes }} {{ element.totalVotes == 1 ? 'vote' : 'votes' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="no-items">No items to discuss yet.</p>
+                {% endif %}
+            </div>
+
             {% if retrospective.facilitator == app.user or retrospective.team.owner == app.user %}
-            <div class="add-action-section">
+            <div class="add-action-section" style="margin-top: 2rem;">
                 <a href="{{ path('app_retrospectives_add_action', {'id': retrospective.id}) }}" class="btn btn-primary">
                     Add Action Item
                 </a>
@@ -392,7 +439,8 @@
             {% endif %}
 
             {% if actions|length > 0 %}
-            <div class="actions-list">
+            <div class="actions-list" style="margin-top: 2rem;">
+                <h3>Action Items</h3>
                 {% for action in actions %}
                 <div class="action-item">
                     <div class="action-content">
@@ -494,7 +542,7 @@
     </script>
     
     <!-- Floating Timer -->
-    <div class="floating-timer" id="floatingTimer">
+    <div class="floating-timer" id="floatingTimer" {% if retrospective.isInStep('actions') %}style="display: none;"{% endif %}>
         {% if retrospective.facilitator == app.user %}
         <div class="timer-label" style="font-size: 0.8rem; font-weight: bold; color: #6c757d; margin-bottom: 0.5rem; text-align: center;">Set timer</div>
         <div class="timer-controls">
@@ -543,4 +591,21 @@
             }
         });
     </script>
+    
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-modal-content">
+            <div class="confirm-modal-header">
+                <div class="confirm-modal-icon">!</div>
+                <h3 class="confirm-modal-title" id="confirmModalTitle">Confirm Action</h3>
+            </div>
+            <div class="confirm-modal-body" id="confirmModalBody">
+                Are you sure you want to proceed?
+            </div>
+            <div class="confirm-modal-footer">
+                <button class="confirm-modal-btn confirm-modal-btn-cancel" id="confirmModalCancel">Cancel</button>
+                <button class="confirm-modal-btn confirm-modal-btn-confirm" id="confirmModalConfirm">Confirm</button>
+            </div>
+        </div>
+    </div>
 {% endblock %}

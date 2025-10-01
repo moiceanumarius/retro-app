@@ -161,6 +161,12 @@ class RetrospectiveController extends AbstractController
         $actions = $this->entityManager->getRepository(RetrospectiveAction::class)
             ->findBy(['retrospective' => $retrospective], ['createdAt' => 'ASC']);
 
+        // Prepare sorted items with aggregated votes for actions phase
+        $sortedItemsWithVotes = [];
+        if ($retrospective->isInStep('actions')) {
+            $sortedItemsWithVotes = $this->getItemsWithAggregatedVotes($items, $groups);
+        }
+
         // Get connected users (simplified - in real app you'd use Redis or similar)
         $connectedUsers = $this->getConnectedUsers($id);
 
@@ -178,6 +184,7 @@ class RetrospectiveController extends AbstractController
             'goodCombined' => $goodCombined,
             'improvedCombined' => $improvedCombined,
             'randomCombined' => $randomCombined,
+            'sortedItemsWithVotes' => $sortedItemsWithVotes,
             'actions' => $actions,
             'connectedUsers' => $connectedUsers,
         ]);
@@ -1250,6 +1257,83 @@ class RetrospectiveController extends AbstractController
         usort($combined, fn($a, $b) => $a['position'] <=> $b['position']);
         
         return $combined;
+    }
+
+    private function getItemsWithAggregatedVotes(array $items, array $groups): array
+    {
+        $combined = [];
+        
+        // Process individual items (not in groups)
+        foreach ($items as $item) {
+            if (!$item->getGroup()) {
+                // Get total votes for this item
+                $totalVotes = $this->entityManager
+                    ->getRepository(\App\Entity\Vote::class)
+                    ->createQueryBuilder('v')
+                    ->select('SUM(v.voteCount)')
+                    ->where('v.retrospectiveItem = :item')
+                    ->setParameter('item', $item)
+                    ->getQuery()
+                    ->getSingleScalarResult() ?? 0;
+                
+                $combined[] = [
+                    'type' => 'item',
+                    'entity' => $item,
+                    'totalVotes' => (int)$totalVotes,
+                    'category' => $this->getItemCategory($item)
+                ];
+            }
+        }
+        
+        // Process groups
+        foreach ($groups as $group) {
+            // Sum votes for all items in the group
+            $totalVotes = 0;
+            foreach ($group->getItems() as $groupItem) {
+                $itemVotes = $this->entityManager
+                    ->getRepository(\App\Entity\Vote::class)
+                    ->createQueryBuilder('v')
+                    ->select('SUM(v.voteCount)')
+                    ->where('v.retrospectiveItem = :item')
+                    ->setParameter('item', $groupItem)
+                    ->getQuery()
+                    ->getSingleScalarResult() ?? 0;
+                $totalVotes += (int)$itemVotes;
+            }
+            
+            $combined[] = [
+                'type' => 'group',
+                'entity' => $group,
+                'totalVotes' => $totalVotes,
+                'category' => $this->getGroupCategory($group)
+            ];
+        }
+        
+        // Sort by total votes (descending)
+        usort($combined, fn($a, $b) => $b['totalVotes'] <=> $a['totalVotes']);
+        
+        return $combined;
+    }
+
+    private function getItemCategory($item): string
+    {
+        if ($item->isWrong()) return 'wrong';
+        if ($item->isGood()) return 'good';
+        if ($item->isImproved()) return 'improved';
+        if ($item->isRandom()) return 'random';
+        return 'unknown';
+    }
+
+    private function getGroupCategory($group): string
+    {
+        $positionX = $group->getPositionX();
+        return match($positionX) {
+            0 => 'wrong',
+            1 => 'good',
+            2 => 'improved',
+            3 => 'random',
+            default => 'unknown'
+        };
     }
 
     private function hasTeamAccess(Team $team): bool

@@ -1,0 +1,130 @@
+/* Discussion Phase Styles (Actions Step) */
+
+.discussion-container {
+    max-width: 100%;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.discussion-card {
+    display: flex;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.discussion-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.category-indicator {
+    width: 8px;
+    flex-shrink: 0;
+}
+
+.category-indicator.wrong {
+    background-color: #dc3545;
+}
+
+.category-indicator.good {
+    background-color: #28a745;
+}
+
+.category-indicator.improved {
+    background-color: #ffc107;
+}
+
+.category-indicator.random {
+    background-color: #007bff;
+}
+
+.card-content {
+    flex: 1;
+    padding: 1.5rem;
+}
+
+.card-text {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid #e9ecef;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+.group-count {
+    font-weight: 500;
+    color: #495057;
+}
+
+.total-votes {
+    font-weight: bold;
+    color: #007bff;
+    padding: 0.25rem 0.75rem;
+    background: #e7f3ff;
+    border-radius: 12px;
+}
+
+.no-items {
+    text-align: center;
+    color: #6c757d;
+    padding: 3rem;
+    font-size: 1.1rem;
+}
+
+/* Item separator for groups */
+.discussion-card .item-paragraph {
+    margin: 0.5rem 0;
+}
+
+.discussion-card .item-separator {
+    height: 1px;
+    background: #dee2e6;
+    margin: 0.75rem 0;
+}
+
+/* Action Items Section */
+.actions-list {
+    margin-top: 2rem;
+}
+
+.actions-list h3 {
+    color: #333;
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+}
+
+.add-action-section {
+    text-align: center;
+    margin: 2rem 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .discussion-container {
+        padding: 0 0.5rem;
+    }
+    
+    .card-content {
+        padding: 1rem;
+    }
+    
+    .card-footer {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
+

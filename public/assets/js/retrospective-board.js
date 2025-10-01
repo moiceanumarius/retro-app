@@ -44,6 +44,14 @@ class RetrospectiveBoard {
                 this.loadUserVotes();
             }
         }
+        
+        // Hide timer in action phase
+        if (this.isInActionStep()) {
+            const floatingTimer = document.getElementById('floatingTimer');
+            if (floatingTimer) {
+                floatingTimer.style.display = 'none';
+            }
+        }
     }
     
     bindEvents() {
@@ -164,8 +172,8 @@ class RetrospectiveBoard {
         const setTimerLabel = floatingTimer ? floatingTimer.querySelector('.timer-label') : null;
         
         if (timerDisplay && timerTime) {
-            // Show floating timer
-            if (floatingTimer) {
+            // Show floating timer (only if not in action phase)
+            if (floatingTimer && this.shouldShowTimer()) {
                 floatingTimer.style.display = 'block';
             }
             
@@ -197,8 +205,8 @@ class RetrospectiveBoard {
         const timerStopped = document.getElementById('timerStopped');
         
         if (timerDisplay && timerTime) {
-            // Show floating timer
-            if (floatingTimer) {
+            // Show floating timer (only if not in action phase)
+            if (floatingTimer && this.shouldShowTimer()) {
                 floatingTimer.style.display = 'block';
             }
             
@@ -306,13 +314,13 @@ class RetrospectiveBoard {
             }
         }
         
-        // Keep floating timer visible for facilitator
-        if (floatingTimer && window.isFacilitator) {
+        // Keep floating timer visible for facilitator (but not in action phase)
+        if (floatingTimer && window.isFacilitator && this.shouldShowTimer()) {
             floatingTimer.style.display = 'block';
         }
         
-        // For members: show floating timer with "Timer stopped" message
-        if (floatingTimer && !window.isFacilitator) {
+        // For members: show floating timer with "Timer stopped" message (but not in action phase)
+        if (floatingTimer && !window.isFacilitator && this.shouldShowTimer()) {
             floatingTimer.style.display = 'block';
         }
     }
@@ -431,13 +439,12 @@ class RetrospectiveBoard {
             });
             
             
-            if (response.ok) {
-                const data = await response.json();
-                this.addPostItCard(category, data.item);
-                input.value = '';
-                this.updateItemCount(category);
-                this.showMessage('Feedback added successfully!', 'success');
-            } else {
+        if (response.ok) {
+            const data = await response.json();
+            // Don't add the card here - let WebSocket handle it to avoid duplicates
+            input.value = '';
+            this.showMessage('Feedback added successfully!', 'success');
+        } else {
                 const responseText = await response.text();
                 console.error('Add item error response:', responseText);
                 try {
@@ -463,7 +470,7 @@ class RetrospectiveBoard {
         
         const postIt = document.createElement('div');
         postIt.className = `post-it ${category}`;
-        postIt.dataset.id = item.id;
+        postIt.dataset.itemId = item.id;
         
         const now = new Date();
         const timeString = now.toLocaleTimeString('en-US', { 
@@ -502,15 +509,19 @@ class RetrospectiveBoard {
         const deleteBtn = postIt.querySelector('.post-it-delete');
         
         // Edit on click
-        content.addEventListener('click', () => {
-            this.editPostIt(postIt, itemId, category);
-        });
+        if (content) {
+            content.addEventListener('click', () => {
+                this.editPostIt(postIt, itemId, category);
+            });
+        }
         
         // Delete on click
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.deletePostIt(itemId, category);
-        });
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.deletePostIt(itemId, category);
+            });
+        }
     }
 
     editPostIt(postIt, itemId, category) {
@@ -595,7 +606,7 @@ class RetrospectiveBoard {
             if (response.ok) {
                 const data = await response.json();
                 // Update the post-it content and re-attach event listeners
-                const postIt = document.querySelector(`.post-it[data-id="${itemId}"]`);
+                const postIt = document.querySelector(`.post-it[data-item-id="${itemId}"]`);
                 if (postIt) {
                     const content = postIt.querySelector('.post-it-content');
                     content.textContent = newText;
@@ -612,8 +623,54 @@ class RetrospectiveBoard {
         }
     }
 
+    showConfirmModal(title, message) {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('confirmModal');
+            const titleEl = document.getElementById('confirmModalTitle');
+            const bodyEl = document.getElementById('confirmModalBody');
+            const cancelBtn = document.getElementById('confirmModalCancel');
+            const confirmBtn = document.getElementById('confirmModalConfirm');
+            
+            titleEl.textContent = title;
+            bodyEl.textContent = message;
+            
+            modal.classList.add('active');
+            
+            const handleConfirm = () => {
+                modal.classList.remove('active');
+                confirmBtn.removeEventListener('click', handleConfirm);
+                cancelBtn.removeEventListener('click', handleCancel);
+                modal.removeEventListener('click', handleBackdropClick);
+                resolve(true);
+            };
+            
+            const handleCancel = () => {
+                modal.classList.remove('active');
+                confirmBtn.removeEventListener('click', handleConfirm);
+                cancelBtn.removeEventListener('click', handleCancel);
+                modal.removeEventListener('click', handleBackdropClick);
+                resolve(false);
+            };
+            
+            const handleBackdropClick = (e) => {
+                if (e.target === modal) {
+                    handleCancel();
+                }
+            };
+            
+            confirmBtn.addEventListener('click', handleConfirm);
+            cancelBtn.addEventListener('click', handleCancel);
+            modal.addEventListener('click', handleBackdropClick);
+        });
+    }
+    
     async deletePostIt(itemId, category) {
-        if (!confirm('Are you sure you want to delete this post?')) {
+        const confirmed = await this.showConfirmModal(
+            'Delete Post',
+            'Are you sure you want to delete this post? This action cannot be undone.'
+        );
+        
+        if (!confirmed) {
             return;
         }
         
@@ -631,16 +688,18 @@ class RetrospectiveBoard {
                 })
             });
             
+            const responseData = await response.json();
+            
             if (response.ok) {
                 // Remove the post-it from DOM
-                const postIt = document.querySelector(`.post-it[data-id="${itemId}"]`);
+                const postIt = document.querySelector(`.post-it[data-item-id="${itemId}"]`);
                 if (postIt) {
                     postIt.remove();
                 }
                 this.updateItemCount(category);
                 this.showMessage('Post deleted successfully!', 'success');
             } else {
-                this.showMessage('Failed to delete post', 'error');
+                this.showMessage(responseData.message || 'Failed to delete post', 'error');
             }
         } catch (error) {
             console.error('Error deleting post:', error);
@@ -650,16 +709,15 @@ class RetrospectiveBoard {
 
     addEventListenersToExistingPosts() {
         // Add event listeners to existing post-its
-        document.querySelectorAll('.post-it').forEach(postIt => {
-            const itemId = postIt.dataset.id;
-            const category = postIt.closest('.feedback-column').dataset.category;
+        const postIts = document.querySelectorAll('.post-it');
+        
+        postIts.forEach(postIt => {
+            const itemId = postIt.dataset.itemId;
+            const feedbackColumn = postIt.closest('.feedback-column');
+            const category = feedbackColumn?.dataset?.category;
             
-            // Add delete button if not exists
-            if (!postIt.querySelector('.post-it-delete')) {
-                const deleteBtn = document.createElement('div');
-                deleteBtn.className = 'post-it-delete';
-                deleteBtn.textContent = '×';
-                postIt.appendChild(deleteBtn);
+            if (!itemId || !category) {
+                return;
             }
             
             this.addPostItEventListeners(postIt, itemId, category);
@@ -762,10 +820,10 @@ class RetrospectiveBoard {
             // Always resync timer with server time
             this.timerEndTime = Date.now() + (data.remainingSeconds * 1000);
             
-            // Show floating timer and timer display if not already shown
+            // Show floating timer and timer display if not already shown (only if not in action phase)
             const floatingTimer = document.getElementById('floatingTimer');
             const timerDisplay = document.getElementById('timerDisplay');
-            if (floatingTimer) {
+            if (floatingTimer && this.shouldShowTimer()) {
                 floatingTimer.style.display = 'block';
             }
             if (timerDisplay) {
@@ -790,7 +848,7 @@ class RetrospectiveBoard {
             const timerDisplay = document.getElementById('timerDisplay');
             const timerTime = document.getElementById('timerTime');
             
-            if (floatingTimer) {
+            if (floatingTimer && this.shouldShowTimer()) {
                 floatingTimer.style.display = 'block';
             }
             if (timerDisplay && timerTime) {
@@ -1113,8 +1171,11 @@ class RetrospectiveBoard {
     }
     
     handleItemAdded(data) {
-        if (this.isInFeedbackStep()) {
-            this.loadFeedbackData();
+        // Check if item already exists in DOM to avoid duplicates
+        const existingItem = document.querySelector(`.post-it[data-item-id="${data.item?.id}"]`);
+        if (!existingItem && data.item) {
+            this.addPostItCard(data.item.category, data.item);
+            this.updateItemCount(data.item.category);
         }
     }
     
@@ -1186,14 +1247,6 @@ class RetrospectiveBoard {
         setTimeout(() => {
             window.location.reload();
         }, 1500);
-    }
-    
-    handleItemAdded(data) {
-        if (!this.isFacilitator) {
-            // Only add item for non-facilitators (facilitator already sees it from AJAX response)
-            this.addPostItCard(data.item.category, data.item);
-            this.updateItemCount(data.item.category);
-        }
     }
     
     showConnectionStatus(status) {
@@ -1297,6 +1350,16 @@ RetrospectiveBoard.prototype.isInReviewStep = function() {
 RetrospectiveBoard.prototype.isInDiscussionStep = function() {
     const isDiscussion = document.querySelector('.voting-phase') !== null;
     return isDiscussion;
+};
+
+RetrospectiveBoard.prototype.isInActionStep = function() {
+    const isAction = document.querySelector('.actions-phase') !== null;
+    return isAction;
+};
+
+RetrospectiveBoard.prototype.shouldShowTimer = function() {
+    // Don't show timer in action phase
+    return !this.isInActionStep();
 };
 
 RetrospectiveBoard.prototype.initReviewPhase = function() {
