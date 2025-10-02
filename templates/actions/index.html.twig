@@ -1002,6 +1002,10 @@
             flex-shrink: 0;
         }
 
+        .stat-card.total .stat-icon {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
         .stat-card.open .stat-icon {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
         }
@@ -1098,11 +1102,24 @@
 
     {% if actions|length > 0 %}
         <!-- Stats Overview -->
-        <div class="stats-row">
+        <div class = "stats-row">
+            {% set totalActions = (statusStats['pending'] ?? 0) + (statusStats['open'] ?? 0) + (statusStats['in-progress'] ?? 0) + (statusStats['completed'] ?? 0) + (statusStats['cancelled'] ?? 0) %}
             {% set openActions = (statusStats['pending'] ?? 0) + (statusStats['open'] ?? 0) %}
             {% set inProgressActions = statusStats['in-progress'] ?? 0 %}
             {% set completedActions = statusStats['completed'] ?? 0 %}
             {% set overdueActions = statusStats['overdue'] ?? 0 %}
+
+            <div class="stat-card total">
+                <div class="stat-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ totalActions }}</h3>
+                    <p>Total Actions</p>
+                </div>
+            </div>
 
             <div class="stat-card open">
                 <div class="stat-icon">
