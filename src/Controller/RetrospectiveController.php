@@ -21,12 +21,14 @@ use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
+use Psr\Log\LoggerInterface;
 
 class RetrospectiveController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private HubInterface $hub
+        private HubInterface $hub,
+        private LoggerInterface $logger
     ) {
     }
 
@@ -365,10 +367,10 @@ class RetrospectiveController extends AbstractController
             }
 
             // DEBUG: Log the request data
-            error_log("DEBUG Add Action - Description: " . $description);
-            error_log("DEBUG Add Action - AssignedToId raw: " . var_export($assignedToId, true));
-            error_log("DEBUG Add Action - AssignedToId type: " . gettype($assignedToId));
-            error_log("DEBUG Add Action - User: " . ($this->getUser() ? $this->getUser()->getEmail() : 'null'));
+            $this->logger->info("DEBUG Add Action - Description: " . $description);
+            $this->logger->info("DEBUG Add Action - AssignedToId raw: " . var_export($assignedToId, true));
+            $this->logger->info("DEBUG Add Action - AssignedToId type: " . gettype($assignedToId));
+            $this->logger->info("DEBUG Add Action - User: " . ($this->getUser() ? $this->getUser()->getEmail() : 'null'));
 
             $action = new RetrospectiveAction();
             $action->setRetrospective($retrospective);
@@ -387,36 +389,36 @@ class RetrospectiveController extends AbstractController
             
             // Assignee is optional
             if ($assignedToId && $assignedToId !== '' && $assignedToId !== '0') {
-                error_log("DEBUG Add Action - Looking up user ID: " . $assignedToId);
+                $this->logger->info("DEBUG Add Action - Looking up user ID: " . $assignedToId);
                 $assignedTo = $this->entityManager->getRepository(User::class)->find($assignedToId);
                 if (!$assignedTo) {
-                    error_log("DEBUG Add Action - User not found for ID: " . $assignedToId);
+                    $this->logger->error("DEBUG Add Action - User not found for ID: " . $assignedToId);
                     return $this->json(['success' => false, 'message' => 'Assigned user not found'], 404);
                 }
                 $action->setAssignedTo($assignedTo);
-                error_log("DEBUG Add Action - ASSIGNED to user ID: " . $assignedTo->getId());
+                $this->logger->info("DEBUG Add Action - ASSIGNED to user ID: " . $assignedTo->getId());
             } else {
                 $currentUser = $this->getUser();
-                error_log("DEBUG Add Action - Current User: " . ($currentUser ? 'ID ' . $currentUser->getId() : 'NULL'));
+                $this->logger->info("DEBUG Add Action - Current User: " . ($currentUser ? 'ID ' . $currentUser->getId() : 'NULL'));
                 
                 // If no assignee, assign to the creator by default
                 $action->setAssignedTo($currentUser);
-                error_log("DEBUG Add Action - Action assignedTo set to: ' . ($action->getAssignedTo() ? 'ID ' . $action->getAssignedTo()->getId() : 'NULL'));
+                $this->logger->info("DEBUG Add Action - Action assignedTo set to: " . ($action->getAssignedTo() ? 'ID ' . $action->getAssignedTo()->getId() : 'NULL'));
             }
             
             if ($dueDate) {
                 $action->setDueDate(new \DateTime($dueDate));
             }
 
-            error_log("DEBUG Add Action - About to persist action...");
+            $this->logger->info("DEBUG Add Action - About to persist action...");
             $this->entityManager->persist($action);
-            error_log("DEBUG Add Action - Persisted, about to flush...");
+            $this->logger->info("DEBUG Add Action - Persisted, about to flush...");
             
             try {
                 $this->entityManager->flush();
-                error_log("DEBUG Add Action - Flush successful!");
+                $this->logger->info("DEBUG Add Action - Flush successful!");
             } catch (\Exception $e) {
-                error_log("DEBUG Add Action - FLUSH ERROR: " . $e->getMessage());
+                $this->logger->error("DEBUG Add Action - FLUSH ERROR: " . $e->getMessage());
                 throw $e;
             }
 
