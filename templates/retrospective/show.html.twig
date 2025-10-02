@@ -557,18 +557,67 @@
                             {% endif %}
                         {% endfor %}
                         
-                        {# Manual sorting: discussed items first, then by vote count descending #}
-                        {% set sortedElements = [] %}
+                        {# Manual sorting: discussed items first (descending by votes), then non-discussed (descending by votes) #}
+                        {% set discussedElements = [] %}
+                        {% set nonDiscussedElements = [] %}
+                        
+                        {# Separate into discussed and non-discussed arrays #}
                         {% for elementData in allElements %}
                             {% if elementData.isDiscussed %}
-                                {% set sortedElements = sortedElements|merge([elementData]) %}
+                                {% set discussedElements = discussedElements|merge([elementData]) %}
+                            {% else %}
+                                {% set nonDiscussedElements = nonDiscussedElements|merge([elementData]) %}
                             {% endif %}
                         {% endfor %}
-                        {% for elementData in allElements %}
-                            {% if not elementData.isDiscussed %}
-                                {% set sortedElements = sortedElements|merge([elementData]) %}
+                        
+                        {# Sort discussed elements by votes (descending) #}
+                        {% set sortedDiscussedElements = [] %}
+                        {% for elementData in discussedElements %}
+                            {% set inserted = false %}
+                            {% if sortedDiscussedElements is empty %}
+                                {% set sortedDiscussedElements = [elementData] %}
+                            {% else %}
+                                {% set tempArray = [] %}
+                                {% for sortedElement in sortedDiscussedElements %}
+                                    {% if not inserted and elementData.votes > sortedElement.votes %}
+                                        {% set tempArray = tempArray|merge([elementData, sortedElement]) %}
+                                        {% set inserted = true %}
+                                    {% else %}
+                                        {% set tempArray = tempArray|merge([sortedElement]) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if not inserted %}
+                                    {% set tempArray = tempArray|merge([elementData]) %}
+                                {% endif %}
+                                {% set sortedDiscussedElements = tempArray %}
                             {% endif %}
                         {% endfor %}
+                        
+                        {# Sort non-discussed elements by votes (descending) #}
+                        {% set sortedNonDiscussedElements = [] %}
+                        {% for elementData in nonDiscussedElements %}
+                            {% set inserted = false %}
+                            {% if sortedNonDiscussedElements is empty %}
+                                {% set sortedNonDiscussedElements = [elementData] %}
+                            {% else %}
+                                {% set tempArray = [] %}
+                                {% for sortedElement in sortedNonDiscussedElements %}
+                                    {% if not inserted and elementData.votes > sortedElement.votes %}
+                                        {% set tempArray = tempArray|merge([elementData, sortedElement]) %}
+                                        {% set inserted = true %}
+                                    {% else %}
+                                        {% set tempArray = tempArray|merge([sortedElement]) %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if not inserted %}
+                                    {% set tempArray = tempArray|merge([elementData]) %}
+                                {% endif %}
+                                {% set sortedNonDiscussedElements = tempArray %}
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {# Combine: discussed first, then non-discussed #}
+                        {% set sortedElements = sortedDiscussedElements|merge(sortedNonDiscussedElements) %}
                         
                         {% for elementData in sortedElements %}
                             {% if elementData.type == 'item' %}
