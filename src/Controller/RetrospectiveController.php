@@ -874,6 +874,14 @@ class RetrospectiveController extends AbstractController
             $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
             if ($item && $item->getRetrospective() === $retrospective) {
                 $group->addItem($item);
+                
+                // Delete individual votes on this item since it's now part of a group
+                $itemVotes = $this->entityManager->getRepository(Vote::class)->findBy([
+                    'retrospectiveItem' => $item
+                ]);
+                foreach ($itemVotes as $vote) {
+                    $this->entityManager->remove($vote);
+                }
             }
         }
 
@@ -1310,6 +1318,17 @@ class RetrospectiveController extends AbstractController
                 $totalVotes += (int)$itemVotes;
             }
             
+            // Add votes directly on the group
+            $groupVotes = $this->entityManager
+                ->getRepository(\App\Entity\Vote::class)
+                ->createQueryBuilder('v')
+                ->select('SUM(v.voteCount)')
+                ->where('v.retrospectiveGroup = :group')
+                ->setParameter('group', $group)
+                ->getQuery()
+                ->getSingleScalarResult() ?? 0;
+            $totalVotes += (int)$groupVotes;
+            
             $combined[] = [
                 'type' => 'group',
                 'entity' => $group,
@@ -1587,10 +1606,17 @@ class RetrospectiveController extends AbstractController
         $totalVotes = 0;
         
         foreach ($votes as $vote) {
-            $votesData[] = [
-                'itemId' => $vote->getRetrospectiveItem()->getId(),
-                'voteCount' => $vote->getVoteCount()
-            ];
+            $voteData = ['voteCount' => $vote->getVoteCount()];
+            
+            if ($vote->getRetrospectiveItem()) {
+                $voteData['targetType'] = 'item';
+                $voteData['targetId'] = $vote->getRetrospectiveItem()->getId();
+            } elseif ($vote->getRetrospectiveGroup()) {
+                $voteData['targetType'] = 'group';
+                $voteData['targetId'] = $vote->getRetrospectiveGroup()->getId();
+            }
+            
+            $votesData[] = $voteData;
             $totalVotes += $vote->getVoteCount();
         }
 
@@ -1659,8 +1685,33 @@ class RetrospectiveController extends AbstractController
                 
                 $this->entityManager->flush();
             } else {
-                // Groups voting - to be implemented if needed
-                return $this->json(['success' => false, 'message' => 'Group voting not yet implemented'], 400);
+                // Group voting
+                $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($targetId);
+                if (!$group || $group->getRetrospective() !== $retrospective) {
+                    return $this->json(['success' => false, 'message' => 'Group not found'], 404);
+                }
+                
+                // Find or create vote record for this user and group
+                $vote = $this->entityManager->getRepository(Vote::class)->findOneBy([
+                    'user' => $user,
+                    'retrospectiveGroup' => $group
+                ]);
+                
+                if (!$vote) {
+                    $vote = new Vote();
+                    $vote->setUser($user);
+                    $vote->setRetrospectiveGroup($group);
+                    $this->entityManager->persist($vote);
+                }
+                
+                // Update vote count (0 means removing the vote)
+                if ($voteCount === 0 && $vote->getId()) {
+                    $this->entityManager->remove($vote);
+                } else {
+                    $vote->setVoteCount($voteCount);
+                }
+                
+                $this->entityManager->flush();
             }
 
             // Broadcast vote update to all participants

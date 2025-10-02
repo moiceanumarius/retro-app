@@ -49,18 +49,24 @@ RetrospectiveBoard.prototype.loadUserVotes = async function() {
             
             // Restore votes from server
             data.votes.forEach(voteData => {
-                const key = `item-${voteData.itemId}`;
+                const key = `${voteData.targetType}-${voteData.targetId}`;
                 this.userVotes[key] = voteData.voteCount;
                 this.totalVotes += voteData.voteCount;
                 
                 // Update vote input
-                const input = document.querySelector(`.vote-input[data-item-id="${voteData.itemId}"]`);
+                const inputSelector = voteData.targetType === 'item' 
+                    ? `.vote-input[data-item-id="${voteData.targetId}"]`
+                    : `.vote-input[data-group-id="${voteData.targetId}"]`;
+                const input = document.querySelector(inputSelector);
                 if (input) {
                     input.value = voteData.voteCount;
                 }
                 
                 // Update vote badge (visible all the time)
-                const voteBadge = document.querySelector(`.votes[data-item-id="${voteData.itemId}"]`);
+                const badgeSelector = voteData.targetType === 'item'
+                    ? `.votes[data-item-id="${voteData.targetId}"]`
+                    : `.votes[data-group-id="${voteData.targetId}"]`;
+                const voteBadge = document.querySelector(badgeSelector);
                 if (voteBadge) {
                     const voteText = voteData.voteCount === 1 ? 'vote' : 'votes';
                     voteBadge.textContent = `${voteData.voteCount} ${voteText}`;

@@ -7,7 +7,6 @@ use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: VoteRepository::class)]
 #[ORM\Table(name: 'votes')]
-#[ORM\UniqueConstraint(name: 'unique_user_item_vote', columns: ['user_id', 'retrospective_item_id'])]
 class Vote
 {
     #[ORM\Id]
@@ -20,8 +19,12 @@ class Vote
     private ?User $user = null;
 
     #[ORM\ManyToOne(targetEntity: RetrospectiveItem::class)]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?RetrospectiveItem $retrospectiveItem = null;
+
+    #[ORM\ManyToOne(targetEntity: RetrospectiveGroup::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?RetrospectiveGroup $retrospectiveGroup = null;
 
     #[ORM\Column]
     private int $voteCount = 0;
@@ -62,6 +65,17 @@ class Vote
     public function setRetrospectiveItem(?RetrospectiveItem $retrospectiveItem): static
     {
         $this->retrospectiveItem = $retrospectiveItem;
+        return $this;
+    }
+
+    public function getRetrospectiveGroup(): ?RetrospectiveGroup
+    {
+        return $this->retrospectiveGroup;
+    }
+
+    public function setRetrospectiveGroup(?RetrospectiveGroup $retrospectiveGroup): static
+    {
+        $this->retrospectiveGroup = $retrospectiveGroup;
         return $this;
     }
 
