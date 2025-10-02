@@ -677,23 +677,23 @@
 }
 
 .action-status.pending {
-    background: #e2e8f0;
-    color: #4a5568;
+    background: #fef3c7;
+    color: #d97706;
 }
 
-.action-status.in_progress {
-    background: #fed7d7;
-    color: #742a2a;
+.action-status.in-progress {
+    background: #dbeafe;
+    color: #1d4ed8;
 }
 
 .action-status.completed {
-    background: #c6f6d5;
-    color: #22543d;
+    background: #d1fae5;
+    color: #047857;
 }
 
 .action-status.cancelled {
-    background: #fed7d7;
-    color: #742a2a;
+    background: #fee2e2;
+    color: #dc2626;
 }
 
 /* Action Buttons */
@@ -814,52 +814,55 @@
 
 /* Completed Retrospective Styles */
 .completed-retrospective {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 16px;
-    padding: 2rem;
-    margin-bottom: 2rem;
-    color: white;
-    box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
+    background: transparent;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 0;
 }
 
 .completed-header {
-    text-align: center;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 2rem;
     margin-bottom: 2rem;
+    text-align: center;
 }
 
 .completed-retrospective h2 {
-    font-size: 2.5rem;
+    font-size: 2rem;
     font-weight: 700;
+    color: #1f2937;
     margin: 0 0 0.5rem 0;
 }
 
 .completed-retrospective p {
-    font-size: 1.1rem;
-    opacity: 0.9;
+    color: #6b7280;
+    margin: 0;
+    font-size: 1rem;
 }
 
 .completed-content {
     display: grid;
-    grid-template-columns: 1fr 400px;
+    grid-template-columns: 1fr 1fr;
     gap: 2rem;
-    align-items: start;
+    margin-top: 2rem;
 }
 
 .completed-summary,
 .completed-actions {
-    background: rgba(255, 255, 255, 0.1);
+    background: white;
     border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
     padding: 2rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .completed-summary h3,
 .completed-actions h3 {
     font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0 0 1.5rem 0;
-    color: white;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
 }
 
 /* Categories Summary */
@@ -872,20 +875,22 @@
 }
 
 .category-title {
-    font-size: 1.2rem;
+    font-size: 1.125rem;
     font-weight: 600;
-    margin: 0 0 1rem 0;
-    color: white;
-    opacity: 0.9;
+    color: #374151;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .group-card,
 .single-item-card {
-    background: rgba(255, 255, 255, 0.15);
+    background: #f9fafb;
     border-radius: 8px;
-    padding: 1rem;
-    margin-bottom: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e5e7eb;
 }
 
 .group-header {
@@ -902,11 +907,10 @@
 }
 
 .item-content {
-    color: white;
-    font-size: 0.95rem;
-    line-height: 1.4;
-    display: block;
-    margin-bottom: 0.5rem;
+    color: #1f2937;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
 }
 
 .item-summary {
@@ -919,19 +923,22 @@
 }
 
 .discussed-badge {
-    background: rgba(76, 175, 80, 0.8);
-    color: white;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
+    background: #d1fae5;
+    color: #047857;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 500;
-    margin-left: 0.5rem;
+    margin-right: 0.5rem;
 }
 
 .vote-count {
-    color: rgba(255, 255, 255, 0.8);
-    font-size: 0.8rem;
-    font-style: italic;
+    background: #dbeafe;
+    color: #1d4ed8;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
 }
 
 /* Actions List */
