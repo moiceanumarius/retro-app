@@ -138,6 +138,11 @@
         .actions-table th.sortable {
             cursor: pointer;
             user-select: none;
+            text-align: center !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
 
         .actions-table th:not(:last-child) {
@@ -662,7 +667,7 @@
         }
 
         .sort-icon {
-            margin-left: 0.5rem;
+            margin-left: 0;
             transition: all 0.2s ease;
             color: #9ca3af;
             font-size: 12px;
