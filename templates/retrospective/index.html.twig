@@ -5,13 +5,13 @@
 {% block page_title %}Retrospectives{% endblock %}
 
 {% block stylesheets %}
-    <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
 {% endblock %}
 
 {% block body %}
-    <div class="retrospective-management">
+    <div class="team-management">
         <!-- Header Section -->
-        <div class="retrospective-header">
+        <div class="team-header">
             <div class="header-content">
                 <h1>My Retrospectives</h1>
                 <p>Manage and participate in team retrospectives</p>
@@ -29,7 +29,7 @@
         </div>
 
         <!-- Retrospectives Overview -->
-        <div class="retrospectives-overview">
+        <div class="teams-overview">
             <div class="stats-card">
                 <div class="stats-icon">
                     <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
@@ -67,52 +67,44 @@
 
         <!-- Retrospectives List -->
         {% if retrospectives|length > 0 %}
-        <div class="retrospectives-section">
+        <div class="teams-section">
             <div class="section-header">
                 <h2>All Retrospectives</h2>
                 <p>Retrospectives you're involved in</p>
             </div>
-            <div class="retrospectives-grid">
+            <div class="teams-grid">
                 {% for retrospective in retrospectives %}
-                <div class="retrospective-card {{ retrospective.status }}">
-                    <div class="retrospective-header">
-                        <div class="retrospective-info">
+                <div class="team-card {{ retrospective.status }}">
+                    <div class="team-header">
+                        <div class="team-info">
                             <h3>{{ retrospective.title }}</h3>
                             {% if retrospective.description %}
                                 <p>{{ retrospective.description }}</p>
                             {% endif %}
                         </div>
-                        <div class="retrospective-status">
-                            <span class="status-badge {{ retrospective.status }}">
-                                {{ retrospective.status|title }}
-                            </span>
+                        <div class="team-color" style="background-color: {{ retrospective.team.color ?: '#667eea' }}"></div>
+                    </div>
+                    <div class="team-stats">
+                        <div class="stat">
+                            <span class="stat-number">{{ retrospective.team.getMemberCount() }}</span>
+                            <span class="stat-label">Team Members</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">{{ retrospective.scheduledAt|date('M d') }}</span>
+                            <span class="stat-label">Scheduled</span>
                         </div>
                     </div>
-                    <div class="retrospective-details">
-                        <div class="detail">
-                            <span class="detail-label">Team:</span>
-                            <span class="detail-value">{{ retrospective.team.name }}</span>
-                        </div>
-                        <div class="detail">
-                            <span class="detail-label">Facilitator:</span>
-                            <span class="detail-value">{{ retrospective.facilitator.firstName }} {{ retrospective.facilitator.lastName }}</span>
-                        </div>
-                        <div class="detail">
-                            <span class="detail-label">Scheduled:</span>
-                            <span class="detail-value">{{ retrospective.scheduledAt|date('M d, Y H:i') }}</span>
-                        </div>
-                    </div>
-                    <div class="retrospective-actions">
+                    <div class="team-actions">
                         <a href="{{ path('app_retrospectives_show', {'id': retrospective.id}) }}" class="btn btn-sm btn-primary">
                             View
                         </a>
                         {% if retrospective.facilitator == app.user %}
                             {% if retrospective.isPlanned() %}
-                                <a href="{{ path('app_retrospectives_start', {'id': retrospective.id}) }}" class="btn btn-sm btn-success">
+                                <a href="{{ path('app_retrospectives_start', {'id': retrospective.id}) }}" class="btn btn-sm btn-secondary">
                                     Start
                                 </a>
                             {% elseif retrospective.isActive() %}
-                                <a href="{{ path('app_retrospectives_complete', {'id': retrospective.id}) }}" class="btn btn-sm btn-warning">
+                                <a href="{{ path('app_retrospectives_complete', {'id': retrospective.id}) }}" class="btn btn-sm btn-secondary">
                                     Complete
                                 </a>
                             {% endif %}
