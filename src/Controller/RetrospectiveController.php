@@ -364,6 +364,11 @@ class RetrospectiveController extends AbstractController
                 return $this->json(['success' => false, 'message' => 'Description is required'], 400);
             }
 
+            // DEBUG: Log the request data
+            error_log("DEBUG Add Action - Description: " . $description);
+            error_log("DEBUG Add Action - AssignedToId: " . ($assignedToId ? $assignedToId : 'null'));
+            error_log("DEBUG Add Action - User: " . ($this->getUser() ? $this->getUser()->getEmail() : 'null'));
+
             $action = new RetrospectiveAction();
             $action->setRetrospective($retrospective);
             $action->setCreatedBy($this->getUser());

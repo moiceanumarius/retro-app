@@ -7,8 +7,9 @@
 {% block stylesheets %}
     <!-- DataTables CSS -->
     <link rel="stylesheet" href="https://cdn.datatables.net/1.13.7/css/dataTables.bootstrap5.min.css">
+    <!-- Team Management CSS for consistent design -->
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ asset('assets/css/role-management.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/datatables-custom.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/flash-messages.css') }}">
 {% endblock %}
@@ -75,118 +76,257 @@
 {% endblock %}
 
 {% block body %}
-    <div class="role-management">
+    <div class="team-management">
+        <!-- Header Section -->
+        <div class="team-header">
+            <div class="header-content">
+                <h1>Role Management</h1>
+                <p>Manage user roles and permissions across your organization</p>
+            </div>
+            <div class="header-actions">
+                <!-- Quick role assignment could be added here if needed -->
+            </div>
+        </div>
+
         <!-- Stats Overview -->
-        <div class="stats-container">
-            <div class="stats-card total">
-                <h3>{{ users|length }}</h3>
-                <p>Total Users</p>
+        <div class="teams-overview">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ users|length }}</h3>
+                    <p>Total Users</p>
+                </div>
             </div>
             
             <!-- Role Stats -->
             {% for role in roles %}
-                {% set roleClass = role.code|lower|replace({'_': '-'}) %}
-                <div class="stats-card {{ roleClass }}">
-                    <h3>{{ roleCounts[role.code] ?? 0 }}</h3>
-                    <p>{{ role.name }}</p>
+                <div class="stats-card">
+                    <div class="stats-icon">
+                        {% if role.code == 'ROLE_ADMIN' %}
+                            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.286-.948z" clip-rule="evenodd"></path>
+                            </svg>
+                        {% elseif role.code == 'ROLE_TEAM_LEAD' %}
+                            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" clip-rule="evenodd"></path>
+                            </svg>
+                        {% elseif role.code == 'ROLE_FACILITATOR' %}
+                            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                            </svg>
+                        {% else %}
+                            <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                            </svg>
+                        {% endif %}
+                    </div>
+                    <div class="stats-content">
+                        {% set roleCount = roleCounts[role.code] ?? 0 %}
+                        <h3>{{ roleCount }}</h3>
+                        <p>{{ role.name }}</p>
+                        {% if roleCount > 0 %}
+                            <small class="text-success">{{ roleCount }} active</small>
+                        {% endif %}
+                    </div>
                 </div>
             {% endfor %}
         </div>
-        
-        <!-- Role Assignment Form -->
-        <div class="modern-card">
-            <div class="modern-card-header">
-                <h2>Assign Role to User</h2>
-            </div>
-            <div class="modern-card-body">
-                <form method="post" action="{{ path('app_roles_assign') }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('assign_role') }}">
-                    <div class="form-row">
-                        <div class="form-col">
-                            <div class="form-group-modern">
-                                <label for="user_id" class="form-label-modern">Select User</label>
-                                <select name="user_id" id="user_id" class="form-select-modern" required>
+
+        <!-- Main Content Sections -->
+        <div class="teams-section">
+            
+            <!-- Quick Actions -->
+            <div class="team-card">
+                <div class="table-section-header">
+                    <div class="table-title">
+                        <h3>Quick Actions</h3>
+                        <p>Assign new roles to users</p>
+                    </div>
+                </div>
+                <div class="quick-actions-content">
+                    <form method="post" action="{{ path('app_roles_assign') }}" class="role-assignment-form">
+                        <input type="hidden" name="_token" value="{{ csrf_token('assign_role') }}">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="user_id">Select User</label>
+                                <select name="user_id" id="user_id" class="form-select" required>
                                     <option value="">Choose a user...</option>
                                     {% for user in users %}
                                         <option value="{{ user.id }}">{{ user.getFullName() }} ({{ user.email }})</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                        </div>
-                        <div class="form-col">
-                            <div class="form-group-modern">
-                                <label for="role_id" class="form-label-modern">Select Role</label>
-                                <select name="role_id" id="role_id" class="form-select-modern" required>
+                            <div class="form-group">
+                                <label for="role_id">Select Role</label>
+                                <select name="role_id" id="role_id" class="form-select" required>
                                     <option value="">Choose a role...</option>
                                     {% for role in roles %}
                                         <option value="{{ role.id }}">{{ role.name }} ({{ role.code }})</option>
                                     {% endfor %}
                                 </select>
                             </div>
-                        </div>
-                        <div class="form-col-button">
-                            <button type="submit" class="btn-modern btn-primary-modern">
-                                Assign Role
-                            </button>
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Current Role Assignments -->
-        <div class="modern-card">
-            <div class="modern-card-header">
-                <h2>Current Role Assignments</h2>
-            </div>
-            <div class="modern-card-body">
-                <table id="userRolesTable" class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th>User</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Assigned At</th>
-                            <th>Assigned By</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Data will be loaded via AJAX -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Available Roles -->
-        <div class="modern-card">
-            <div class="modern-card-header">
-                <h2>Available Roles & Permissions</h2>
-            </div>
-            <div class="modern-card-body">
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
-                    {% for role in roles %}
-                        <div class="role-card">
-                            <h5>{{ role.name }}</h5>
-                            <p>{{ role.description }}</p>
-                            <p style="margin-bottom: 1rem;">
-                                <strong>Code:</strong> {{ role.code }}
-                            </p>
-                            <div style="display: flex; justify-content: space-between; align-items: center;">
-                                <span class="permission-count">
-                                    {{ role.permissions|length }} Permissions
-                                </span>
-                                {% if role.isActive %}
-                                    <span class="badge-modern badge-success-modern">Active</span>
-                                {% else %}
-                                    <span class="badge-modern badge-secondary-modern">Inactive</span>
-                                {% endif %}
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Assign Role
+                                </button>
                             </div>
                         </div>
-                    {% endfor %}
+                    </form>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Role Assignments Table -->
+        <div class="teams-section">
+            <div class="team-card full-width">
+                <div class="table-section-header">
+                    <div class="table-title">
+                        <h3>Current Role Assignments</h3>
+                        <p>View and manage all role assignments across your organization</p>
+                    </div>
+                </div>
+                <div class="table-container">
+                    <table id="userRolesTable" class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Assigned At</th>
+                                <th>Assigned By</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Custom Styles for Role Management -->
+    <style>
+        .role-assignment-form {
+            width: 100%;
+            margin: 0;
+        }
+
+        .role-assignment-form .form-row {
+            display: flex;
+            gap: 1rem;
+            align-items: end;
+        }
+
+        .role-assignment-form .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .role-assignment-form .form-group:last-child {
+            flex: 0 0 auto;
+        }
+
+        .role-assignment-form label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .role-assignment-form .form-select,
+        .role-assignment-form button {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+        }
+
+        .role-assignment-form button {
+            background: #667eea;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+
+        .role-assignment-form button:hover {
+            background: #5a67d8;
+        }
+
+        .table-container {
+            margin-top: 1rem;
+            overflow-x: auto;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .role-code {
+            font-family: 'Courier New', monospace;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-style: italic;
+        }
+
+        .text-success {
+            color: #10b981;
+            font-size: 0.875rem;
+        }
+
+        .table-section-header {
+            padding: 1.5rem 1.5rem 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+            background: #f9fafb;
+        }
+
+        .table-title h3 {
+            margin: 0 0 0.5rem 0;
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .table-title p {
+            margin: 0;
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .quick-actions-content {
+            padding: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .role-assignment-form .form-row {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .role-assignment-form .form-group:last-child {
+                flex: 1;
+            }
+        }
+    </style>
 {% endblock %}
