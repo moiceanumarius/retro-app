@@ -370,4 +370,52 @@ class ActionController extends AbstractController
             ]);
         }
     }
+
+    #[Route('/{id}/update-due-date', name: 'app_actions_update_due_date', methods: ['POST'])]
+    public function updateDueDate(Request $request, int $id): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['success' => false, 'message' => 'You must be logged in to update actions']);
+        }
+
+        $action = $this->entityManager->find(\App\Entity\RetrospectiveAction::class, $id);
+        if (!$action) {
+            return $this->json(['success' => false, 'message' => 'Action not found']);
+        }
+
+        // Check if user has permission to edit this action
+        $hasPermission = $action->getAssignedTo() === $user ||
+                        $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                        $this->isGranted('ROLE_ADMIN');
+
+        if (!$hasPermission) {
+            return $this->json(['success' => false, 'message' => 'You do not have permission to edit this action']);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $dueDateValue = $data['due_date'] ?? null;
+
+        try {
+            if ($dueDateValue && !empty(trim($dueDateValue))) {
+                $dueDate = new \DateTime(trim($dueDateValue));
+                $action->setDueDate($dueDate);
+            } else {
+                $action->setDueDate(null);
+            }
+            
+            $action->setUpdatedAt(new \DateTime());
+            $this->entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Due date updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error updating due date: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

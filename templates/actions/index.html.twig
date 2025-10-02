@@ -493,6 +493,46 @@
             justify-content: center;
         }
 
+        /* Due Date Editing Styles */
+        .due-date-view {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid transparent;
+        }
+
+        .due-date-view:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .due-date-edit-form {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .due-date-edit-form .due-date-input {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.875rem;
+            min-width: 140px;
+        }
+
+        .due-date-edit-form .btn {
+            padding: 0.375rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .action-description-detail {
             background: #f9fafb;
             border-radius: 8px;
@@ -1358,6 +1398,107 @@
             showMessage('Error updating status. Please try again.', 'error');
             // Switch back to view mode on error
             cancelModalActionStatus(actionId);
+        });
+    }
+
+    function editModalDueDate(actionId) {
+        const modalDueDateView = document.getElementById(`modal-due-date-view-${actionId}`);
+        const modalDueDateEdit = document.getElementById(`modal-due-date-edit-${actionId}`);
+        
+        // Hide the view, show the edit form
+        modalDueDateView.style.display = 'none';
+        modalDueDateEdit.style.display = 'inline-flex';
+        
+        // Focus on the date input
+        document.getElementById(`modal-due-date-input-${actionId}`).focus();
+    }
+
+    function cancelModalDueDate(actionId) {
+        const modalDueDateView = document.getElementById(`modal-due-date-view-${actionId}`);
+        const modalDueDateEdit = document.getElementById(`modal-due-date-edit-${actionId}`);
+        
+        // Hide edit form, show view
+        modalDueDateEdit.style.display = 'none';
+        modalDueDateView.style.display = 'inline-flex';
+        
+        // Reset the input value to original
+        const input = document.getElementById(`modal-due-date-input-${actionId}`);
+        input.value = input.getAttribute('data-original-value') || '';
+    }
+
+    function saveModalDueDate(actionId) {
+        const newDueDate = document.getElementById(`modal-due-date-input-${actionId}`).value;
+        const modalDueDateView = document.getElementById(`modal-due-date-view-${actionId}`);
+        const modalDueDateEdit = document.getElementById(`modal-due-date-edit-${actionId}`);
+        
+        // Send update request
+        fetch(`/actions/${actionId}/update-due-date`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ due_date: newDueDate })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message || 'Due date updated successfully', 'success');
+                
+                // Update the view text
+                const viewSpan = modalDueDateView.querySelector('span');
+                if (newDueDate) {
+                    const date = new Date(newDueDate);
+                    viewSpan.textContent = date.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                    });
+                    viewSpan.style.color = '';
+                } else {
+                    viewSpan.textContent = 'No due date set';
+                    viewSpan.style.color = '#9ca3af';
+                }
+                
+                // Switch back to view mode
+                modalDueDateEdit.style.display = 'none';
+                modalDueDateView.style.display = 'inline-flex';
+                
+                // Also update the table if it exists
+                const tableRow = document.querySelector(`[data-action-id="${actionId}"]`);
+                if (tableRow) {
+                    const dueDateCell = tableRow.querySelector('.due-date-cell');
+                    if (dueDateCell) {
+                        if (newDueDate) {
+                            const date = new Date(newDueDate);
+                            dueDateCell.innerHTML = `
+                                <span class="status-badge ${getDateStatusClass(newDueDate)}">${date.toLocaleDateString('en-US', { 
+                                    month: 'short', 
+                                    day: 'numeric', 
+                                    year: 'numeric' 
+                                })}</span>
+                            `;
+                        } else {
+                            dueDateCell.innerHTML = '<span style="color: #9ca3af;">-</span>';
+                        }
+                    }
+                }
+                
+                // Update filter counts
+                if (typeof filterTable === 'function') {
+                    filterTable();
+                }
+            } else {
+                showMessage(data.message || 'Error updating due date', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating due date:', error);
+            showMessage('Error updating due date. Please try again.', 'error');
+            // Switch back to view mode on error
+            cancelModalDueDate(actionId);
         });
     }
 
