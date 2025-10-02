@@ -352,4 +352,63 @@ class ActionController extends AbstractController
             ]);
         }
     }
+
+    #[Route('/{id}/update-status', name: 'app_actions_update_status', methods: ['POST'])]
+    public function updateStatus(Request $request, int $id): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['success' => false, 'message' => 'You must be logged in to update actions']);
+        }
+
+        $action = $this->entityManager->find(\App\Entity\RetrospectiveAction::class, $id);
+        if (!$action) {
+            return $this->json(['success' => false, 'message' => 'Action not found']);
+        }
+
+        // Check if user has permission to edit this action
+        $hasPermission = $action->getAssignedTo() === $user ||
+                        $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                        $this->isGranted('ROLE_ADMIN');
+
+        if (!$hasPermission) {
+            return $this->json(['success' => false, 'message' => 'You do not have permission to edit this action']);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!isset($data['status']) || empty(trim($data['status']))) {
+            return $this->json(['success' => false, 'message' => 'Status cannot be empty']);
+        }
+
+        $validStatuses = ['pending', 'in-progress', 'completed', 'cancelled'];
+        $newStatus = trim($data['status']);
+        
+        if (!in_array($newStatus, $validStatuses)) {
+            return $this->json(['success' => false, 'message' => 'Invalid status value']);
+        }
+
+        try {
+            $action->setStatus($newStatus);
+            $action->setUpdatedAt(new \DateTime());
+
+            // If completed, set completion date
+            if ($newStatus === 'completed' && !$action->getCompletedAt()) {
+                $action->setCompletedAt(new \DateTime());
+            } elseif ($newStatus !== 'completed' && $action->getCompletedAt()) {
+                $action->setCompletedAt(null);
+            }
+
+            $this->entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Action status updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error updating action status: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

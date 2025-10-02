@@ -454,6 +454,45 @@
             margin-top: 0.5rem;
         }
 
+        .status-badge-view {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid transparent;
+        }
+
+        .status-badge-view:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #667eea;
+            transform: translateY(-1px);
+        }
+
+        .status-edit-form {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-edit-form .status-select {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.875rem;
+            min-width: 120px;
+        }
+
+        .cancel-status-btn {
+            padding: 0.375rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
         .action-description-detail {
             background: #f9fafb;
             border-radius: 8px;
@@ -1243,6 +1282,83 @@
         // Hide edit form, show view
         modalEdit.style.display = 'none';
         modalView.style.display = 'block';
+    }
+
+    function editModalActionStatus(actionId) {
+        const modalStatusView = document.getElementById(`modal-status-view-${actionId}`);
+        const modalStatusEdit = document.getElementById(`modal-status-edit-${actionId}`);
+        
+        // Hide the view, show the edit form
+        modalStatusView.style.display = 'none';
+        modalStatusEdit.style.display = 'inline-flex';
+        
+        // Focus on the select
+        document.getElementById(`modal-status-select-${actionId}`).focus();
+    }
+
+    function cancelModalActionStatus(actionId) {
+        const modalStatusView = document.getElementById(`modal-status-view-${actionId}`);
+        const modalStatusEdit = document.getElementById(`modal-status-edit-${actionId}`);
+        
+        // Hide edit form, show view
+        modalStatusEdit.style.display = 'none';
+        modalStatusView.style.display = 'inline-flex';
+    }
+
+    function saveModalActionStatus(actionId) {
+        const newStatus = document.getElementById(`modal-status-select-${actionId}`).value;
+        const modalStatusView = document.getElementById(`modal-status-view-${actionId}`);
+        const modalStatusEdit = document.getElementById(`modal-status-edit-${actionId}`);
+        
+        // Send update request
+        fetch(`/actions/${actionId}/update-status`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message || 'Status updated successfully', 'success');
+                
+                // Update the badge text and class
+                const badge = modalStatusView.querySelector('.status-badge');
+                badge.className = `status-badge ${newStatus}`;
+                badge.textContent = newStatus.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                // Switch back to view mode
+                modalStatusEdit.style.display = 'none';
+                modalStatusView.style.display = 'inline-flex';
+                
+                // Also update the table if it exists
+                const tableRow = document.querySelector(`[data-action-id="${actionId}"]`);
+                if (tableRow) {
+                    const tableBadge = tableRow.querySelector('.status-badge');
+                    if (tableBadge) {
+                        tableBadge.className = `status-badge ${newStatus}`;
+                        tableBadge.textContent = newStatus.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    }
+                    tableRow.setAttribute('data-status', newStatus);
+                    
+                    // Update filter counts
+                    if (typeof filterTable === 'function') {
+                        filterTable();
+                    }
+                }
+            } else {
+                showMessage(data.message || 'Error updating status', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating status:', error);
+            showMessage('Error updating status. Please try again.', 'error');
+            // Switch back to view mode on error
+            cancelModalActionStatus(actionId);
+        });
     }
 
     function showActionDetails(actionId) {
