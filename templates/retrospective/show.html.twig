@@ -561,10 +561,7 @@
                                             {% endif %}
                                         {% endfor %}
                                         
-                                        {# Also add votes directly on the group (like in controller) #}
-                                        {% for vote in group.votes %}
-                                            {% set groupTotalVotes = groupTotalVotes + vote.voteCount %}
-                                        {% endfor %}
+                                        {# Note: In template we can only sum item votes, not group-level votes like in controller #}
                                         
                                         {% set groupData = {
                                             'type': 'group',
