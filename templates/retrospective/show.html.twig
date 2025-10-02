@@ -518,57 +518,6 @@
         <div class="completed-retrospective">
             <h2>Retrospective Completed</h2>
             <p>This retrospective was completed on {{ retrospective.completedAt|date('M d, Y H:i') }}</p>
-            
-            <!-- Show summary of all feedback and actions -->
-            <div class="summary-sections">
-                <div class="summary-section">
-                    <h3>Feedback Summary</h3>
-                    <div class="feedback-summary">
-                        <div class="summary-column">
-                            <h4>What went wrong ({{ wrongItems|length }})</h4>
-                            {% for item in wrongItems %}
-                            <div class="summary-item wrong-item">{{ item.content }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="summary-column">
-                            <h4>What went good ({{ goodItems|length }})</h4>
-                            {% for item in goodItems %}
-                            <div class="summary-item good-item">{{ item.content }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="summary-column">
-                            <h4>What can be improved ({{ improvedItems|length }})</h4>
-                            {% for item in improvedItems %}
-                            <div class="summary-item improved-item">{{ item.content }}</div>
-                            {% endfor %}
-                        </div>
-                        <div class="summary-column">
-                            <h4>Random feedback ({{ randomItems|length }})</h4>
-                            {% for item in randomItems %}
-                            <div class="summary-item random-item">{{ item.content }}</div>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-
-                {% if actions|length > 0 %}
-                <div class="summary-section">
-                    <h3>Action Items ({{ actions|length }})</h3>
-                    <div class="actions-summary">
-                        {% for action in actions %}
-                        <div class="action-summary">
-                            <strong>{{ action.description }}</strong><br>
-                            Assigned to: {{ action.assignedTo.firstName }} {{ action.assignedTo.lastName }}<br>
-                            Status: {{ action.status|title }}
-                            {% if action.dueDate %}
-                            <br>Due: {{ action.dueDate|date('M d, Y') }}
-                            {% endif %}
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
         </div>
 
         {% else %}
