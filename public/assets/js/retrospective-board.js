@@ -3128,12 +3128,23 @@ RetrospectiveBoard.prototype.handleAddAction = async function(e) {
                 window.location.reload();
             }, 1000);
         } else {
-            const errorData = await response.json();
-            this.showMessage(errorData.message || 'Failed to add action item', 'error');
+            console.log('DEBUG JS - Response status:', response.status);
+            console.log('DEBUG JS - Response headers:', Object.fromEntries(response.headers.entries()));
+            const errorText = await response.text();
+            console.log('DEBUG JS - Response text (first 500 chars):', errorText.substring(0, 500));
+            
+            try {
+                const errorData = JSON.parse(errorText);
+                this.showMessage(errorData.message || 'Failed to add action item', 'error');
+            } catch (e) {
+                console.log('DEBUG JS - Could not parse error as JSON, showing HTML error page');
+                this.showMessage('Server error - check console for details', 'error');
+            }
         }
     } catch (error) {
-        console.error('Error adding action:', error);
-        this.showMessage('Failed to add action item', 'error');
+        console.error('DEBUG JS - Network error:', error);
+        console.error('DEBUG JS - Error message:', error.message);
+        this.showMessage('Network error - check console for details', 'error');
     }
 };
 
