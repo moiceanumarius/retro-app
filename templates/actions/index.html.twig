@@ -1110,6 +1110,66 @@
         });
     }
 
+    function saveModalActionDescription(actionId) {
+        const modalTextarea = document.getElementById(`modal-text-${actionId}`);
+        const saveBtn = document.querySelector(`#modal-text-${actionId}`).closest('.action-detail-group').querySelector('.save-action-btn');
+        
+        const newDescription = modalTextarea.value.trim();
+        
+        if (!newDescription) {
+            showMessage('Description cannot be empty', 'error');
+            return;
+        }
+        
+        // Disable save button during request
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `
+            <div style="width: 20px; height: 20px; border: 2px solid #ffffff40; border-top: 2px solid #ffffff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            Saving...
+        `;
+        
+        // Send update request
+        fetch(`/actions/${actionId}/edit-description`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ description: newDescription })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message || 'Action updated successfully', 'success');
+                
+                // Also update the table if it exists
+                const tableText = document.getElementById(`action-text-${actionId}`);
+                if (tableText) {
+                    tableText.textContent = newDescription;
+                    const tableRow = tableText.closest('tr');
+                    tableRow.setAttribute('data-description', newDescription.toLowerCase());
+                }
+            } else {
+                showMessage(data.message || 'Error updating action', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating action:', error);
+            showMessage('Error updating action. Please try again.', 'error');
+        })
+        .finally(() => {
+            // Reset save button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = `
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                Save Changes
+            `;
+        });
+    }
+
     function showActionDetails(actionId) {
         const modal = document.getElementById('actionModal');
         const modalBody = document.getElementById('actionModalBody');
