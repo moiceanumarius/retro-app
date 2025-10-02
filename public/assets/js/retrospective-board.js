@@ -1480,8 +1480,9 @@ RetrospectiveBoard.prototype.isInActionStep = function() {
 };
 
 RetrospectiveBoard.prototype.shouldShowTimer = function() {
-    // Don't show timer in review phase and action phase
-    return !this.isInReviewStep() && !this.isInActionStep();
+    // Don't show timer in review phase, action phase, or completed retrospectives
+    const isCompleted = document.querySelector('.completed-retrospective') !== null;
+    return !this.isInReviewStep() && !this.isInActionStep() && !isCompleted;
 };
 
 RetrospectiveBoard.prototype.initReviewPhase = function() {
