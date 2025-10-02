@@ -1096,6 +1096,9 @@ class RetrospectiveBoard {
             case 'item_added_to_group':
                 this.handleItemAddedToGroup(data);
                 break;
+            case 'item_separated':
+                this.handleItemSeparated(data);
+                break;
             case 'items_reordered':
                 this.handleItemsReordered(data);
                 break;
@@ -1296,8 +1299,20 @@ class RetrospectiveBoard {
         // Check if item already exists in DOM to avoid duplicates
         const existingItem = document.querySelector(`.post-it[data-item-id="${data.item?.id}"]`);
         if (!existingItem && data.item) {
-            this.addPostItCard(data.item.category, data.item);
-            this.updateItemCount(data.item.category);
+            // Only show item to its author in feedback phase
+            if (this.isInStep('feedback')) {
+                const currentUsername = this.user?.firstName || 'Unknown';
+                const itemAuthorFirstName = data.item.author?.firstName || '';
+                
+                if (currentUsername === itemAuthorFirstName) {
+                    this.addPostItCard(data.item.category, data.item);
+                    this.updateItemCount(data.item.category);
+                }
+            } else {
+                // In review and other phases, show all items
+                this.addPostItCard(data.item.category, data.item);
+                this.updateItemCount(data.item.category);
+            }
         }
     }
     
@@ -1333,10 +1348,18 @@ class RetrospectiveBoard {
         }
     }
     
+    handleItemSeparated(data) {
+        if (this.isInReviewStep()) {
+            this.loadReviewData();
+        }
+    }
+    
     handleItemsReordered(data) {
         if (this.isInReviewStep()) {
-            // Update initial order after successful reorder from server
+            // Check if this reorder was triggered by our own action
             const category = data.category;
+            
+            // Update initial order after successful reorder from server
             if (this.initialOrder && this.initialOrder[category]) {
                 this.initialOrder[category] = {
                     itemIds: data.item_ids || [],
@@ -1344,8 +1367,10 @@ class RetrospectiveBoard {
                 };
                 console.log('Updated initial order for', category, ':', this.initialOrder[category]);
             }
-            // Don't reload data if this reorder was triggered by our own action
-            // The UI should already be in the correct state
+            
+            // Always reload data for this category to sync with server
+            // This ensures all connected users see the reorder, regardless of who initiated it
+            this.loadReviewData();
         }
     }
     
