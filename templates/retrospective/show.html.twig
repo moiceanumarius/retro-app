@@ -548,7 +548,7 @@
                                             'group': group,
                                             'category': group.getPositionX() == 0 ? 'wrong' : group.getPositionX() == 1 ? 'good' : group.getPositionX() == 2 ? 'improved' : 'random',
                                             'isDiscussed': false, # Groups aren't discussed individually
-                                            'votes': group.getItems()|map(item => item.votes)|flatten|length,
+                                            'votes': 0, {# Groups don't accumulate votes - items vote individually #}
                                             'itemCount': group.getItems()|length
                                         } %}
                                         {% set allElements = allElements|merge([groupData]) %}
