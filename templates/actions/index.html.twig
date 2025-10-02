@@ -96,14 +96,20 @@
 
         .actions-table {
             width: 100%;
-            border-collapse: collapse;
-            border-spacing: 0;
-            border: none;
-            outline: none;
+            border-collapse: collapse !important;
+            border-spacing: 0 !important;
+            border: none !important;
+            outline: none !important;
         }
 
         .actions-table * {
-            border-color: inherit;
+            border-color: transparent !important;
+        }
+
+        .actions-table,
+        .actions-table th,
+        .actions-table td {
+            border-style: none !important;
         }
 
         .actions-table thead {
@@ -118,36 +124,67 @@
             font-size: 0.875rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            border-bottom: 2px solid #e9ecef;
-            border-left: none;
-            border-right: none;
-            border-top: none;
+            border-bottom: 2px solid #e9ecef !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-top: none !important;
             position: relative;
+            box-shadow: none !important;
+            background-clip: border-box !important;
         }
 
         .actions-table th:not(:last-child) {
-            border-right: none;
+            border-right: none !important;
         }
 
         .actions-table th:not(:first-child) {
-            border-left: none;
+            border-left: none !important;
+        }
+
+        /* Override any Bootstrap table styling */
+        table.actions-table th,
+        table.actions-table td {
+            border-left: none !important;
+            border-right: none !important;
+        }
+
+        .actions-table thead tr th {
+            border: none !important;
+            border-bottom: 2px solid #e9ecef !important;
         }
 
         .actions-table td {
             padding: 1rem;
-            border-bottom: 1px solid #f1f5f9;
-            border-left: none;
-            border-right: none;
-            border-top: none;
+            border-bottom: 1px solid #f1f5f9 !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-top: none !important;
             vertical-align: top;
+            outline: none !important;
+            box-shadow: none !important;
         }
 
         .actions-table td:not(:last-child) {
-            border-right: none;
+            border-right: none !important;
         }
 
         .actions-table td:not(:first-child) {
-            border-left: none;
+            border-left: none !important;
+        }
+
+        /* Additional aggressive border removal */
+        .actions-table thead tr,
+        .actions-table thead tr td,
+        .actions-table thead tr th {
+            border-left: none !important;
+            border-right: none !important;
+            border-collapse: collapse !important;
+        }
+
+        /* Remove any visual separators */
+        .actions-table th + th,
+        .actions-table td + td {
+            border-left: none !important;
         }
 
         .actions-table tbody tr {
