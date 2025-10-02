@@ -268,4 +268,42 @@ class ActionController extends AbstractController
 
         return $this->json($stats);
     }
+
+    #[Route('/{id}/details', name: 'app_actions_details', methods: ['GET'])]
+    public function details(Request $request, int $id): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            throw $this->createAccessDeniedException('You must be logged in to view action details');
+        }
+
+        $action = $this->entityManager->find(\App\Entity\RetrospectiveAction::class, $id);
+        if (!$action) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Action not found']);
+            }
+            throw $this->createNotFoundException('Action not found');
+        }
+
+        // Check if user has access to this action
+        $hasAccess = $action->getAssignedTo() === $user || 
+                    $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                    $this->isGranted('ROLE_ADMIN');
+
+        if (!$hasAccess) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'You do not have access to this action']);
+            }
+            throw $this->createAccessDeniedException('You do not have access to this action');
+        }
+
+        $html = $this->renderView('actions/detail_popup.html.twig', [
+            'action' => $action,
+        ]);
+
+        return $this->json([
+            'success' => true,
+            'html' => $html
+        ]);
+    }
 }
