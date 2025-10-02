@@ -47,8 +47,7 @@
         <div class="label">Due Date</div>
         <div class="value">
             {% if action.dueDate %}
-                {{ action.dueDate|date('dddd, MMMM d, Y') }}
-                ({{ action.dueDate|date('M d, Y') }})
+                {{ action.dueDate|date('l, F j, Y') }}
             {% else %}
                 <span style="color: #9ca3af;">No due date set</span>
             {% endif %}
