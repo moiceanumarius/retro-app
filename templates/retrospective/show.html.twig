@@ -530,16 +530,20 @@
                         <div class="category-section">
                             <h4 class="category-title">🚨 What went wrong</h4>
                             {% if wrongCombined is iterable %}
-                                {% for item in wrongCombined %}
+                                {% for element in wrongCombined %}
+                                    {% if element.type == 'item' %}
+                                        {% set item = element.entity %}
                                     <div class="single-item-card">
                                         <div class="item-content">{{ item.content }}</div>
-                                        {% if item.discussed is defined and item.discussed %}
+                                        {% if item.isDiscussed is defined and item.isDiscussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% if item.votes is defined and item.votes > 0 %}
-                                            <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% set votesCount = item.votes|length %}
+                                        {% if votesCount > 0 %}
+                                            <span class="vote-count">{{ votesCount }} {{ votesCount == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
+                                        {% endif %}
                                 {% endfor %}
                             {% endif %}
                         </div>
@@ -549,16 +553,20 @@
                         <div class="category-section">
                             <h4 class="category-title">✅ What went well</h4>
                             {% if goodCombined is iterable %}
-                                {% for item in goodCombined %}
+                                {% for element in goodCombined %}
+                                    {% if element.type == 'item' %}
+                                        {% set item = element.entity %}
                                     <div class="single-item-card">
                                         <div class="item-content">{{ item.content }}</div>
-                                        {% if item.discussed is defined and item.discussed %}
+                                        {% if item.isDiscussed is defined and item.isDiscussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% if item.votes is defined and item.votes > 0 %}
-                                            <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% set votesCount = item.votes|length %}
+                                        {% if votesCount > 0 %}
+                                            <span class="vote-count">{{ votesCount }} {{ votesCount == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
+                                        {% endif %}
                                 {% endfor %}
                             {% endif %}
                         </div>
@@ -568,16 +576,20 @@
                         <div class="category-section">
                             <h4 class="category-title">🚀 What could be improved</h4>
                             {% if improvedCombined is iterable %}
-                                {% for item in improvedCombined %}
+                                {% for element in improvedCombined %}
+                                    {% if element.type == 'item' %}
+                                        {% set item = element.entity %}
                                     <div class="single-item-card">
                                         <div class="item-content">{{ item.content }}</div>
-                                        {% if item.discussed is defined and item.discussed %}
+                                        {% if item.isDiscussed is defined and item.isDiscussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% if item.votes is defined and item.votes > 0 %}
-                                            <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% set votesCount = item.votes|length %}
+                                        {% if votesCount > 0 %}
+                                            <span class="vote-count">{{ votesCount }} {{ votesCount == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
+                                        {% endif %}
                                 {% endfor %}
                             {% endif %}
                         </div>
@@ -587,16 +599,20 @@
                         <div class="category-section">
                             <h4 class="category-title">💡 Random thoughts</h4>
                             {% if randomCombined is iterable %}
-                                {% for item in randomCombined %}
+                                {% for element in randomCombined %}
+                                    {% if element.type == 'item' %}
+                                        {% set item = element.entity %}
                                     <div class="single-item-card">
                                         <div class="item-content">{{ item.content }}</div>
-                                        {% if item.discussed is defined and item.discussed %}
+                                        {% if item.isDiscussed is defined and item.isDiscussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% if item.votes is defined and item.votes > 0 %}
-                                            <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% set votesCount = item.votes|length %}
+                                        {% if votesCount > 0 %}
+                                            <span class="vote-count">{{ votesCount }} {{ votesCount == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
+                                        {% endif %}
                                 {% endfor %}
                             {% endif %}
                         </div>
