@@ -525,97 +525,64 @@
                 <div class="completed-summary">
                     <h3>Discussion Summary</h3>
                     
-                    <div class="categories-summary">
-                        {% if wrongCombined is not empty %}
-                        <div class="category-section">
-                            <h4 class="category-title">🚨 What went wrong</h4>
-                            {% if wrongCombined is iterable %}
-                                {% for element in wrongCombined %}
+                    <div class="discussion-items">
+                        {# Combine all items and sort by discussed status (discussed first) then by votes #}
+                        {% set allItems = [] %}
+                        {% for categoryItems in [wrongCombined, goodCombined, improvedCombined, randomCombined] %}
+                            {% if categoryItems is defined and categoryItems is iterable %}
+                                {% for element in categoryItems %}
                                     {% if element.type == 'item' %}
                                         {% set item = element.entity %}
-                                    <div class="single-item-card">
-                                        <div class="item-content">{{ item.content }}</div>
-                                        {% if item.isDiscussed is defined and item.isDiscussed %}
-                                            <span class="discussed-badge">Discussed</span>
-                                        {% endif %}
-                                        {% set votesCount = item.votes|length %}
-                                        {% if votesCount > 0 %}
-                                            <span class="vote-count">{{ votesCount }} {{ votesCount == 1 ? 'vote' : 'votes' }}</span>
-                                        {% endif %}
-                                    </div>
-                                        {% endif %}
+                                        {% set itemData = {
+                                            'item': item,
+                                            'category': item.category,
+                                            'isDiscussed': item.isDiscussed ? 1 : 0,
+                                            'votes': item.votes|length
+                                        } %}
+                                        {% set allItems = allItems|merge([itemData]) %}
+                                    {% endif %}
                                 {% endfor %}
                             {% endif %}
-                        </div>
-                        {% endif %}
+                        {% endfor %}
                         
-                        {% if goodCombined is not empty %}
-                        <div class="category-section">
-                            <h4 class="category-title">✅ What went well</h4>
-                            {% if goodCombined is iterable %}
-                                {% for element in goodCombined %}
-                                    {% if element.type == 'item' %}
-                                        {% set item = element.entity %}
-                                    <div class="single-item-card">
-                                        <div class="item-content">{{ item.content }}</div>
-                                        {% if item.isDiscussed is defined and item.isDiscussed %}
-                                            <span class="discussed-badge">Discussed</span>
-                                        {% endif %}
-                                        {% set votesCount = item.votes|length %}
-                                        {% if votesCount > 0 %}
-                                            <span class="vote-count">{{ votesCount }} {{ votesCount == 1 ? 'vote' : 'votes' }}</span>
-                                        {% endif %}
-                                    </div>
-                                        {% endif %}
-                                {% endfor %}
+                        {# Manual sorting: discussed items first, then by vote count descending #}
+                        {% set sortedItems = [] %}
+                        {% for itemData in allItems %}
+                            {% if itemData.isDiscussed %}
+                                {% set sortedItems = sortedItems|merge([itemData]) %}
                             {% endif %}
-                        </div>
-                        {% endif %}
+                        {% endfor %}
+                        {% for itemData in allItems %}
+                            {% if not itemData.isDiscussed %}
+                                {% set sortedItems = sortedItems|merge([itemData]) %}
+                            {% endif %}
+                        {% endfor %}
                         
-                        {% if improvedCombined is not empty %}
-                        <div class="category-section">
-                            <h4 class="category-title">🚀 What could be improved</h4>
-                            {% if improvedCombined is iterable %}
-                                {% for element in improvedCombined %}
-                                    {% if element.type == 'item' %}
-                                        {% set item = element.entity %}
-                                    <div class="single-item-card">
-                                        <div class="item-content">{{ item.content }}</div>
-                                        {% if item.isDiscussed is defined and item.isDiscussed %}
+                        {% for itemData in sortedItems %}
+                            {% set item = itemData.item %}
+                            {% set categoryColor = item.category == 'wrong' ? '#ef4444' : 
+                                          item.category == 'good' ? '#22c55e' : 
+                                          item.category == 'improved' ? '#3b82f6' : '#f59e0b' %}
+                            <div class="discussion-item-card">
+                                <div class="category-indicator" style="background-color: {{ categoryColor }};"></div>
+                                <div class="item-content">
+                                    <div class="item-text">{{ item.content }}</div>
+                                    <div class="item-badges">
+                                        {% if item.isDiscussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% set votesCount = item.votes|length %}
-                                        {% if votesCount > 0 %}
-                                            <span class="vote-count">{{ votesCount }} {{ votesCount == 1 ? 'vote' : 'votes' }}</span>
+                                        {% if itemData.votes > 0 %}
+                                            <span class="vote-count">{{ itemData.votes }} {{ itemData.votes == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
-                                        {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        </div>
-                        {% endif %}
+                                </div>
+                            </div>
+                        {% endfor %}
                         
-                        {% if randomCombined is not empty %}
-                        <div class="category-section">
-                            <h4 class="category-title">💡 Random thoughts</h4>
-                            {% if randomCombined is iterable %}
-                                {% for element in randomCombined %}
-                                    {% if element.type == 'item' %}
-                                        {% set item = element.entity %}
-                                    <div class="single-item-card">
-                                        <div class="item-content">{{ item.content }}</div>
-                                        {% if item.isDiscussed is defined and item.isDiscussed %}
-                                            <span class="discussed-badge">Discussed</span>
-                                        {% endif %}
-                                        {% set votesCount = item.votes|length %}
-                                        {% if votesCount > 0 %}
-                                            <span class="vote-count">{{ votesCount }} {{ votesCount == 1 ? 'vote' : 'votes' }}</span>
-                                        {% endif %}
-                                    </div>
-                                        {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        </div>
+                        {% if sortedItems is empty %}
+                            <div class="no-items">
+                                <p>No discussion items found.</p>
+                            </div>
                         {% endif %}
                     </div>
                 </div>
