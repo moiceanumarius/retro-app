@@ -401,7 +401,7 @@ class RetrospectiveController extends AbstractController
                 
                 // If no assignee, assign to the creator by default
                 $action->setAssignedTo($currentUser);
-                error_log("DEBUG Add Action - Action assignedTo set to: " . ($action->getAssignedTo() ? 'ID ' . $action->getAssignedTo()->getId() : 'NULL'));
+                error_log("DEBUG Add Action - Action assignedTo set to: ' . ($action->getAssignedTo() ? 'ID ' . $action->getAssignedTo()->getId() : 'NULL'));
             }
             
             if ($dueDate) {

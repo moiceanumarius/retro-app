@@ -22,7 +22,7 @@ class RetrospectiveAction
     private ?Retrospective $retrospective = null;
 
     #[ORM\ManyToOne]
-    #[ORM\JoinColumn(nullable: false)]
+    #[ORM\JoinColumn(nullable: true)]
     private ?User $assignedTo = null;
 
     #[ORM\ManyToOne]
