@@ -6,11 +6,48 @@
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
     <style>
-        /* Action-specific styles to extend team-management.css */
-        .team-management {
+        /* Action-specific styles */
+        .actions-management {
             padding: 0;
             max-width: 1400px;
             margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .header-left h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .header-left p {
+            color: #6b7280;
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .header-actions .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .page-content {
+            padding: 0;
         }
 
         .filters-section {
@@ -1074,10 +1111,11 @@
 {% endblock %}
 
 {% block body %}
-<div class="team-management">
+<!-- Actions Management Page -->
+<div class="actions-management">
     <!-- Header Section -->
-    <div class="team-header">
-        <div class="header-content">
+    <div class="page-header">
+        <div class="header-left">
             <h1>Action Management{% if team %} - {{ team.name }}{% endif %}</h1>
             <p>Track and manage action items from retrospectives{% if team %} for {{ team.name }}{% endif %}</p>
         </div>
@@ -1099,6 +1137,8 @@
             {% endif %}
         </div>
     </div>
+
+    <div class="page-content">
 
     {% if actions|length > 0 %}
         <!-- Stats Overview -->
@@ -1420,6 +1460,7 @@
             </div>
         </div>
     </div>
+    </div> <!-- End page-content -->
 </div>
 
 <script>
