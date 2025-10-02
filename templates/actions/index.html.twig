@@ -85,7 +85,7 @@
 
     .filters-grid {
         display: grid;
-        grid-template-columns: auto 1fr auto auto;
+        grid-template-columns: auto auto 2fr auto;
         gap: 1rem;
         align-items: center;
     }
@@ -106,12 +106,13 @@
     }
 
     .filter-dropdown {
-        padding: 0.875rem 1rem;
+        padding: 0.75rem 0.75rem;
         border: 2px solid #e2e8f0;
         border-radius: 8px;
         background: white;
         font-size: 0.875rem;
-        min-width: 150px;
+        min-width: 120px;
+        max-width: 140px;
     }
 
     .filter-dropdown:focus {
@@ -266,7 +267,8 @@
         font-size: 0.875rem;
         color: #374151;
         cursor: pointer;
-        min-width: 120px;
+        min-width: 110px;
+        max-width: 130px;
     }
 
     .status-select:hover,
@@ -392,7 +394,8 @@
         }
         
         .status-select {
-            min-width: 100px;
+            min-width: 90px;
+            max-width: 110px;
             font-size: 0.75rem;
         }
     }
