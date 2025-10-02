@@ -984,49 +984,60 @@
     padding: 2rem 0;
 }
 
-/* Discussion Group Cards */
-.discussion-group-card {
-    background: #f9fafb;
-    border-radius: 8px;
-    padding: 1.5rem;
-    margin-bottom: 1rem;
-    border: 1px solid #e5e7eb;
-    display: flex;
-    align-items: stretch;
-}
-
-.group-content {
-    flex: 1;
-}
-
-.group-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-}
-
-.group-label {
-    font-weight: 600;
-    color: #374151;
-    font-size: 0.875rem;
-}
-
-.group-items {
+/* Discussion Cards (Groups and Items) - Actions Page Style */
+.discussion-card {
     background: white;
-    border-radius: 6px;
-    padding: 1rem;
-    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+    position: relative;
 }
 
-.group-item-text {
+.discussion-card.group-card {
+    background: #f9fafb;
+}
+
+.category-indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+}
+
+.category-indicator.wrong {
+    background-color: #ef4444;
+}
+
+.category-indicator.good {
+    background-color: #22c55e;
+}
+
+.category-indicator.improved {
+    background-color: #3b82f6;
+}
+
+.category-indicator.random {
+    background-color: #f59e0b;
+}
+
+.card-content {
+    padding: 1.5rem 1.5rem 1.5rem 2rem;
+}
+
+.card-text {
+    margin-bottom: 1rem;
+}
+
+.item-paragraph {
     color: #1f2937;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 1rem;
+    line-height: 1.6;
     margin-bottom: 0.75rem;
 }
 
-.group-item-text:last-child {
+.item-paragraph:last-of-type {
     margin-bottom: 0;
 }
 
@@ -1034,6 +1045,23 @@
     height: 1px;
     background: #e5e7eb;
     margin: 0.75rem 0;
+}
+
+.card-footer {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.total-votes {
+    background: #dbeafe;
+    color: #1d4ed8;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
 }
 
 /* Actions List */

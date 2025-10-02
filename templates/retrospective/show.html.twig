@@ -592,25 +592,21 @@
                                 </div>
                             {% elseif elementData.type == 'group' %}
                                 {% set group = elementData.group %}
-                                {% set categoryColor = elementData.category == 'wrong' ? '#ef4444' : 
-                                              elementData.category == 'good' ? '#22c55e' : 
-                                              elementData.category == 'improved' ? '#3b82f6' : '#f59e0b' %}
-                                <div class="discussion-group-card">
-                                    <div class="category-indicator" style="background-color: {{ categoryColor }};"></div>
-                                    <div class="group-content">
-                                        <div class="group-header">
-                                            <span class="group-label">Group ({{ elementData.itemCount }} items)</span>
-                                            {% if elementData.votes > 0 %}
-                                                <span class="vote-count">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="group-items">
+                                <div class="discussion-card group-card">
+                                    <div class="category-indicator {{ elementData.category }}"></div>
+                                    <div class="card-content">
+                                        <div class="card-text">
                                             {% for groupItem in group.getItems() %}
-                                                <div class="group-item-text">{{ groupItem.content }}</div>
+                                                <div class="item-paragraph">{{ groupItem.content }}</div>
                                                 {% if not loop.last %}
                                                     <div class="item-separator"></div>
                                                 {% endif %}
                                             {% endfor %}
+                                        </div>
+                                        <div class="card-footer">
+                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                <span class="total-votes">{{ elementData.itemCount }} {{ elementData.itemCount == 1 ? 'vote' : 'votes' }}</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
