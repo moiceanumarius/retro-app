@@ -526,57 +526,8 @@
                     <h3>Discussion Summary</h3>
                     
                     <div class="discussion-items">
-                        {# Combine all items and groups and sort by discussed status (discussed first) then by votes #}
-                        {% set allElements = [] %}
-                        {% for categoryItems in [wrongCombined, goodCombined, improvedCombined, randomCombined] %}
-                            {% if categoryItems is defined and categoryItems is iterable %}
-                                {% for element in categoryItems %}
-                                    {% if element.type == 'item' %}
-                                        {% set item = element.entity %}
-                                        {# Calculate total votes manually like in controller #}
-                                        {% set totalVotes = 0 %}
-                                        {% for vote in item.votes %}
-                                            {% set totalVotes = totalVotes + vote.voteCount %}
-                                        {% endfor %}
-                                        
-                                        {% set itemData = {
-                                            'type': 'item',
-                                            'item': item,
-                                            'category': item.category,
-                                            'isDiscussed': item.isDiscussed ? true : false,
-                                            'votes': totalVotes,
-                                            'position': element.position|default(0)
-                                        } %}
-                                        {% set allElements = allElements|merge([itemData]) %}
-                                    {% elseif element.type == 'group' %}
-                                        {% set group = element.entity %}
-                                        {# Calculate total votes from all items in the group manually like in controller #}
-                                        {% set groupTotalVotes = 0 %}
-                                        {% set groupHasDiscussed = false %}
-                                        {% for groupItem in group.getItems() %}
-                                            {% for vote in groupItem.votes %}
-                                                {% set groupTotalVotes = groupTotalVotes + vote.voteCount %}
-                                            {% endfor %}
-                                            {% if groupItem.isDiscussed %}
-                                                {% set groupHasDiscussed = true %}
-                                            {% endif %}
-                                        {% endfor %}
-                                        
-                                        {# Note: Template can only calculate votes from individual items in group, not group-level votes #}
-                                        
-                                        {% set groupData = {
-                                            'type': 'group',
-                                            'group': group,
-                                            'category': group.getPositionX() == 0 ? 'wrong' : group.getPositionX() == 1 ? 'good' : group.getPositionX() == 2 ? 'improved' : 'random',
-                                            'isDiscussed': groupHasDiscussed,
-                                            'votes': groupTotalVotes,
-                                            'position': element.position|default(0)
-                                        } %}
-                                        {% set allElements = allElements|merge([groupData]) %}
-                                    {% endif %}
-                                {% endfor %}
-                            {% endif %}
-                        {% endfor %}
+                        {# Use pre-calculated votes from controller #}
+                        {% set allElements = sortedItemsWithVotes %}
                         
                         {# Manual sorting: discussed items first (descending by votes), then non-discussed (descending by votes) #}
                         {% set discussedElements = [] %}

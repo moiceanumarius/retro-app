@@ -164,9 +164,9 @@ class RetrospectiveController extends AbstractController
         $actions = $this->entityManager->getRepository(RetrospectiveAction::class)
             ->findBy(['retrospective' => $retrospective], ['createdAt' => 'ASC']);
 
-        // Prepare sorted items with aggregated votes for actions phase
+        // Prepare sorted items with aggregated votes for actions and completed phases
         $sortedItemsWithVotes = [];
-        if ($retrospective->isInStep('actions')) {
+        if ($retrospective->isInStep('actions') || $retrospective->isCompleted()) {
             $sortedItemsWithVotes = $this->getItemsWithAggregatedVotes($items, $groups);
         }
 
