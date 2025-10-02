@@ -97,6 +97,13 @@
         .actions-table {
             width: 100%;
             border-collapse: collapse;
+            border-spacing: 0;
+            border: none;
+            outline: none;
+        }
+
+        .actions-table * {
+            border-color: inherit;
         }
 
         .actions-table thead {
@@ -112,12 +119,35 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             border-bottom: 2px solid #e9ecef;
+            border-left: none;
+            border-right: none;
+            border-top: none;
+            position: relative;
+        }
+
+        .actions-table th:not(:last-child) {
+            border-right: none;
+        }
+
+        .actions-table th:not(:first-child) {
+            border-left: none;
         }
 
         .actions-table td {
             padding: 1rem;
             border-bottom: 1px solid #f1f5f9;
+            border-left: none;
+            border-right: none;
+            border-top: none;
             vertical-align: top;
+        }
+
+        .actions-table td:not(:last-child) {
+            border-right: none;
+        }
+
+        .actions-table td:not(:first-child) {
+            border-left: none;
         }
 
         .actions-table tbody tr {
