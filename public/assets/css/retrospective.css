@@ -984,6 +984,58 @@
     padding: 2rem 0;
 }
 
+/* Discussion Group Cards */
+.discussion-group-card {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid #e5e7eb;
+    display: flex;
+    align-items: stretch;
+}
+
+.group-content {
+    flex: 1;
+}
+
+.group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.group-label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.group-items {
+    background: white;
+    border-radius: 6px;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+}
+
+.group-item-text {
+    color: #1f2937;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+}
+
+.group-item-text:last-child {
+    margin-bottom: 0;
+}
+
+.item-separator {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 0.75rem 0;
+}
+
 /* Actions List */
 .actions-list {
     max-height: 600px;

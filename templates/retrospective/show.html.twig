@@ -526,60 +526,98 @@
                     <h3>Discussion Summary</h3>
                     
                     <div class="discussion-items">
-                        {# Combine all items and sort by discussed status (discussed first) then by votes #}
-                        {% set allItems = [] %}
+                        {# Combine all items and groups and sort by discussed status (discussed first) then by votes #}
+                        {% set allElements = [] %}
                         {% for categoryItems in [wrongCombined, goodCombined, improvedCombined, randomCombined] %}
                             {% if categoryItems is defined and categoryItems is iterable %}
                                 {% for element in categoryItems %}
                                     {% if element.type == 'item' %}
                                         {% set item = element.entity %}
                                         {% set itemData = {
+                                            'type': 'item',
                                             'item': item,
                                             'category': item.category,
-                                            'isDiscussed': item.isDiscussed ? 1 : 0,
+                                            'isDiscussed': item.isDiscussed ? true : false,
                                             'votes': item.votes|length
                                         } %}
-                                        {% set allItems = allItems|merge([itemData]) %}
+                                        {% set allElements = allElements|merge([itemData]) %}
+                                    {% elseif element.type == 'group' %}
+                                        {% set group = element.entity %}
+                                        {% set groupData = {
+                                            'type': 'group',
+                                            'group': group,
+                                            'category': group.getPositionX() == 0 ? 'wrong' : group.getPositionX() == 1 ? 'good' : group.getPositionX() == 2 ? 'improved' : 'random',
+                                            'isDiscussed': false, # Groups aren't discussed individually
+                                            'votes': group.getItems()|map(item => item.votes)|flatten|length,
+                                            'itemCount': group.getItems()|length
+                                        } %}
+                                        {% set allElements = allElements|merge([groupData]) %}
                                     {% endif %}
                                 {% endfor %}
                             {% endif %}
                         {% endfor %}
                         
                         {# Manual sorting: discussed items first, then by vote count descending #}
-                        {% set sortedItems = [] %}
-                        {% for itemData in allItems %}
-                            {% if itemData.isDiscussed %}
-                                {% set sortedItems = sortedItems|merge([itemData]) %}
+                        {% set sortedElements = [] %}
+                        {% for elementData in allElements %}
+                            {% if elementData.isDiscussed %}
+                                {% set sortedElements = sortedElements|merge([elementData]) %}
                             {% endif %}
                         {% endfor %}
-                        {% for itemData in allItems %}
-                            {% if not itemData.isDiscussed %}
-                                {% set sortedItems = sortedItems|merge([itemData]) %}
+                        {% for elementData in allElements %}
+                            {% if not elementData.isDiscussed %}
+                                {% set sortedElements = sortedElements|merge([elementData]) %}
                             {% endif %}
                         {% endfor %}
                         
-                        {% for itemData in sortedItems %}
-                            {% set item = itemData.item %}
-                            {% set categoryColor = item.category == 'wrong' ? '#ef4444' : 
-                                          item.category == 'good' ? '#22c55e' : 
-                                          item.category == 'improved' ? '#3b82f6' : '#f59e0b' %}
-                            <div class="discussion-item-card">
-                                <div class="category-indicator" style="background-color: {{ categoryColor }};"></div>
-                                <div class="item-content">
-                                    <div class="item-text">{{ item.content }}</div>
-                                    <div class="item-badges">
-                                        {% if item.isDiscussed %}
-                                            <span class="discussed-badge">Discussed</span>
-                                        {% endif %}
-                                        {% if itemData.votes > 0 %}
-                                            <span class="vote-count">{{ itemData.votes }} {{ itemData.votes == 1 ? 'vote' : 'votes' }}</span>
-                                        {% endif %}
+                        {% for elementData in sortedElements %}
+                            {% if elementData.type == 'item' %}
+                                {% set item = elementData.item %}
+                                {% set categoryColor = elementData.category == 'wrong' ? '#ef4444' : 
+                                              elementData.category == 'good' ? '#22c55e' : 
+                                              elementData.category == 'improved' ? '#3b82f6' : '#f59e0b' %}
+                                <div class="discussion-item-card">
+                                    <div class="category-indicator" style="background-color: {{ categoryColor }};"></div>
+                                    <div class="item-content">
+                                        <div class="item-text">{{ item.content }}</div>
+                                        <div class="item-badges">
+                                            {% if item.isDiscussed %}
+                                                <span class="discussed-badge">Discussed</span>
+                                            {% endif %}
+                                            {% if elementData.votes > 0 %}
+                                                <span class="vote-count">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            {% elseif elementData.type == 'group' %}
+                                {% set group = elementData.group %}
+                                {% set categoryColor = elementData.category == 'wrong' ? '#ef4444' : 
+                                              elementData.category == 'good' ? '#22c55e' : 
+                                              elementData.category == 'improved' ? '#3b82f6' : '#f59e0b' %}
+                                <div class="discussion-group-card">
+                                    <div class="category-indicator" style="background-color: {{ categoryColor }};"></div>
+                                    <div class="group-content">
+                                        <div class="group-header">
+                                            <span class="group-label">Group ({{ elementData.itemCount }} items)</span>
+                                            {% if elementData.votes > 0 %}
+                                                <span class="vote-count">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="group-items">
+                                            {% for groupItem in group.getItems() %}
+                                                <div class="group-item-text">{{ groupItem.content }}</div>
+                                                {% if not loop.last %}
+                                                    <div class="item-separator"></div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endif %}
                         {% endfor %}
                         
-                        {% if sortedItems is empty %}
+                        {% if sortedElements is empty %}
                             <div class="no-items">
                                 <p>No discussion items found.</p>
                             </div>
