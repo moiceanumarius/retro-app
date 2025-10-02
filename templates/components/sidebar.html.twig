@@ -90,6 +90,7 @@
                 </a>
             </div>
             
+            {% if not app.user.hasRole('ROLE_MEMBER') %}
             <div class="nav-item">
                 <a href="{{ path('app_actions_team_selection') }}" class="nav-link">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
@@ -98,6 +99,7 @@
                     Actions
                 </a>
             </div>
+            {% endif %}
             
             <div class="nav-item">
                 <a href="{{ path('app_user_profile') }}" class="nav-link">
