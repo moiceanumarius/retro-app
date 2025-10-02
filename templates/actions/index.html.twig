@@ -254,17 +254,6 @@
             color: #38a169;
         }
 
-        .retrospective-link {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-            font-size: 0.875rem;
-        }
-
-        .retrospective-link:hover {
-            color: #5a67d8;
-            text-decoration: underline;
-        }
 
         .action-actions {
             display: flex;
@@ -569,6 +558,18 @@
             align-items: center;
             justify-content: center;
             flex-shrink: 0;
+        }
+
+        /* Created At Column Styling */
+        .created-at-cell {
+            width: 150px;
+            text-align: left;
+        }
+
+        .created-at-text {
+            font-size: 0.875rem;
+            color: #374151;
+            font-weight: 500;
         }
 
         /* Pagination Styles */
@@ -1059,7 +1060,7 @@
                     <option value="cancelled">Cancelled</option>
                 </select>
                 
-                <input type="text" class="search-box" id="searchBox" placeholder="Search actions, retrospectives, or assignees...">
+                <input type="text" class="search-box" id="searchBox" placeholder="Search actions, dates, or assignees...">
                 
                 <button class="clear-filters-btn" onclick="clearFilters()">
                     <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
@@ -1079,7 +1080,7 @@
                         <th>Description</th>
                         <th>Assignee</th>
                         <th>Due Date</th>
-                        <th>Retrospective</th>
+                        <th>Created At</th>
                         <th>Status</th>
                         <th>Actions</th>
                     </tr>
@@ -1088,8 +1089,9 @@
                     {% for action in actions %}
                     <tr data-status="{{ action.status }}" 
                         data-description="{{ action.description|lower }}" 
-                        data-retrospective="{{ action.retrospective.title|lower }}"
-                        data-assignee="{{ action.assignedTo ? action.assignedTo.email|lower : '' }}">
+                        data-created-at="{{ action.createdAt|date('Y-m-d') }}"
+                        data-assignee="{{ action.assignedTo ? action.assignedTo.email|lower : '' }}"
+                        data-action-id="{{ action.id }}">
                         <td>
                             <span class="action-id">#{{ action.id }}</span>
                         </td>
@@ -1141,11 +1143,8 @@
                                 <span style="color: #9ca3af;">No due date</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <a href="{{ path('app_retrospectives_show', {'id': action.retrospective.id}) }}" 
-                               class="retrospective-link" target="_blank">
-                                {{ action.retrospective.title }}
-                            </a>
+                        <td class="created-at-cell">
+                            <span class="created-at-text">{{ action.createdAt|date('M d, Y H:i') }}</span>
                         </td>
                         <td>
                             {% if app.user == action.assignedTo or app.user == action.retrospective.team.owner or is_granted('ROLE_ADMIN') %}
@@ -1305,7 +1304,7 @@
         tableRows.forEach(row => {
             const status = row.getAttribute('data-status');
             const description = row.getAttribute('data-description');
-            const retrospective = row.getAttribute('data-retrospective');
+            const createdAt = row.getAttribute('data-created-at');
             const assignee = row.getAttribute('data-assignee');
             
             let showRow = true;
@@ -1318,8 +1317,8 @@
             // Filter by search term
             if (searchValue) {
                 const searchMatch = description.includes(searchValue) ||
-                                 retrospective.includes(searchValue) ||
-                                 assignee.includes(searchValue);
+                                 assignee.includes(searchValue) ||
+                                 (createdAt && searchValue.match(/\d/) && createdAt.includes(searchValue));
                 if (!searchMatch) {
                     showRow = false;
                 }
