@@ -1398,7 +1398,6 @@ class RetrospectiveController extends AbstractController
                     ->getSingleScalarResult();
                 
                 $totalVotes = (int)($voteQueryResult ?? 0);
-                $this->logger->info("DEBUG Votes for item {$item->getId()}: query result = " . var_export($voteQueryResult, true) . ", total = {$totalVotes}");
                 
                 $combined[] = [
                     'type' => 'item',
@@ -1425,7 +1424,6 @@ class RetrospectiveController extends AbstractController
                 
                 $itemVotes = (int)($itemVotesResult ?? 0);
                 $totalVotes += $itemVotes;
-                $this->logger->info("DEBUG Group votes for item {$groupItem->getId()}: query result = " . var_export($itemVotesResult, true) . ", votes = {$itemVotes}");
             }
             
             // Add votes directly on the group
@@ -1440,7 +1438,6 @@ class RetrospectiveController extends AbstractController
             
             $groupVotes = (int)($groupVotesResult ?? 0);
             $totalVotes += $groupVotes;
-            $this->logger->info("DEBUG Group direct votes for group {$group->getId()}: query result = " . var_export($groupVotesResult, true) . ", votes = {$groupVotes}, total = {$totalVotes}");
             
             $combined[] = [
                 'type' => 'group',
