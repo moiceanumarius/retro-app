@@ -529,176 +529,76 @@
                         {% if wrongCombined is not empty %}
                         <div class="category-section">
                             <h4 class="category-title">🚨 What went wrong</h4>
-                            {% set wrongGrouped = wrongCombined|groupBy('group') %}
-                            {% for groupId, items in wrongGrouped %}
-                                {% if items|length > 1 %}
-                                    <div class="group-card">
-                                        <div class="group-header">
-                                            <span class="group-label">Group {{ items|length }} items</span>
-                                            {% set votes = items|map(i => i.votes)|flatten|sum %}
-                                            {% if votes > 0 %}
-                                                <span class="vote-count">{{ votes }} {{ votes == 1 ? 'vote' : 'votes' }}</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="items-list">
-                                            {% for item in items %}
-                                                <div class="item-summary">
-                                                    <span class="item-content">{{ item.content }}</span>
-                                                    {% if item.discussed %}
-                                                        <span class="discussed-badge">Discussed</span>
-                                                    {% endif %}
-                                                    {% if item.votes > 0 %}
-                                                        <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
-                                                    {% endif %}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    {% set item = items|first %}
+                            {% if wrongCombined is iterable %}
+                                {% for item in wrongCombined %}
                                     <div class="single-item-card">
                                         <div class="item-content">{{ item.content }}</div>
-                                        {% if item.discussed %}
+                                        {% if item.discussed is defined and item.discussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% if item.votes > 0 %}
+                                        {% if item.votes is defined and item.votes > 0 %}
                                             <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
-                                {% endif %}
-                            {% endfor %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                         {% endif %}
                         
                         {% if goodCombined is not empty %}
                         <div class="category-section">
                             <h4 class="category-title">✅ What went well</h4>
-                            {% set goodGrouped = goodCombined|groupBy('group') %}
-                            {% for groupId, items in goodGrouped %}
-                                {% if items|length > 1 %}
-                                    <div class="group-card">
-                                        <div class="group-header">
-                                            <span class="group-label">Group {{ items|length }} items</span>
-                                            {% set votes = items|map(i => i.votes)|flatten|sum %}
-                                            {% if votes > 0 %}
-                                                <span class="vote-count">{{ votes }} {{ votes == 1 ? 'vote' : 'votes' }}</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="items-list">
-                                            {% for item in items %}
-                                                <div class="item-summary">
-                                                    <span class="item-content">{{ item.content }}</span>
-                                                    {% if item.discussed %}
-                                                        <span class="discussed-badge">Discussed</span>
-                                                    {% endif %}
-                                                    {% if item.votes > 0 %}
-                                                        <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
-                                                    {% endif %}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    {% set item = items|first %}
+                            {% if goodCombined is iterable %}
+                                {% for item in goodCombined %}
                                     <div class="single-item-card">
                                         <div class="item-content">{{ item.content }}</div>
-                                        {% if item.discussed %}
+                                        {% if item.discussed is defined and item.discussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% if item.votes > 0 %}
+                                        {% if item.votes is defined and item.votes > 0 %}
                                             <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
-                                {% endif %}
-                            {% endfor %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                         {% endif %}
                         
                         {% if improvedCombined is not empty %}
                         <div class="category-section">
                             <h4 class="category-title">🚀 What could be improved</h4>
-                            {% set improvedGrouped = improvedCombined|groupBy('group') %}
-                            {% for groupId, items in improvedGrouped %}
-                                {% if items|length > 1 %}
-                                    <div class="group-card">
-                                        <div class="group-header">
-                                            <span class="group-label">Group {{ items|length }} items</span>
-                                            {% set votes = items|map(i => i.votes)|flatten|sum %}
-                                            {% if votes > 0 %}
-                                                <span class="vote-count">{{ votes }} {{ votes == 1 ? 'vote' : 'votes' }}</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="items-list">
-                                            {% for item in items %}
-                                                <div class="item-summary">
-                                                    <span class="item-content">{{ item.content }}</span>
-                                                    {% if item.discussed %}
-                                                        <span class="discussed-badge">Discussed</span>
-                                                    {% endif %}
-                                                    {% if item.votes > 0 %}
-                                                        <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
-                                                    {% endif %}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    {% set item = items|first %}
+                            {% if improvedCombined is iterable %}
+                                {% for item in improvedCombined %}
                                     <div class="single-item-card">
                                         <div class="item-content">{{ item.content }}</div>
-                                        {% if item.discussed %}
+                                        {% if item.discussed is defined and item.discussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% if item.votes > 0 %}
+                                        {% if item.votes is defined and item.votes > 0 %}
                                             <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
-                                {% endif %}
-                            {% endfor %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                         {% endif %}
                         
                         {% if randomCombined is not empty %}
                         <div class="category-section">
                             <h4 class="category-title">💡 Random thoughts</h4>
-                            {% set randomGrouped = randomCombined|groupBy('group') %}
-                            {% for groupId, items in randomGrouped %}
-                                {% if items|length > 1 %}
-                                    <div class="group-card">
-                                        <div class="group-header">
-                                            <span class="group-label">Group {{ items|length }} items</span>
-                                            {% set votes = items|map(i => i.votes)|flatten|sum %}
-                                            {% if votes > 0 %}
-                                                <span class="vote-count">{{ votes }} {{ votes == 1 ? 'vote' : 'votes' }}</span>
-                                            {% endif %}
-                                        </div>
-                                        <div class="items-list">
-                                            {% for item in items %}
-                                                <div class="item-summary">
-                                                    <span class="item-content">{{ item.content }}</span>
-                                                    {% if item.discussed %}
-                                                        <span class="discussed-badge">Discussed</span>
-                                                    {% endif %}
-                                                    {% if item.votes > 0 %}
-                                                        <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
-                                                    {% endif %}
-                                                </div>
-                                            {% endfor %}
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    {% set item = items|first %}
+                            {% if randomCombined is iterable %}
+                                {% for item in randomCombined %}
                                     <div class="single-item-card">
                                         <div class="item-content">{{ item.content }}</div>
-                                        {% if item.discussed %}
+                                        {% if item.discussed is defined and item.discussed %}
                                             <span class="discussed-badge">Discussed</span>
                                         {% endif %}
-                                        {% if item.votes > 0 %}
+                                        {% if item.votes is defined and item.votes > 0 %}
                                             <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
                                         {% endif %}
                                     </div>
-                                {% endif %}
-                            {% endfor %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                         {% endif %}
                     </div>
