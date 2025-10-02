@@ -6,7 +6,8 @@
     <title>Register - Retro App</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>🔄</text></svg>">
+    <link rel="icon" type="image/svg+xml" href="{{ asset('assets/images/favicon-r.svg') }}">
+    <link rel="apple-touch-icon" href="{{ asset('assets/images/favicon-r.svg') }}">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -165,7 +166,10 @@
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
-                <div class="auth-logo">🔄 Retro App</div>
+                <div class="auth-logo">
+                    <img src="{{ asset('assets/images/logo-r.svg') }}" alt="Retro App" style="width: 40px; height: 40px; margin-right: 12px;">
+                    Retro App
+                </div>
                 <p class="auth-subtitle">Create your account</p>
             </div>
             

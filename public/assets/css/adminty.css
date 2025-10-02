@@ -61,6 +61,12 @@ body {
     font-weight: 700;
     color: white;
     text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+.sidebar-brand img {
+    vertical-align: middle;
 }
 
 .sidebar-nav {
@@ -227,3 +233,17 @@ body {
 .mt-2 { margin-top: 0.5rem; }
 .mt-3 { margin-top: 1rem; }
 .mt-4 { margin-top: 1.5rem; }
+
+/* Auth Logo Styles */
+.auth-logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.auth-logo img {
+    vertical-align: middle;
+}
