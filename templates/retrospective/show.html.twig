@@ -527,25 +527,25 @@
                         <div class="summary-column">
                             <h4>What went wrong ({{ wrongItems|length }})</h4>
                             {% for item in wrongItems %}
-                            <div class="summary-item">{{ item.content }}</div>
+                            <div class="summary-item wrong-item">{{ item.content }}</div>
                             {% endfor %}
                         </div>
                         <div class="summary-column">
                             <h4>What went good ({{ goodItems|length }})</h4>
                             {% for item in goodItems %}
-                            <div class="summary-item">{{ item.content }}</div>
+                            <div class="summary-item good-item">{{ item.content }}</div>
                             {% endfor %}
                         </div>
                         <div class="summary-column">
                             <h4>What can be improved ({{ improvedItems|length }})</h4>
                             {% for item in improvedItems %}
-                            <div class="summary-item">{{ item.content }}</div>
+                            <div class="summary-item improved-item">{{ item.content }}</div>
                             {% endfor %}
                         </div>
                         <div class="summary-column">
                             <h4>Random feedback ({{ randomItems|length }})</h4>
                             {% for item in randomItems %}
-                            <div class="summary-item">{{ item.content }}</div>
+                            <div class="summary-item random-item">{{ item.content }}</div>
                             {% endfor %}
                         </div>
                     </div>
@@ -602,7 +602,7 @@
     </script>
     
     <!-- Floating Timer -->
-    <div class="floating-timer" id="floatingTimer" {% if retrospective.isInStep('actions') %}style="display: none;"{% endif %}>
+    <div class="floating-timer" id="floatingTimer" {% if retrospective.isInStep('actions') or retrospective.isCompleted() %}style="display: none;"{% endif %}>
         {% if retrospective.facilitator == app.user %}
         <div class="timer-label" style="font-size: 0.8rem; font-weight: bold; color: #6c757d; margin-bottom: 0.5rem; text-align: center;">Set timer</div>
         <div class="timer-controls">
