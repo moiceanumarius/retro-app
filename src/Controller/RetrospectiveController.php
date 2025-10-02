@@ -248,7 +248,7 @@ class RetrospectiveController extends AbstractController
         return $this->redirectToRoute('app_retrospectives_show', ['id' => $retrospective->getId()]);
     }
 
-    #[Route('/retrospectives/{id}/complete', name: 'app_retrospectives_complete', methods: ['POST'])]
+    #[Route('/retrospectives/{id}/complete', name: 'app_retrospectives_complete', methods: ['GET', 'POST'])]
     public function complete(Request $request, int $id): Response
     {
         $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
