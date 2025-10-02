@@ -545,6 +545,18 @@ document.addEventListener('DOMContentLoaded', function() {
     console.log('');
     
 
+    // Initialize filtering on page load
+    if (tableRows.length === 0) {
+        console.log('No table rows found!');
+    } else {
+        console.log('Found', tableRows.length, 'table rows');
+    }
+    
+    // Test initial state
+    setTimeout(() => {
+        filterTable();
+    }, 200);
+
     // Status filter functionality
     if (statusFilter) {
         statusFilter.addEventListener('change', function() {
@@ -625,8 +637,6 @@ document.addEventListener('DOMContentLoaded', function() {
         filterTable();
     };
     
-    // Initialize filtering on page load
-    setTimeout(filterTable, 100);
 
     // Status update functionality
     const statusSelects = document.querySelectorAll('.status-select');
