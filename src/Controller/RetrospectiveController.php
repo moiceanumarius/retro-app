@@ -1407,8 +1407,25 @@ class RetrospectiveController extends AbstractController
             ];
         }
         
-        // Sort by total votes (descending)
-        usort($combined, fn($a, $b) => $b['totalVotes'] <=> $a['totalVotes']);
+        // Sort: first non-discussed (by votes desc), then discussed (by votes desc)
+        usort($combined, function($a, $b) {
+            $aEntity = $a['entity'];
+            $bEntity = $b['entity'];
+            
+            // Check if items are discussed
+            $aDiscussed = ($aEntity instanceof \App\Entity\RetrospectiveItem) ? $aEntity->isDiscussed() : 
+                         (method_exists($aEntity, 'isDiscussed') ? $aEntity->isDiscussed() : false);
+            $bDiscussed = ($bEntity instanceof \App\Entity\RetrospectiveItem) ? $bEntity->isDiscussed() : 
+                         (method_exists($bEntity, 'isDiscussed') ? $bEntity->isDiscussed() : false);
+            
+            // If both have same discussion status, sort by votes
+            if ($aDiscussed === $bDiscussed) {
+                return $b['totalVotes'] <=> $a['totalVotes'];
+            }
+            
+            // Non-discussed items come first
+            return $aDiscussed ? 1 : -1;
+        });
         
         return $combined;
     }
