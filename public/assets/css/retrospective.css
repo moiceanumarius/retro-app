@@ -1031,16 +1031,16 @@
 
 /* Actions List */
 .actions-list {
-    max-height: 600px;
-    overflow-y: auto;
+    /* Removed max-height and overflow-y for full display of all actions */
 }
 
 .action-item {
-    background: rgba(255, 255, 255, 0.15);
+    background: #f8fafc;
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid #e2e8f0;
+    transition: all 0.2s ease;
 }
 
 .action-item:last-child {
@@ -1063,32 +1063,37 @@
 }
 
 .action-status.pending {
-    background: rgba(255, 193, 7, 0.8);
+    background: #fbbf24;
     color: white;
+    box-shadow: 0 1px 3px rgba(251, 191, 36, 0.3);
 }
 
 .action-status.in-progress {
-    background: rgba(33, 150, 243, 0.8);
+    background: #3b82f6;
     color: white;
+    box-shadow: 0 1px 3px rgba(59, 130, 246, 0.3);
 }
 
 .action-status.completed {
-    background: rgba(76, 175, 80, 0.8);
+    background: #10b981;
     color: white;
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
 }
 
 .action-status.cancelled {
-    background: rgba(244, 67, 54, 0.8);
+    background: #ef4444;
     color: white;
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
 }
 
 .action-due-date {
-    color: rgba(255, 255, 255, 0.7);
+    color: #64748b;
     font-size: 0.85rem;
+    font-weight: 500;
 }
 
 .action-description {
-    color: white;
+    color: #1e293b;
     font-size: 0.95rem;
     line-height: 1.4;
     margin-bottom: 0.75rem;
@@ -1102,7 +1107,7 @@
 
 .action-assignee,
 .action-meta {
-    color: rgba(255, 255, 255, 0.8);
+    color: #64748b;
     font-size: 0.8rem;
 }
 
@@ -1112,7 +1117,7 @@
 }
 
 .no-actions p {
-    color: rgba(255, 255, 255, 0.7);
+    color: #64748b;
     font-style: italic;
 }
 
@@ -1243,6 +1248,6 @@
     }
     
     .actions-list {
-        max-height: 400px;
+        /* Full height for mobile - no scrolling */
     }
 }
