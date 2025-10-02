@@ -533,24 +533,37 @@
                                 {% for element in categoryItems %}
                                     {% if element.type == 'item' %}
                                         {% set item = element.entity %}
+                                        {# Calculate total votes like in getItemsWithAggregatedVotes #}
+                                        {% set totalVotes = 0 %}
+                                        {% for vote in item.votes %}
+                                            {% set totalVotes = totalVotes + vote.voteCount %}
+                                        {% endfor %}
+                                        
                                         {% set itemData = {
                                             'type': 'item',
                                             'item': item,
                                             'category': item.category,
                                             'isDiscussed': item.isDiscussed ? true : false,
-                                            'votes': item.votes|length
+                                            'votes': totalVotes
                                         } %}
                                         {% set allElements = allElements|merge([itemData]) %}
                                     {% elseif element.type == 'group' %}
                                         {% set group = element.entity %}
-                                        {# Calculate total votes from all items in the group #}
+                                        {# Calculate total votes from all items in the group (sum voteCount like in getItemsWithAggregatedVotes) #}
                                         {% set groupTotalVotes = 0 %}
                                         {% set groupHasDiscussed = false %}
                                         {% for groupItem in group.getItems() %}
-                                            {% set groupTotalVotes = groupTotalVotes + groupItem.votes|length %}
+                                            {% for vote in groupItem.votes %}
+                                                {% set groupTotalVotes = groupTotalVotes + vote.voteCount %}
+                                            {% endfor %}
                                             {% if groupItem.isDiscussed %}
                                                 {% set groupHasDiscussed = true %}
                                             {% endif %}
+                                        {% endfor %}
+                                        
+                                        {# Also add votes directly on the group (like in controller) #}
+                                        {% for vote in group.votes %}
+                                            {% set groupTotalVotes = groupTotalVotes + vote.voteCount %}
                                         {% endfor %}
                                         
                                         {% set groupData = {
