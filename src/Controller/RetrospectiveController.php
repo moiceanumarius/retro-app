@@ -1514,6 +1514,9 @@ class RetrospectiveController extends AbstractController
         // Store user as connected (in a real app, use Redis or similar)
         $this->addConnectedUser($id, $user);
         
+        // Notify all users via Mercure about the new connection
+        $this->publishConnectedUsersUpdate($id);
+        
         // error_log("User added to connected users for retrospective: $id");
         
         return $this->json([
@@ -1541,6 +1544,9 @@ class RetrospectiveController extends AbstractController
         
         // Remove user from connected list
         $this->removeConnectedUser($id, $user);
+        
+        // Notify all users via Mercure about the user leaving
+        $this->publishConnectedUsersUpdate($id);
         
         return $this->json(['success' => true]);
     }
@@ -1820,6 +1826,37 @@ class RetrospectiveController extends AbstractController
             ]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => 'Failed to save vote: ' . $e->getMessage()], 500);
+        }
+    }
+
+    private function publishConnectedUsersUpdate(int $retrospectiveId): void
+    {
+        try {
+            // Get updated connected users
+            $connectedUsers = $this->getConnectedUsers($retrospectiveId);
+            
+            // Publish update to connected-users topic
+            $update = new Update(
+                "retrospective/{$retrospectiveId}/connected-users",
+                json_encode([
+                    'type' => 'connected_users_updated',
+                    'users' => $connectedUsers
+                ])
+            );
+            $this->hub->publish($update);
+            
+            // Also broadcast to general retrospective topic
+            $update2 = new Update(
+                "retrospective/{$retrospectiveId}",
+                json_encode([
+                    'type' => 'connected_users_updated',
+                    'users' => $connectedUsers
+                ])
+            );
+            $this->hub->publish($update2);
+        } catch (\Exception $e) {
+            // Log error but don't break the main flow
+            error_log('Error publishing connected users update: ' . $e->getMessage());
         }
     }
 

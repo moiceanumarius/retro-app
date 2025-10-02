@@ -24,6 +24,9 @@ class RetrospectiveBoard {
         this.maxVotesPerItem = 2;
         this.votingActive = false;
         
+        // Store global reference for cleanup
+        window.retrospectiveBoard = this;
+        
         this.init();
     }
     
@@ -60,6 +63,9 @@ class RetrospectiveBoard {
                 floatingTimer.style.display = 'none';
             }
         }
+        
+        // Start polling for connected users to update sidebar
+        this.startUserConnectivityPolling();
     }
     
     bindEvents() {
@@ -3095,3 +3101,46 @@ RetrospectiveBoard.prototype.handleAddAction = async function(e) {
         this.showMessage('Failed to add action item', 'error');
     }
 };
+
+// User Connectivity Polling
+RetrospectiveBoard.prototype.startUserConnectivityPolling = function() {
+    // Call immediately to set initial state
+    this.heartbeatConnectedUsers();
+    
+    // Set up interval to keep users "alive" and check other users
+    this.userPollingInterval = setInterval(() => {
+        this.heartbeatConnectedUsers();
+    }, 30000); // Every 30 seconds
+};
+
+RetrospectiveBoard.prototype.heartbeatConnectedUsers = async function() {
+    try {
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/connected-users`, {
+            method: 'GET',
+            credentials: 'include',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            this.updateConnectedUsers(data.users);
+        }
+    } catch (error) {
+        console.error('Error in heartbeat users:', error);
+    }
+};
+
+// Cleanup polling on page unload
+window.addEventListener('beforeunload', function() {
+    if (window.retrospectiveBoard && window.retrospectiveBoard.userPollingInterval) {
+        clearInterval(window.retrospectiveBoard.userPollingInterval);
+        
+        // Notify server that user is leaving
+        if (window.retrospectiveBoard && window.retrospectiveBoard.retrospectiveId) {
+            navigator.sendBeacon(`/retrospectives/${window.retrospectiveBoard.retrospectiveId}/leave`, '');
+        }
+    }
+});
