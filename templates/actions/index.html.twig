@@ -214,10 +214,15 @@
             letter-spacing: 0.5px;
         }
 
+        .status-badge.pending {
+            background: #64748b;
+            color: white;
+        }
+
         .status-badge.open {
             background: #ff6b6b;
             color: white;
-        }
+        }    
 
         .status-badge.in-progress {
             background: #ffd93d;
@@ -438,10 +443,10 @@
     {% if actions|length > 0 %}
         <!-- Stats Overview -->
         <div class="stats-row">
-            {% set openActions = actions|filter(a => a.status == 'open')|length %}
+            {% set openActions = actions|filter(a => a.status == 'pending' or a.status == 'open')|length %}
             {% set inProgressActions = actions|filter(a => a.status == 'in-progress')|length %}
             {% set completedActions = actions|filter(a => a.status == 'completed')|length %}
-            {% set overdueActions = actions|filter(a => a.dueAt and a.dueAt.date < 'now'|date('Y-m-d') and a.status != 'completed')|length %}
+            {% set overdueActions = actions|filter(a => a.dueDate and a.dueDate.date < 'now'|date('Y-m-d') and a.status != 'completed')|length %}
 
             <div class="stat-card open">
                 <div class="stat-icon">
@@ -498,6 +503,7 @@
                 <label class="filter-label">Status:</label>
                 <select class="filter-dropdown" id="statusFilter">
                     <option value="">All Status</option>
+                    <option value="pending">Pending</option>
                     <option value="open">Open</option>
                     <option value="in-progress">In Progress</option>
                     <option value="completed">Completed</option>
@@ -534,7 +540,7 @@
                     <tr data-status="{{ action.status }}" 
                         data-description="{{ action.description|lower }}" 
                         data-retrospective="{{ action.retrospective.title|lower }}"
-                        data-assignee="{{ action.assignee ? action.assignee.email|lower : '' }}">
+                        data-assignee="{{ action.assignedTo ? action.assignedTo.email|lower : '' }}">
                         <td>
                             <span class="action-id">#{{ action.id }}</span>
                         </td>
@@ -542,26 +548,27 @@
                             <div class="action-description">{{ action.description }}</div>
                         </td>
                         <td>
-                            {% if action.assignee %}
+                            {% if action.assignedTo %}
                                 <div class="assignee-info">
                                     <div class="assignee-avatar">
-                                        {{ action.assignee.email|slice(0,1)|upper }}
+                                        {{ action.assignedTo.email|slice(0,1)|upper }}
                                     </div>
-                                    <span class="assignee-name">{{ action.assignee.email }}</span>
+                                    <span class="assignee-name">{{ action.assignedTo.email }}">
+                                    </span>
                                 </div>
                             {% else %}
                                 <span style="color: #9ca3af; font-style: italic;">Unassigned</span>
                             {% endif %}
                         </td>
                         <td>
-                            {% if action.dueAt %}
-                                {% set dueDate = action.dueAt.date('Y-m-d') %}
+                            {% if action.dueDate %}
+                                {% set dueDate = action.dueDate.date('Y-m-d') %}
                                 {% set now = 'now'|date('Y-m-d') %}
-                                {% set diff = action.dueAt.diff(date(now))|date('%a') %}
+                                {% set diff = action.dueDate.diff(date(now))|date('%a') %}
                                 <span class="due-date {% if dueDate < now and action.status != 'completed' %}overdue
                                 {% elseif diff <= 3 and diff >= 0 %}due-soon
                                 {% else %}normal{% endif %}">
-                                    {{ action.dueAt|date('M d, Y') }}
+                                    {{ action.dueDate|date('M d, Y') }}
                                 </span>
                             {% else %}
                                 <span style="color: #9ca3af;">No due date</span>
@@ -574,11 +581,12 @@
                             </a>
                         </td>
                         <td>
-                            {% if app.user == action.assignee or app.user == action.retrospective.team.owner or is_granted('ROLE_ADMIN') %}
+                            {% if app.user == action.assignedTo or app.user == action.retrospective.team.owner or is_granted('ROLE_ADMIN') %}
                                 <select class="status-select" 
                                         data-action-id="{{ action.id }}"
                                         value="{{ action.status }}"
                                         onchange="updateActionStatus({{ action.id }}, this.value)">
+                                    <option value="pending" {{ action.status == 'pending' ? 'selected' : '' }}>Pending</option>
                                     <option value="open" {{ action.status == 'open' ? 'selected' : '' }}>Open</option>
                                     <option value="in-progress" {{ action.status == 'in-progress' ? 'selected' : '' }}>In Progress</option>
                                     <option value="completed" {{ action.status == 'completed' ? 'selected' : '' }}>Completed</option>
@@ -590,7 +598,7 @@
                         </td>
                         <td>
                             <div class="action-actions">
-                                {% if app.user == action.assignee or app.user == action.retrospective.team.owner or is_granted('ROLE_ADMIN') %}
+                                {% if app.user == action.assignedTo or app.user == action.retrospective.team.owner or is_granted('ROLE_ADMIN') %}
                                     <button class="btn btn-sm btn-primary" 
                                             onclick="assignAction({{ action.id }})"
                                             style="padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.75rem;">
