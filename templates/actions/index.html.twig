@@ -562,12 +562,10 @@
                         </td>
                         <td>
                             {% if action.dueDate %}
-                                {% set dueDate = action.dueDate.date('Y-m-d') %}
-                                {% set now = 'now'|date('Y-m-d') %}
-                                {% set diff = action.dueDate.diff(date(now))|date('%a') %}
-                                <span class="due-date {% if dueDate < now and action.status != 'completed' %}overdue
-                                {% elseif diff <= 3 and diff >= 0 %}due-soon
-                                {% else %}normal{% endif %}">
+                                {% set dueDateStr = action.dueDate|date('Y-m-d') %}
+                                {% set nowStr = 'now'|date('Y-m-d') %}
+                                {% set diffDays = (action.dueDate.timestamp - 'now'|date('U'))/86400 %}
+                                <span class="due-date {% if dueDateStr < nowStr and action.status != 'completed' %}overdue{% elseif diffDays <= 3 and diffDays >= 0 %}due-soon{% else %}normal{% endif %}">
                                     {{ action.dueDate|date('M d, Y') }}
                                 </span>
                             {% else %}
