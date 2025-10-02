@@ -617,6 +617,7 @@
                                                     <span class="discussed-badge">Discussed</span>
                                                 {% endif %}
                                                 <span class="total-votes">{{ elementData.totalVotes }} {{ elementData.totalVotes == 1 ? 'vote' : 'votes' }}</span>
+                                                <!-- DEBUG: Item ID {{ item.id ?? 'unknown' }}, Type: {{ elementData.type ?? 'unknown' }}, Votes: {{ elementData.totalVotes ?? 'unknown' }} -->
                                             </div>
                                         </div>
                                     </div>
@@ -646,6 +647,7 @@
                                                     <span class="discussed-badge">Discussed</span>
                                                 {% endif %}
                                                 <span class="total-votes">{{ elementData.totalVotes }} {{ elementData.totalVotes == 1 ? 'vote' : 'votes' }}</span>
+                                                <!-- DEBUG: Group ID {{ group.id ?? 'unknown' }}, Type: {{ elementData.type ?? 'unknown' }}, Votes: {{ elementData.totalVotes ?? 'unknown' }}, Items: {{ group.getItems()|length }} -->
                                             </div>
                                         </div>
                                     </div>
