@@ -3089,10 +3089,23 @@ RetrospectiveBoard.prototype.handleAddAction = async function(e) {
     const assignedToId = document.getElementById('actionAssignee').value;
     const dueDate = document.getElementById('actionDueDate').value;
     
+    // DEBUG: Log what we're sending
+    console.log('DEBUG JS - Description:', description);
+    console.log('DEBUG JS - AssignedToId:', assignedToId, 'Type:', typeof assignedToId);
+    console.log('DEBUG JS - DueDate:', dueDate);
+    
     if (!description) {
         this.showMessage('Please enter a description', 'error');
         return;
     }
+    
+    const requestData = {
+        description: description,
+        assignedToId: assignedToId || null,
+        dueDate: dueDate || null
+    };
+    
+    console.log('DEBUG JS - Request data:', JSON.stringify(requestData));
     
     try {
         const response = await fetch(`/retrospectives/${this.retrospectiveId}/add-action`, {
@@ -3103,11 +3116,7 @@ RetrospectiveBoard.prototype.handleAddAction = async function(e) {
                 'Accept': 'application/json'
             },
             credentials: 'include',
-            body: JSON.stringify({
-                description: description,
-                assignedToId: assignedToId || null,
-                dueDate: dueDate || null
-            })
+            body: JSON.stringify(requestData)
         });
         
         if (response.ok) {
