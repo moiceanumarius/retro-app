@@ -155,6 +155,21 @@ class ActionController extends AbstractController
         foreach ($qbStats->getQuery()->getResult() as $stat) {
             $statusStats[$stat['status']] = $stat['count'];
         }
+        
+        // Calculate overdue actions
+        $qbOverdue = $this->entityManager->createQueryBuilder();
+        $qbOverdue->select('COUNT(a) as count')
+                  ->from(\App\Entity\RetrospectiveAction::class, 'a')
+                  ->leftJoin('a.retrospective', 'r')
+                  ->where('r.team = :team')
+                  ->andWhere('a.dueDate < :currentDate')
+                  ->andWhere('a.status NOT IN (:completedStatuses)')
+                  ->setParameter('team', $team)
+                  ->setParameter('currentDate', new \DateTime())
+                  ->setParameter('completedStatuses', ['completed', 'cancelled']);
+        
+        $overdueCount = $qbOverdue->getQuery()->getSingleScalarResult();
+        $statusStats['overdue'] = $overdueCount;
 
         return $this->render('actions/index.html.twig', [
             'actions' => $paginator,

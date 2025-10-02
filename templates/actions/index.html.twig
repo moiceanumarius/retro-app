@@ -1099,10 +1099,10 @@
     {% if actions|length > 0 %}
         <!-- Stats Overview -->
         <div class="stats-row">
-            {% set openActions = actions|filter(a => a.status == 'pending' or a.status == 'open')|length %}
-            {% set inProgressActions = actions|filter(a => a.status == 'in-progress')|length %}
-            {% set completedActions = actions|filter(a => a.status == 'completed')|length %}
-            {% set overdueActions = actions|filter(a => a.dueDate and a.dueDate.date < 'now'|date('Y-m-d') and a.status != 'completed')|length %}
+            {% set openActions = (statusStats['pending'] ?? 0) + (statusStats['open'] ?? 0) %}
+            {% set inProgressActions = statusStats['in-progress'] ?? 0 %}
+            {% set completedActions = statusStats['completed'] ?? 0 %}
+            {% set overdueActions = statusStats['overdue'] ?? 0 %}
 
             <div class="stat-card open">
                 <div class="stat-icon">
