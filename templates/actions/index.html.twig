@@ -533,6 +533,44 @@
             justify-content: center;
         }
 
+        /* Assignee Editing Styles */
+        .assignee-view {
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .assignee-view:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.25rem;
+            margin: -0.25rem;
+        }
+
+        .assignee-edit-form {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .assignee-edit-form .assignee-select {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.875rem;
+            min-width: 200px;
+            flex: 1;
+        }
+
+        .assignee-edit-form .btn {
+            padding: 0.375rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
         .action-description-detail {
             background: #f9fafb;
             border-radius: 8px;
@@ -1499,6 +1537,114 @@
             showMessage('Error updating due date. Please try again.', 'error');
             // Switch back to view mode on error
             cancelModalDueDate(actionId);
+        });
+    }
+
+    function editModalAssignee(actionId) {
+        const modalAssigneeView = document.getElementById(`modal-assignee-view-${actionId}`);
+        const modalAssigneeEdit = document.getElementById(`modal-assignee-edit-${actionId}`);
+        
+        // Hide the view, show the edit form
+        modalAssigneeView.style.display = 'none';
+        modalAssigneeEdit.style.display = 'flex';
+        
+        // Focus on the select
+        document.getElementById(`modal-assignee-select-${actionId}`).focus();
+    }
+
+    function cancelModalAssignee(actionId) {
+        const modalAssigneeView = document.getElementById(`modal-assignee-view-${actionId}`);
+        const modalAssigneeEdit = document.getElementById(`modal-assignee-edit-${actionId}`);
+        const select = document.getElementById(`modal-assignee-select-${actionId}`);
+        
+        // Reset the select value to original
+        select.value = select.getAttribute('data-original-value') || '';
+        
+        // Hide edit form, show view
+        modalAssigneeEdit.style.display = 'none';
+        modalAssigneeView.style.display = 'block';
+    }
+
+    function saveModalAssignee(actionId) {
+        const newAssigneeId = document.getElementById(`modal-assignee-select-${actionId}`).value;
+        const modalAssigneeView = document.getElementById(`modal-assignee-view-${actionId}`);
+        const modalAssigneeEdit = document.getElementById(`modal-assignee-edit-${actionId}`);
+        
+        // Send update request
+        fetch(`/actions/${actionId}/update-assignee`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ assigned_to_id: newAssigneeId })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message || 'Assignee updated successfully', 'success');
+                
+                // Update the view content
+                if (data.assignee) {
+                    modalAssigneeView.innerHTML = `
+                        <div class="action-assignee-detail">
+                            <div class="action-assignee-avatar">
+                                ${data.assignee.email.charAt(0).toUpperCase()}
+                            </div>
+                            <div class="action-assignee-info">
+                                <div class="action-assignee-name">${data.assignee.email}</div>
+                                <div class="action-assignee-role">${data.assignee.is_owner ? 'Team Owner' : 'Team Member'}</div>
+                            </div>
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20" style="margin-left: 8px;">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    `;
+                } else {
+                    modalAssigneeView.innerHTML = `
+                        <div style="color: #9ca3af; font-style: italic; padding: 1rem; background: #f9fafb; border-radius: 8px; display: flex; align-items: center;">
+                            No one assigned to this action
+                            <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20" style="margin-left: 8px;">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </div>
+                    `;
+                }
+                
+                // Add the onclick handler back
+                modalAssigneeView.onclick = function() { editModalAssignee(actionId); };
+                
+                // Switch back to view mode
+                modalAssigneeEdit.style.display = 'none';
+                modalAssigneeView.style.display = 'block';
+                
+                // Also update the table if it exists
+                const tableRow = document.querySelector(`[data-action-id="${actionId}"]`);
+                if (tableRow) {
+                    const assigneeCell = tableRow.querySelector('.assignee-cell');
+                    if (assigneeCell) {
+                        if (data.assignee) {
+                            assigneeCell.innerHTML = `<span class="text-primary">${data.assignee.email}</span>`;
+                        } else {
+                            assigneeCell.innerHTML = '<span style="color: #9ca3af;">-</span>';
+                        }
+                    }
+                }
+                
+                // Update filter counts - this might affect overdue counts
+                if (typeof filterTable === 'function') {
+                    filterTable();
+                }
+            } else {
+                showMessage(data.message || 'Error updating assignee', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating assignee:', error);
+            showMessage('Error updating assignee. Please try again.', 'error');
+            // Switch back to view mode on error
+            cancelModalAssignee(actionId);
         });
     }
 

@@ -28,27 +28,61 @@
 <!-- Assignee Information -->
 <div class="action-detail-group">
     <label class="action-detail-label">Assigned To</label>
-    {% if action.assignedTo %}
-        <div class="action-assignee-detail">
-            <div class="action-assignee-avatar">
-                {{ action.assignedTo.email|slice(0,1)|upper }}
-            </div>
-            <div class="action-assignee-info">
-                <div class="action-assignee-name">{{ action.assignedTo.email }}</div>
-                <div class="action-assignee-role">
-                    {% if action.retrospective.team.owner == action.assignedTo %}
-                        Team Owner
-                    {% else %}
-                        Team Member
-                    {% endif %}
+    <div class="assignee-view" id="modal-assignee-view-{{ action.id }}" onclick="editModalAssignee({{ action.id }})">
+        {% if action.assignedTo %}
+            <div class="action-assignee-detail">
+                <div class="action-assignee-avatar">
+                    {{ action.assignedTo.email|slice(0,1)|upper }}
                 </div>
+                <div class="action-assignee-info">
+                    <div class="action-assignee-name">{{ action.assignedTo.email }}</div>
+                    <div class="action-assignee-role">
+                        {% if action.retrospective.team.owner == action.assignedTo %}
+                            Team Owner
+                        {% else %}
+                            Team Member
+                        {% endif %}
+                    </div>
+                </div>
+                <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20" style="margin-left: 8px;">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
             </div>
-        </div>
-    {% else %}
-        <div style="color: #9ca3af; font-style: italic; padding: 1rem; background: #f9fafb; border-radius: 8px;">
-            No one assigned to this action
-        </div>
-    {% endif %}
+        {% else %}
+            <div style="color: #9ca3af; font-style: italic; padding: 1rem; background: #f9fafb; border-radius: 8px; display: flex; align-items: center;">
+                No one assigned to this action
+                <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20" style="margin-left: 8px;">
+                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+        {% endif %}
+    </div>
+    <div class="assignee-edit-form" id="modal-assignee-edit-{{ action.id }}" style="display: none;">
+        <select class="assignee-select" id="modal-assignee-select-{{ action.id }}" data-original-value="{{ action.assignedTo ? action.assignedTo.id : '' }}">
+            <option value="">No one assigned</option>
+            {% for member in action.retrospective.team.teamMembers %}
+                <option value="{{ member.user.id }}" {{ action.assignedTo == member.user ? 'selected' : '' }}>
+                    {{ member.user.email }}
+                </option>
+            {% endfor %}
+            {# Include team owner if not in team members #}
+            {% if action.retrospective.team.owner not in action.retrospective.team.teamMembers|map(member => member.user) %}
+                <option value="{{ action.retrospective.team.owner.id }}" {{ action.assignedTo == action.retrospective.team.owner ? 'selected' : '' }}>
+                    {{ action.retrospective.team.owner.email }} (Owner)
+                </option>
+            {% endif %}
+        </select>
+        <button class="btn btn-sm btn-secondary" onclick="saveModalAssignee({{ action.id }})">
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd"></path>
+            </svg>
+        </button>
+        <button class="btn btn-sm btn-outline-secondary" onclick="cancelModalAssignee({{ action.id }})">
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+            </svg>
+        </button>
+    </div>
 </div>
 
 <!-- Action Metadata -->

@@ -418,4 +418,86 @@ class ActionController extends AbstractController
             ]);
         }
     }
+
+    #[Route('/{id}/update-assignee', name: 'app_actions_update_assignee', methods: ['POST'])]
+    public function updateAssignee(Request $request, int $id): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['success' => false, 'message' => 'You must be logged in to update actions']);
+        }
+
+        $action = $this->entityManager->find(\App\Entity\RetrospectiveAction::class, $id);
+        if (!$action) {
+            return $this->json(['success' => false, 'message' => 'Action not found']);
+        }
+
+        // Check if user has permission to edit this action
+        $hasPermission = $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                        $this->isGranted('ROLE_ADMIN') ||
+                        $this->isGranted('ROLE_TEAM_LEAD') ||
+                        $this->isGranted('ROLE_FACILITATOR');
+
+        if (!$hasPermission) {
+            return $this->json(['success' => false, 'message' => 'You do not have permission to reassign this action']);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $assignedToId = $data['assigned_to_id'] ?? null;
+
+        try {
+            if ($assignedToId && !empty(trim($assignedToId))) {
+                $assignedUser = $this->entityManager->getRepository(\App\Entity\User::class)->find($assignedToId);
+                if (!$assignedUser) {
+                    return $this->json(['success' => false, 'message' => 'User not found']);
+                }
+
+                // Check if the user is a member of the retrospective team or is the owner
+                $team = $action->getRetrospective()->getTeam();
+                $isTeamMember = false;
+                if ($team->getOwner() === $assignedUser) {
+                    $isTeamMember = true;
+                } else {
+                    foreach ($team->getTeamMembers() as $member) {
+                        if ($member->getUser() === $assignedUser) {
+                            $isTeamMember = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!$isTeamMember) {
+                    return $this->json(['success' => false, 'message' => 'User is not a member of this team']);
+                }
+
+                $action->setAssignedTo($assignedUser);
+            } else {
+                $action->setAssignedTo(null);
+            }
+            
+            $action->setUpdatedAt(new \DateTime());
+            $this->entityManager->flush();
+
+            $response = [
+                'success' => true,
+                'message' => 'Assignee updated successfully'
+            ];
+
+            // Include assignee info for frontend update
+            if ($action->getAssignedTo()) {
+                $response['assignee'] = [
+                    'id' => $action->getAssignedTo()->getId(),
+                    'email' => $action->getAssignedTo()->getEmail(),
+                    'is_owner' => $action->getRetrospective()->getTeam()->getOwner() === $action->getAssignedTo()
+                ];
+            }
+
+            return $this->json($response);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error updating assignee: ' . $e->getMessage()
+            ]);
+        }
+    }
 }
