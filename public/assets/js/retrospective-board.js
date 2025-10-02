@@ -48,6 +48,11 @@ class RetrospectiveBoard {
             }
         }
         
+        // Initialize card zoom in action phase
+        if (this.isInActionStep()) {
+            this.initCardZoom();
+        }
+        
         // Hide timer in review and action phases
         if (this.isInReviewStep() || this.isInActionStep()) {
             const floatingTimer = document.getElementById('floatingTimer');
@@ -78,6 +83,12 @@ class RetrospectiveBoard {
         const nextStepBtn = document.getElementById('nextStepBtn');
         if (nextStepBtn) {
             nextStepBtn.addEventListener('click', () => this.nextStep());
+        }
+        
+        // Complete retrospective button
+        const completeRetrospectiveBtn = document.getElementById('completeRetrospectiveBtn');
+        if (completeRetrospectiveBtn) {
+            completeRetrospectiveBtn.addEventListener('click', () => this.completeRetrospective());
         }
         
         // Add item buttons
@@ -793,6 +804,55 @@ class RetrospectiveBoard {
             if (nextStepBtn) {
                 nextStepBtn.disabled = false;
                 nextStepBtn.textContent = 'Next Step';
+            }
+        }
+    }
+    
+    async completeRetrospective() {
+        const completeBtn = document.getElementById('completeRetrospectiveBtn');
+        
+        // Show confirmation
+        const confirmed = await this.showConfirmModal(
+            'Complete Retrospective',
+            'Are you sure you want to complete this retrospective? This action cannot be undone.'
+        );
+        
+        if (!confirmed) {
+            return;
+        }
+        
+        if (completeBtn) {
+            completeBtn.disabled = true;
+            completeBtn.textContent = 'Completing...';
+        }
+        
+        try {
+            const response = await fetch(`/retrospectives/${this.retrospectiveId}/complete`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                credentials: 'same-origin'
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                this.showMessage('Retrospective completed successfully!', 'success');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                const error = await response.json();
+                this.showMessage(error.message || 'Failed to complete retrospective', 'error');
+            }
+        } catch (error) {
+            console.error('Error completing retrospective:', error);
+            this.showMessage('Failed to complete retrospective', 'error');
+        } finally {
+            if (completeBtn) {
+                completeBtn.disabled = false;
+                completeBtn.textContent = 'Complete Retrospective';
             }
         }
     }
@@ -2799,6 +2859,184 @@ RetrospectiveBoard.prototype.createGroupFromItems = async function(itemIds, cate
     }
 };
 
+
+// Card Zoom Functionality
+RetrospectiveBoard.prototype.initCardZoom = function() {
+    const zoomButtons = document.querySelectorAll('.btn-add-action');
+    const markDiscussedButtons = document.querySelectorAll('.btn-mark-discussed');
+    const overlay = document.getElementById('zoomOverlay');
+    const zoomedCard = document.getElementById('zoomedCard');
+    const closeBtn = document.getElementById('closeZoom');
+
+    zoomButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cardElement = btn.closest('.discussion-card');
+            this.zoomCard(cardElement);
+        });
+    });
+
+    markDiscussedButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cardElement = btn.closest('.discussion-card');
+            const itemId = btn.dataset.id;
+            const itemType = btn.dataset.type;
+            this.markAsDiscussed(cardElement, itemId, itemType);
+        });
+    });
+
+    closeBtn.addEventListener('click', () => {
+        this.closeZoom();
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            this.closeZoom();
+        }
+    });
+
+    // Close on ESC key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && overlay.classList.contains('active')) {
+            this.closeZoom();
+        }
+    });
+};
+
+RetrospectiveBoard.prototype.zoomCard = function(cardElement) {
+    const overlay = document.getElementById('zoomOverlay');
+    const zoomedCard = document.getElementById('zoomedCard');
+    
+    // Clone the card content
+    const clonedCard = cardElement.cloneNode(true);
+    
+    // Remove the action buttons from the cloned card
+    const actionsDiv = clonedCard.querySelector('.card-actions');
+    if (actionsDiv) {
+        actionsDiv.remove();
+    }
+    
+    // Remove hover classes that might interfere
+    clonedCard.classList.remove('dragging');
+    
+    // Clear and append the cloned content
+    zoomedCard.innerHTML = '';
+    zoomedCard.appendChild(clonedCard);
+    
+    // Force the card to maintain hover state styles
+    clonedCard.style.transform = 'none';
+    clonedCard.style.boxShadow = '0 2px 4px rgba(0, 0, 0, 0.05)';
+    
+    // Show overlay with animation
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+        overlay.classList.add('active');
+    }, 10);
+    
+    // Prevent body scroll
+    document.body.style.overflow = 'hidden';
+};
+
+RetrospectiveBoard.prototype.closeZoom = function() {
+    const overlay = document.getElementById('zoomOverlay');
+    
+    overlay.classList.remove('active');
+    setTimeout(() => {
+        overlay.style.display = 'none';
+    }, 300);
+    
+    // Restore body scroll
+    document.body.style.overflow = '';
+};
+
+RetrospectiveBoard.prototype.markAsDiscussed = function(cardElement, itemId, itemType) {
+    // Add discussed class for gray out effect
+    cardElement.classList.add('discussed');
+    
+    // Add the discussed badge to the card footer
+    const cardFooter = cardElement.querySelector('.card-footer');
+    if (cardFooter) {
+        const votesContainer = cardFooter.querySelector('div');
+        if (votesContainer && !votesContainer.querySelector('.discussed-badge')) {
+            const badge = document.createElement('span');
+            badge.className = 'discussed-badge';
+            badge.textContent = '✓ Discussed';
+            votesContainer.appendChild(badge);
+        }
+    }
+    
+    // Hide the "Mark as Discussed" button
+    const markBtn = cardElement.querySelector('.btn-mark-discussed');
+    if (markBtn) {
+        markBtn.style.display = 'none';
+    }
+    
+    // Get the container
+    const container = cardElement.parentElement;
+    
+    // Animate card moving to bottom
+    const cards = Array.from(container.querySelectorAll('.discussion-card'));
+    const currentIndex = cards.indexOf(cardElement);
+    const lastCard = cards[cards.length - 1];
+    
+    // Calculate distance to move
+    if (lastCard && lastCard !== cardElement) {
+        const cardRect = cardElement.getBoundingClientRect();
+        const lastCardRect = lastCard.getBoundingClientRect();
+        const distance = lastCardRect.bottom - cardRect.top;
+        
+        // Animate sliding down
+        cardElement.style.transition = 'transform 0.6s ease, opacity 0.3s ease, filter 0.3s ease';
+        cardElement.style.transform = `translateY(${distance}px)`;
+        cardElement.style.opacity = '0.5';
+        
+        // After animation, move to end of container
+        setTimeout(() => {
+            cardElement.style.transition = 'none';
+            cardElement.style.transform = '';
+            // Don't reset opacity - let CSS class handle it
+            container.appendChild(cardElement);
+            
+            // Trigger reflow
+            cardElement.offsetHeight;
+            
+            // Remove inline styles to let CSS class take over
+            setTimeout(() => {
+                cardElement.style.opacity = '';
+                cardElement.style.transition = '';
+            }, 10);
+        }, 600);
+    }
+    
+    // Send to backend to persist discussed state
+    this.saveDiscussedState(itemId, itemType);
+};
+
+RetrospectiveBoard.prototype.saveDiscussedState = async function(itemId, itemType) {
+    try {
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/mark-discussed`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                itemId: itemId,
+                itemType: itemType
+            })
+        });
+
+        if (response.ok) {
+            console.log(`Successfully marked ${itemType} ${itemId} as discussed`);
+        } else {
+            console.error('Failed to save discussed state');
+        }
+    } catch (error) {
+        console.error('Error saving discussed state:', error);
+    }
+};
 
 // Action Item Management
 RetrospectiveBoard.prototype.showActionForm = function() {

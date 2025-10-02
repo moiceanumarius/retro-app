@@ -47,12 +47,16 @@ class RetrospectiveGroup
     #[ORM\Column]
     private ?int $position = null;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private ?bool $isDiscussed = false;
+
     public function __construct()
     {
         $this->items = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
         $this->position = 0;
+        $this->isDiscussed = false;
     }
 
     public function getId(): ?int
@@ -195,6 +199,17 @@ class RetrospectiveGroup
     {
         $this->position = $position;
 
+        return $this;
+    }
+
+    public function isDiscussed(): ?bool
+    {
+        return $this->isDiscussed;
+    }
+
+    public function setIsDiscussed(bool $isDiscussed): static
+    {
+        $this->isDiscussed = $isDiscussed;
         return $this;
     }
 }

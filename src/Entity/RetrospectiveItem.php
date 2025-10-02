@@ -43,12 +43,16 @@ class RetrospectiveItem
     #[ORM\Column]
     private ?int $position = null;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private ?bool $isDiscussed = false;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
         $this->updatedAt = new \DateTime();
         $this->votes = 0;
         $this->position = 0;
+        $this->isDiscussed = false;
     }
 
     public function getId(): ?int
@@ -203,6 +207,17 @@ class RetrospectiveItem
     {
         $this->position = $position;
 
+        return $this;
+    }
+
+    public function isDiscussed(): ?bool
+    {
+        return $this->isDiscussed;
+    }
+
+    public function setIsDiscussed(bool $isDiscussed): static
+    {
+        $this->isDiscussed = $isDiscussed;
         return $this;
     }
 }
