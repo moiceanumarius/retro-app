@@ -516,8 +516,229 @@
         {% elseif retrospective.isCompleted() %}
         <!-- Completed Retrospective -->
         <div class="completed-retrospective">
-            <h2>Retrospective Completed</h2>
-            <p>This retrospective was completed on {{ retrospective.completedAt|date('M d, Y H:i') }}</p>
+            <div class="completed-header">
+                <h2>Retrospective Completed</h2>
+                <p>This retrospective was completed on {{ retrospective.completedAt|date('M d, Y H:i') }}</p>
+            </div>
+            
+            <div class="completed-content">
+                <div class="completed-summary">
+                    <h3>Discussion Summary</h3>
+                    
+                    <div class="categories-summary">
+                        {% if wrongCombined is not empty %}
+                        <div class="category-section">
+                            <h4 class="category-title">🚨 What went wrong</h4>
+                            {% set wrongGrouped = wrongCombined|groupBy('group') %}
+                            {% for groupId, items in wrongGrouped %}
+                                {% if items|length > 1 %}
+                                    <div class="group-card">
+                                        <div class="group-header">
+                                            <span class="group-label">Group {{ items|length }} items</span>
+                                            {% set votes = items|map(i => i.votes)|flatten|sum %}
+                                            {% if votes > 0 %}
+                                                <span class="vote-count">{{ votes }} {{ votes == 1 ? 'vote' : 'votes' }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="items-list">
+                                            {% for item in items %}
+                                                <div class="item-summary">
+                                                    <span class="item-content">{{ item.content }}</span>
+                                                    {% if item.discussed %}
+                                                        <span class="discussed-badge">Discussed</span>
+                                                    {% endif %}
+                                                    {% if item.votes > 0 %}
+                                                        <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {% set item = items|first %}
+                                    <div class="single-item-card">
+                                        <div class="item-content">{{ item.content }}</div>
+                                        {% if item.discussed %}
+                                            <span class="discussed-badge">Discussed</span>
+                                        {% endif %}
+                                        {% if item.votes > 0 %}
+                                            <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if goodCombined is not empty %}
+                        <div class="category-section">
+                            <h4 class="category-title">✅ What went well</h4>
+                            {% set goodGrouped = goodCombined|groupBy('group') %}
+                            {% for groupId, items in goodGrouped %}
+                                {% if items|length > 1 %}
+                                    <div class="group-card">
+                                        <div class="group-header">
+                                            <span class="group-label">Group {{ items|length }} items</span>
+                                            {% set votes = items|map(i => i.votes)|flatten|sum %}
+                                            {% if votes > 0 %}
+                                                <span class="vote-count">{{ votes }} {{ votes == 1 ? 'vote' : 'votes' }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="items-list">
+                                            {% for item in items %}
+                                                <div class="item-summary">
+                                                    <span class="item-content">{{ item.content }}</span>
+                                                    {% if item.discussed %}
+                                                        <span class="discussed-badge">Discussed</span>
+                                                    {% endif %}
+                                                    {% if item.votes > 0 %}
+                                                        <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {% set item = items|first %}
+                                    <div class="single-item-card">
+                                        <div class="item-content">{{ item.content }}</div>
+                                        {% if item.discussed %}
+                                            <span class="discussed-badge">Discussed</span>
+                                        {% endif %}
+                                        {% if item.votes > 0 %}
+                                            <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if improvedCombined is not empty %}
+                        <div class="category-section">
+                            <h4 class="category-title">🚀 What could be improved</h4>
+                            {% set improvedGrouped = improvedCombined|groupBy('group') %}
+                            {% for groupId, items in improvedGrouped %}
+                                {% if items|length > 1 %}
+                                    <div class="group-card">
+                                        <div class="group-header">
+                                            <span class="group-label">Group {{ items|length }} items</span>
+                                            {% set votes = items|map(i => i.votes)|flatten|sum %}
+                                            {% if votes > 0 %}
+                                                <span class="vote-count">{{ votes }} {{ votes == 1 ? 'vote' : 'votes' }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="items-list">
+                                            {% for item in items %}
+                                                <div class="item-summary">
+                                                    <span class="item-content">{{ item.content }}</span>
+                                                    {% if item.discussed %}
+                                                        <span class="discussed-badge">Discussed</span>
+                                                    {% endif %}
+                                                    {% if item.votes > 0 %}
+                                                        <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {% set item = items|first %}
+                                    <div class="single-item-card">
+                                        <div class="item-content">{{ item.content }}</div>
+                                        {% if item.discussed %}
+                                            <span class="discussed-badge">Discussed</span>
+                                        {% endif %}
+                                        {% if item.votes > 0 %}
+                                            <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if randomCombined is not empty %}
+                        <div class="category-section">
+                            <h4 class="category-title">💡 Random thoughts</h4>
+                            {% set randomGrouped = randomCombined|groupBy('group') %}
+                            {% for groupId, items in randomGrouped %}
+                                {% if items|length > 1 %}
+                                    <div class="group-card">
+                                        <div class="group-header">
+                                            <span class="group-label">Group {{ items|length }} items</span>
+                                            {% set votes = items|map(i => i.votes)|flatten|sum %}
+                                            {% if votes > 0 %}
+                                                <span class="vote-count">{{ votes }} {{ votes == 1 ? 'vote' : 'votes' }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="items-list">
+                                            {% for item in items %}
+                                                <div class="item-summary">
+                                                    <span class="item-content">{{ item.content }}</span>
+                                                    {% if item.discussed %}
+                                                        <span class="discussed-badge">Discussed</span>
+                                                    {% endif %}
+                                                    {% if item.votes > 0 %}
+                                                        <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    {% set item = items|first %}
+                                    <div class="single-item-card">
+                                        <div class="item-content">{{ item.content }}</div>
+                                        {% if item.discussed %}
+                                            <span class="discussed-badge">Discussed</span>
+                                        {% endif %}
+                                        {% if item.votes > 0 %}
+                                            <span class="vote-count">{{ item.votes }} {{ item.votes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="completed-actions">
+                    <h3>Action Items</h3>
+                    {% if actions is not empty %}
+                        <div class="actions-list">
+                            {% for action in actions %}
+                                <div class="action-item">
+                                    <div class="action-header">
+                                        <span class="action-status {{ action.status }}">{{ action.status|title }}</span>
+                                        {% if action.dueDate %}
+                                            <span class="action-due-date">Due: {{ action.dueDate|date('M d, Y') }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="action-description">{{ action.description }}</div>
+                                    <div class="action-footer">
+                                        <div class="action-assignee">
+                                            {% if action.assignedTo %}
+                                                Assigned to: {{ action.assignedTo.firstName }} {{ action.assignedTo.lastName }}
+                                            {% else %}
+                                                Unassigned
+                                            {% endif %}
+                                        </div>
+                                        <div class="action-meta">
+                                            Created by: {{ action.createdBy.firstName }} {{ action.createdBy.lastName }}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="no-actions">
+                            <p>No action items created for this retrospective.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         {% else %}

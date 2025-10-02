@@ -822,26 +822,203 @@
     box-shadow: 0 20px 40px rgba(102, 126, 234, 0.3);
 }
 
-.completed-retrospective h2 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    margin: 0 0 0.5rem 0;
-    text-align: center;
-}
-
-.completed-retrospective > p {
-    font-size: 1.1rem;
-    opacity: 0.9;
+.completed-header {
     text-align: center;
     margin-bottom: 2rem;
 }
 
-.summary-sections {
+.completed-retrospective h2 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.completed-retrospective p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+.completed-content {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 2rem;
+    align-items: start;
+}
+
+.completed-summary,
+.completed-actions {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 2rem;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.completed-summary h3,
+.completed-actions h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    color: white;
+}
+
+/* Categories Summary */
+.category-section {
+    margin-bottom: 2rem;
+}
+
+.category-section:last-child {
+    margin-bottom: 0;
+}
+
+.category-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    color: white;
+    opacity: 0.9;
+}
+
+.group-card,
+.single-item-card {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.group-label {
+    font-weight: 600;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.item-content {
+    color: white;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.item-summary {
+    display: block;
+    position: relative;
+}
+
+.item-summary .item-content {
+    margin-bottom: 0.25rem;
+}
+
+.discussed-badge {
+    background: rgba(76, 175, 80, 0.8);
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin-left: 0.5rem;
+}
+
+.vote-count {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.8rem;
+    font-style: italic;
+}
+
+/* Actions List */
+.actions-list {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.action-item {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.action-item:last-child {
+    margin-bottom: 0;
+}
+
+.action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+}
+
+.action-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.action-status.pending {
+    background: rgba(255, 193, 7, 0.8);
+    color: white;
+}
+
+.action-status.in-progress {
+    background: rgba(33, 150, 243, 0.8);
+    color: white;
+}
+
+.action-status.completed {
+    background: rgba(76, 175, 80, 0.8);
+    color: white;
+}
+
+.action-status.cancelled {
+    background: rgba(244, 67, 54, 0.8);
+    color: white;
+}
+
+.action-due-date {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+}
+
+.action-description {
+    color: white;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+}
+
+.action-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.action-assignee,
+.action-meta {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.8rem;
+}
+
+.no-actions {
+    text-align: center;
+    padding: 2rem;
+}
+
+.no-actions p {
+    color: rgba(255, 255, 255, 0.7);
+    font-style: italic;
 }
 
 .summary-section {
@@ -943,6 +1120,13 @@
 }
 
 /* Responsive adjustments for completed retrospective */
+@media (max-width: 1200px) {
+    .completed-content {
+        grid-template-columns: 1fr 350px;
+        gap: 1.5rem;
+    }
+}
+
 @media (max-width: 768px) {
     .completed-retrospective {
         padding: 1.5rem;
@@ -953,16 +1137,17 @@
         font-size: 2rem;
     }
     
-    .summary-sections {
+    .completed-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .completed-summary,
+    .completed-actions {
         padding: 1.5rem;
     }
     
-    .feedback-summary {
-        grid-template-columns: 1fr;
-        gap: 1rem;
-    }
-    
-    .summary-column {
-        padding: 1rem;
+    .actions-list {
+        max-height: 400px;
     }
 }
