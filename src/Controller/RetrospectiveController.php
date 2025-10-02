@@ -248,8 +248,8 @@ class RetrospectiveController extends AbstractController
         return $this->redirectToRoute('app_retrospectives_show', ['id' => $retrospective->getId()]);
     }
 
-    #[Route('/retrospectives/{id}/complete', name: 'app_retrospectives_complete')]
-    public function complete(int $id): Response
+    #[Route('/retrospectives/{id}/complete', name: 'app_retrospectives_complete', methods: ['POST'])]
+    public function complete(Request $request, int $id): Response
     {
         $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
         
@@ -268,6 +268,15 @@ class RetrospectiveController extends AbstractController
         
         $this->entityManager->flush();
         
+        // Check if this is an AJAX request
+        if ($request->isXmlHttpRequest()) {
+            return $this->json([
+                'success' => true,
+                'message' => 'Retrospective completed successfully!'
+            ]);
+        }
+        
+        // For regular requests, add flash message and redirect
         $this->addFlash('success', '✅ Retrospective completed!');
         
         return $this->redirectToRoute('app_retrospectives_show', ['id' => $retrospective->getId()]);
