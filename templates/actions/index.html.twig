@@ -541,25 +541,45 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchBox = document.getElementById('searchBox');
     const tableRows = document.querySelectorAll('.actions-table tbody tr');
     
+    // Debug: Check if elements are found
+    console.log('');
+    
+
     // Status filter functionality
-    statusFilter.addEventListener('change', function() {
-        filterTable();
-    });
+    if (statusFilter) {
+        statusFilter.addEventListener('change', function() {
+            console.log('Status changed:', this.value);
+            filterTable();
+        });
+    }
     
     // Search functionality
-    searchBox.addEventListener('input', function() {
-        filterTable();
-    });
+    if (searchBox) {
+        searchBox.addEventListener('input', function() {
+            console.log('Search input:', this.value);
+            filterTable();
+        });
+    }
     
     // Filter table based on status and search
     function filterTable() {
-        const statusValue = statusFilter.value;
-        const searchValue = searchBox.value.toLowerCase();
+        if (!statusFilter || !searchBox) {
+            console.log('Missing filter elements');
+            return;
+        }
         
-        tableRows.forEach(row => {
+        const statusValue = statusFilter.value;
+        const searchValue = searchBox.value.toLowerCase().trim();
+        
+        console.log('Filtering - Status:', statusValue, 'Search:', searchValue);
+        console.log('Total rows:', tableRows.length);
+        
+        let visibleCount = 0;
+        
+        tableRows.forEach((row, index) => {
             const rowStatus = row.dataset.status;
-            const description = row.dataset.description;
-            const retrospective = row.dataset.retrospective;
+            const description = row.dataset.description || '';
+            const retrospective = row.dataset.retrospective || '';
             
             // Status filter
             let statusMatch = true;
@@ -570,24 +590,43 @@ document.addEventListener('DOMContentLoaded', function() {
             // Search filter
             let searchMatch = true;
             if (searchValue.length > 0) {
-                searchMatch = description.includes(searchValue) || retrospective.includes(searchValue);
+                const descMatch = description.includes(searchValue);
+                const retroMatch = retrospective.includes(searchValue);
+                searchMatch = descMatch || retroMatch;
+                
+                if (index === 0) { // Debug first row
+                    console.log('First row debug:', {
+                        description: description,
+                        retrospective: retrospective,
+                        searchValue: searchValue,
+                        descMatch: descMatch,
+                        retroMatch: retroMatch,
+                        searchMatch: searchMatch
+                    });
+                }
             }
             
             // Show/hide row
             if (statusMatch && searchMatch) {
                 row.style.display = '';
+                visibleCount++;
             } else {
                 row.style.display = 'none';
             }
         });
+        
+        console.log('Visible rows after filtering:', visibleCount);
     }
     
     // Clear filters functionality
     window.clearFilters = function() {
-        statusFilter.value = 'all';
-        searchBox.value = '';
+        if (statusFilter) statusFilter.value = 'all';
+        if (searchBox) searchBox.value = '';
         filterTable();
     };
+    
+    // Initialize filtering on page load
+    setTimeout(filterTable, 100);
 
     // Status update functionality
     const statusSelects = document.querySelectorAll('.status-select');
