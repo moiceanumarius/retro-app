@@ -659,19 +659,39 @@
             background: rgba(102, 126, 234, 0.05);
         }
 
+        .header-content {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+        }
+
+        .header-text {
+            flex: 1;
+            white-space: nowrap;
+        }
+
         .sort-icon {
-            margin-left: 0;
             transition: all 0.2s ease;
-            color: #9ca3af;
-            font-size: 12px;
+            stroke: #9ca3af;
+            flex-shrink: 0;
         }
 
         .sortable:hover .sort-icon {
-            color: #667eea;
+            stroke: #667eea;
         }
 
         .sortable.active .sort-icon {
-            color: #667eea;
+            stroke: #667eea;
+        }
+
+        .sortable.sort-desc .sort-icon {
+            transform: rotate(180deg);
+        }
+
+        .sortable.sort-asc .sort-icon {
+            transform: rotate(0deg);
         }
 
         /* Pagination Styles */
@@ -1166,16 +1186,28 @@
                         <th>Description</th>
                         <th>Assignee</th>
                         <th class="sortable" data-sort="due_date">
-                            Due Date
-                            <i class="fas fa-sort sort-icon"></i>
+                            <span class="header-content">
+                                <span class="header-text">Due Date</span>
+                                <svg class="sort-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
                         </th>
                         <th class="sortable" data-sort="created_at">
-                            Created At
-                            <i class="fas fa-sort sort-icon"></i>
+                            <span class="header-content">
+                                <span class="header-text">Created At</span>
+                                <svg class="sort-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
                         </th>
                         <th class="sortable" data-sort="status">
-                            Status
-                            <i class="fas fa-sort sort-icon"></i>
+                            <span class="header-content">
+                                <span class="header-text">Status</span>
+                                <svg class="sort-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M7 14L12 9L17 14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
                         </th>
                         <th>Actions</th>
                     </tr>
@@ -2114,16 +2146,21 @@
             // Update icon based on current sort state
             const icon = header.querySelector('.sort-icon');
             if (dataSort === currentSort) {
-                icon.style.fill = '#667eea';
+                icon.style.stroke = '#667eea';
                 header.classList.add('active');
+                // Add direction class for proper rotation
+                header.classList.add(`sort-${currentDirection}`);
                 // Rotate icon based on direction
                 if (currentDirection === 'asc') {
-                    icon.style.transform = 'rotate(180deg)';
+                    header.classList.add('sort-asc');
+                    header.classList.remove('sort-desc');
+                } else {
+                    header.classList.add('sort-desc');
+                    header.classList.remove('sort-asc');
                 }
             } else {
-                icon.style.fill = '#9ca3af';
-                icon.style.transform = 'none';
-                header.classList.remove('active');
+                icon.style.stroke = '#9ca3af';
+                header.classList.remove('active', 'sort-asc', 'sort-desc');
             }
         });
     });
