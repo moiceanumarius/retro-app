@@ -11,7 +11,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 
-#[Route('/actions', name: 'app_actions')]
+#[Route('/actions')]
 class ActionController extends AbstractController
 {
     public function __construct(
@@ -21,7 +21,7 @@ class ActionController extends AbstractController
     {
     }
 
-    #[Route('/', name: '_index', methods: ['GET'])]
+    #[Route('/', name: 'app_actions_index', methods: ['GET'])]
     public function index(Request $request): Response
     {
         $user = $this->getUser();
