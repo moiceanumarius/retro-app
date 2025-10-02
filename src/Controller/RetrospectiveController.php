@@ -391,17 +391,31 @@ class RetrospectiveController extends AbstractController
                     return $this->json(['success' => false, 'message' => 'Assigned user not found'], 404);
                 }
                 $action->setAssignedTo($assignedTo);
+                error_log("DEBUG Add Action - ASSIGNED to user ID: " . $assignedTo->getId());
             } else {
+                $currentUser = $this->getUser();
+                error_log("DEBUG Add Action - Current User: " . ($currentUser ? 'ID ' . $currentUser->getId() : 'NULL'));
+                
                 // If no assignee, assign to the creator by default
-                $action->setAssignedTo($this->getUser());
+                $action->setAssignedTo($currentUser);
+                error_log("DEBUG Add Action - Action assignedTo set to: " . ($action->getAssignedTo() ? 'ID ' . $action->getAssignedTo()->getId() : 'NULL'));
             }
             
             if ($dueDate) {
                 $action->setDueDate(new \DateTime($dueDate));
             }
 
+            error_log("DEBUG Add Action - About to persist action...");
             $this->entityManager->persist($action);
-            $this->entityManager->flush();
+            error_log("DEBUG Add Action - Persisted, about to flush...");
+            
+            try {
+                $this->entityManager->flush();
+                error_log("DEBUG Add Action - Flush successful!");
+            } catch (\Exception $e) {
+                error_log("DEBUG Add Action - FLUSH ERROR: " . $e->getMessage());
+                throw $e;
+            }
 
             return $this->json([
                 'success' => true,
