@@ -37,8 +37,9 @@ class ActionController extends AbstractController
             $userTeams = $this->entityManager->createQueryBuilder()
                 ->select('t')
                 ->from(\App\Entity\Team::class, 't')
-                ->leftJoin('t.members', 'tm')
-                ->where('t.owner = :user OR tm.user = :user')
+                ->leftJoin('t.teamMembers', 'tm')
+                ->leftJoin('tm.user', 'u')
+                ->where('t.owner = :user OR u = :user')
                 ->setParameter('user', $user)
                 ->orderBy('t.name', 'ASC')
                 ->getQuery()
@@ -48,8 +49,9 @@ class ActionController extends AbstractController
             $userTeams = $this->entityManager->createQueryBuilder()
                 ->select('t')
                 ->from(\App\Entity\Team::class, 't')
-                ->leftJoin('t.members', 'tm')
-                ->where('tm.user = :user')
+                ->leftJoin('t.teamMembers', 'tm')
+                ->leftJoin('tm.user', 'u')
+                ->where('u = :user')
                 ->setParameter('user', $user)
                 ->orderBy('t.name', 'ASC')
                 ->getQuery()
@@ -80,7 +82,7 @@ class ActionController extends AbstractController
             $hasAccess = true;
         } else {
             $hasAccess = $team->getOwner() === $user || 
-                        $team->getMembers()->exists(fn($m) => $m->getUser() === $user);
+                        $team->getTeamMembers()->exists(fn($tm) => $tm->getUser() === $user);
         }
 
         if (!$hasAccess) {
