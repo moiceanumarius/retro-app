@@ -306,4 +306,50 @@ class ActionController extends AbstractController
             'html' => $html
         ]);
     }
+
+    #[Route('/{id}/edit-description', name: 'app_actions_edit_description', methods: ['POST'])]
+    public function editDescription(Request $request, int $id): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['success' => false, 'message' => 'You must be logged in to edit actions']);
+        }
+
+        $action = $this->entityManager->find(\App\Entity\RetrospectiveAction::class, $id);
+        if (!$action) {
+            return $this->json(['success' => false, 'message' => 'Action not found']);
+        }
+
+        // Check if user has permission to edit this action
+        $hasPermission = $action->getAssignedTo() === $user || 
+                        $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                        $this->isGranted('ROLE_ADMIN');
+
+        if (!$hasPermission) {
+            return $this->json(['success' => false, 'message' => 'You do not have permission to edit this action']);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        if (!isset($data['description']) || empty(trim($data['description']))) {
+            return $this->json(['success' => false, 'message' => 'Description cannot be empty']);
+        }
+
+        try {
+            $newDescription = trim($data['description']);
+            $action->setDescription($newDescription);
+            $action->setUpdatedAt(new \DateTime());
+            
+            $this->entityManager->flush();
+            
+            return $this->json([
+                'success' => true,
+                'message' => 'Action description updated successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error updating action: ' . $e->getMessage()
+            ]);
+        }
+    }
 }

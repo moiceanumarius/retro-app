@@ -143,6 +143,73 @@
             font-weight: 500;
             line-height: 1.6;
             max-width: 300px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .action-description:hover {
+            background-color: #f8fafc;
+            border-radius: 6px;
+            padding: 0.5rem;
+            border: 1px dashed #cbd5e0;
+        }
+
+        .action-description-container {
+            position: relative;
+        }
+
+        .action-edit-form {
+            position: relative;
+            margin-top: 0.5rem;
+        }
+
+        .action-edit-textarea {
+            width: 100%;
+            min-width: 300px;
+            max-width: 500px;
+            padding: 0.75rem;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-family: inherit;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .action-edit-textarea:focus {
+            outline: none;
+            border-color: #5a67d8;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .action-edit-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .save-action-btn {
+            background: #10b981;
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .save-action-btn:hover {
+            background: #6dc865;
+            transform: translateY(-1px);
+        }
+
+        .cancel-action-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .cancel-action-btn:hover {
+            background: #545b62;
+            transform: translateY(-1px);
         }
 
         .assignee-info {
@@ -733,7 +800,28 @@
                             <span class="action-id">#{{ action.id }}</span>
                         </td>
                         <td>
-                            <div class="action-description">{{ action.description }}</div>
+                            <div class="action-description-container">
+                                <div class="action-description" onclick="editActionDescription({{ action.id }})" id="action-text-{{ action.id }}">
+                                    {{ action.description }}
+                                </div>
+                                <div class="action-edit-form" id="action-edit-{{ action.id }}" style="display: none;">
+                                    <textarea class="action-edit-textarea" id="text-{{ action.id }}" rows="3">{{ action.description }}</textarea>
+                                    <div class="action-edit-actions">
+                                        <button class="btn btn-sm btn-success save-action-btn" onclick="saveActionDescription({{ action.id }})">
+                                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            Save
+                                        </button>
+                                        <button class="btn btn-sm btn-secondary cancel-action-btn" onclick="cancelEditActionDescription({{ action.id }})">
+                                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                         <td>
                             {% if action.assignedTo %}
@@ -927,6 +1015,101 @@
         });
     }
 
+    function editActionDescription(actionId) {
+        const actionText = document.getElementById(`action-text-${actionId}`);
+        const actionEditForm = document.getElementById(`action-edit-${actionId}`);
+        const editTextarea = document.getElementById(`text-${actionId}`);
+        
+        // Hide the text, show the form
+        actionText.style.display = 'none';
+        actionEditForm.style.display = 'block';
+        
+        // Focus and select the textarea
+        editTextarea.focus();
+        editTextarea.select();
+        
+        // Store original text for cancel functionality
+        editTextarea.dataset.originalValue = editTextarea.value;
+    }
+
+    function cancelEditActionDescription(actionId) {
+        const actionText = document.getElementById(`action-text-${actionId}`);
+        const actionEditForm = document.getElementById(`action-edit-${actionId}`);
+        const editTextarea = document.getElementById(`text-${actionId}`);
+        
+        // Restore original value
+        editTextarea.value = editTextarea.dataset.originalValue;
+        
+        // Hide form, show text
+        actionEditForm.style.display = 'none';
+        actionText.style.display = 'block';
+    }
+
+    function saveActionDescription(actionId) {
+        const actionText = document.getElementById(`action-text-${actionId}`);
+        const actionEditForm = document.getElementById(`action-edit-${actionId}`);
+        const editTextarea = document.getElementById(`text-${actionId}`);
+        const saveBtn = document.querySelector(`#action-edit-${actionId} .save-action-btn`);
+        
+        const newDescription = editTextarea.value.trim();
+        
+        if (!newDescription) {
+            showMessage('Description cannot be empty', 'error');
+            return;
+        }
+        
+        // Disable save button during request
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = `
+            <div style="width: 20px; height: 20px; border: 2px solid #ffffff40; border-top: 2px solid #ffffff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            Saving...
+        `;
+        
+        // Send update request
+        fetch(`/actions/${actionId}/edit-description`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ description: newDescription })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update the text display
+                actionText.textContent = newDescription;
+                
+                // Hide form, show text
+                actionEditForm.style.display = 'none';
+                actionText.style.display = 'block';
+                
+                showMessage(data.message || 'Action updated successfully', 'success');
+                
+                // Update data-description for filtering
+                const tableRow = actionText.closest('tr');
+                tableRow.setAttribute('data-description', newDescription.toLowerCase());
+            } else {
+                showMessage(data.message || 'Error updating action', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error updating action:', error);
+            showMessage('Error updating action. Please try again.', 'error');
+        })
+        .finally(() => {
+            // Reset save button
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = `
+                <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                Save
+            `;
+        });
+    }
+
     function showActionDetails(actionId) {
         const modal = document.getElementById('actionModal');
         const modalBody = document.getElementById('actionModalBody');
@@ -1064,5 +1247,15 @@
             }, 300);
         }, 4000);
     }
+
+    // Add CSS for spinner animation
+    const spinnerStyle = document.createElement('style');
+    spinnerStyle.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(spinnerStyle);
 </script>
 {% endblock %}
