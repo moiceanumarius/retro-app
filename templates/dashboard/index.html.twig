@@ -4,106 +4,460 @@
 
 {% block page_title %}Dashboard{% endblock %}
 
-{% block body %}
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">Welcome to Retro App</h2>
-        </div>
-        <div class="card-body">
-            <p>Your Agile Retrospectives dashboard is ready! This is a clean, white content area where you can add your dashboard widgets and content.</p>
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+{% endblock %}
 
-            <div class="mt-4">
-                <h3>Your Roles</h3>
-                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem;">
-                    {% for role in user_roles %}
-                        <span class="badge badge-primary">{{ role }}</span>
-                    {% endfor %}
+{% block body %}
+    <div class="team-management">
+        <!-- Dashboard Header -->
+        <div class="team-header">
+            <div class="header-content">
+                <h1>Welcome back, {{ app.user.firstName }}!</h1>
+                <p>Here's what's happening with your retrospectives and actions</p>
+            </div>
+            <div class="header-actions">
+                <div class="current-role">
+                    <span class="role-label">Current role:</span>
+                    <span class="role-value">
+                        {% if is_admin %}
+                            Admin
+                        {% elseif is_team_lead %}
+                            Team Lead
+                        {% elseif is_facilitator %}
+                            Facilitator
+                        {% else %}
+                            Member
+                        {% endif %}
+                    </span>
                 </div>
-                
-                {% if is_admin %}
-                    <div class="mt-3">
-                        <a href="{{ path('app_roles') }}" class="btn btn-sm btn-outline-primary">
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="teams-overview">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ stats.total_teams }}</h3>
+                    <p>My Teams</p>
+                </div>
+            </div>
+            
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ stats.total_retrospectives }}</h3>
+                    <p>Total Retrospectives</p>
+                </div>
+            </div>
+
+
+
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ stats.total_actions }}</h3>
+                    <p>Total Actions</p>
+                </div>
+            </div>
+
+
+        </div>
+
+        <!-- Main Content Grid -->
+        <div class="dashboard-grid">
+            <!-- Quick Actions -->
+            <div class="dashboard-card">
+                <div class="dashboard-header">
+                    <h3>Quick Actions</h3>
+                    <p>Jump straight into your most common tasks</p>
+                </div>
+                <div class="quick-actions">
+                    <!-- Role-based action buttons -->
+                    {% if is_admin %}
+                        <a href="{{ path('app_teams_create') }}" class="action-btn primary">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z"></path>
+                            </svg>
+                            Create Team
+                        </a>
+                        <a href="{{ path('app_roles') }}" class="action-btn primary">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.286-.948z" clip-rule="evenodd"></path>
+                            </svg>
                             Manage Roles
                         </a>
+                    {% endif %}
+                    
+                    {% if is_team_lead %}
+                        <a href="{{ path('app_actions_team_selection') }}" class="action-btn secondary">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                            </svg>
+                            Manage Actions
+                        </a>
+                        <a href="{{ path('app_teams') }}" class="action-btn outline">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                            </svg>
+                            View Teams
+                        </a>
+                    {% endif %}
+                    
+                    {% if is_facilitator %}
+                        <a href="{{ path('app_retrospectives_create') }}" class="action-btn secondary">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            New Retrospective
+                        </a>
+                        <a href="{{ path('app_retrospectives') }}" class="action-btn outline">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                            </svg>
+                            View Retrospectives
+                        </a>
+                    {% endif %}
+                    
+                    {% if not is_admin and not is_team_lead and not is_facilitator %}
+                        <a href="{{ path('app_retrospectives') }}" class="action-btn outline">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                            </svg>
+                            Join Retrospective
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Teams Overview -->
+            {% if user_teams|length > 0 %}
+            <div class="dashboard-card">
+                <div class="dashboard-header">
+                    <h3>My Teams</h3>
+                    <p>{{ user_teams|length }} team{% if user_teams|length != 1 %}s{% endif %} you're part of</p>
+                </div>
+                <div class="teams-list">
+                    {% for team in user_teams|slice(0, 4) %}
+                        <a href="{{ path('app_teams_show', {'id': team.id}) }}" class="team-item">
+                            <div class="team-color-dot" style="background-color: {{ team.color ?: '#667eea' }};"></div>
+                            <div class="team-info">
+                                <div class="team-name">{{ team.name }}</div>
+                                <div class="team-details">{{ team.getMemberCount() }} members</div>
+                            </div>
+                            <div class="team-arrow">
+                                <svg width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                        </a>
+                    {% endfor %}
+                </div>
+                {% if user_teams|length > 4 %}
+                    <div class="teams-footer">
+                        <a href="{{ path('app_teams') }}" class="view-all-link">View all teams→</a>
                     </div>
                 {% endif %}
             </div>
+            {% endif %}
 
-            <div class="mt-4">
-                <h3>Getting Started</h3>
-                <p>This dashboard is built with the Adminty theme and includes:</p>
-                <ul style="margin-left: 1.5rem; margin-top: 1rem;">
-                    <li>Responsive sidebar navigation</li>
-                    <li>Clean, modern design</li>
-                    <li>Mobile-friendly layout</li>
-                    <li>Ready for your retrospective features</li>
-                    <li>Role-based access control (RBAC)</li>
-                </ul>
-            </div>
-            
-            <div class="mt-4">
-                <h3>Next Steps</h3>
-                <p>You can now start building your retrospective features:</p>
-                <ul style="margin-left: 1.5rem; margin-top: 1rem;">
-                    <li>Add team management</li>
-                    <li>Create sprint tracking</li>
-                    <li>Build retrospective forms</li>
-                    <li>Add voting and collaboration features</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
-    <div class="card">
-        <div class="card-header">
-            <h2 class="card-title">Quick Actions</h2>
-        </div>
-        <div class="card-body">
-            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                {% if is_admin or is_team_lead %}
-                    <button class="btn btn-primary" disabled>
-                        Create Team
-                    </button>
-                {% endif %}
-                
-                {% if is_facilitator or is_team_lead %}
-                    <button class="btn btn-secondary" disabled>
-                        Start Sprint
-                    </button>
-                    <button class="btn btn-secondary" disabled>
-                        New Retrospective
-                    </button>
-                {% endif %}
-                
-                {% if is_member %}
-                    <button class="btn btn-secondary" disabled>
-                        Join Retrospective
-                    </button>
-                {% endif %}
-            </div>
-            <p class="mt-3 text-muted">These buttons will be functional as you add more features to the application.</p>
-        </div>
-    </div>
-
-    {% if is_admin %}
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">Admin Panel</h2>
-            </div>
-            <div class="card-body">
-                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                    <a href="{{ path('app_roles') }}" class="btn btn-primary">
-                        Manage Roles
-                    </a>
-                    <button class="btn btn-secondary" disabled>
-                        User Management
-                    </button>
-                    <button class="btn btn-secondary" disabled>
-                        System Settings
-                    </button>
+            <!-- Upcoming Deadlines -->
+            {% if upcoming_deadlines|length > 0 %}
+            <div class="dashboard-card">
+                <div class="dashboard-header">
+                    <h3>Upcoming Deadlines</h3>
+                    <p>Actions due in the next 7 days</p>
                 </div>
-                <p class="mt-3 text-muted">Administrative functions available to you.</p>
+                <div class="deadline-list">
+                    {% for action in upcoming_deadlines %}
+                        <div class="deadline-item">
+                            <div class="deadline-info">
+                                <div class="deadline-title">{{ action.description|slice(0, 50) }}{% if action.description|length > 50 %}...{% endif %}</div>
+                                <div class="deadline-details">
+                                    Due: {{ action.dueDate|date('M d, Y') }} • {{ action.retrospective.team.name }}
+                                </div>
+                            </div>
+                            <div class="deadline-status">
+                                <span class="status-badge {{ action.status }}">{{ action.status|title }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
+            {% endif %}
+
+            <!-- Recent Activity -->
+            {% if recent_activity|length > 0 %}
+            <div class="dashboard-card">
+                <div class="dashboard-header">
+                    <h3>Recent Activity</h3>
+                    <p>Latest retrospectives you're involved with</p>
+                </div>
+                <div class="activity-list">
+                    {% for retrospective in recent_activity %}
+                        <div class="activity-item">
+                            <div class="activity-info">
+                                <div class="activity-title">{{ retrospective.title }}</div>
+                                <div class="activity-details">
+                                    {{ retrospective.team.name }} • {{ retrospective.createdAt|date('M d') }}
+                                </div>
+                            </div>
+                            <div class="activity-status">
+                                <span class="status-badge {{ retrospective.status }}">{{ retrospective.status|title }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
         </div>
-    {% endif %}
+    </div>
+
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .dashboard-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+        }
+
+        .dashboard-header {
+            margin-bottom: 1.5rem;
+        }
+
+        .dashboard-header h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .dashboard-header p {
+            color: #64748b;
+            margin: 0;
+            font-size: 0.875rem;
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .action-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .action-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .action-btn.secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.outline {
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .action-btn.outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .teams-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .team-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f7fafc;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .team-color-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .team-info {
+            flex: 1;
+        }
+
+        .team-item:hover {
+            background: #edf2f7;
+        }
+
+        .team-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        .team-details {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin-top: 0.25rem;
+        }
+
+        .team-arrow {
+            color: #667eea;
+            transition: transform 0.2s ease;
+            opacity: 0.7;
+        }
+
+        .team-item:hover .team-arrow {
+            transform: translateX(2px);
+            opacity: 1;
+        }
+
+        .teams-footer {
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .view-all-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .deadline-list, .activity-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .deadline-item, .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .deadline-title, .activity-title {
+            font-weight: 500;
+            color: #2d3748;
+            margin-bottom: 0.25rem;
+        }
+
+        .deadline-details, .activity-details {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.5rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-badge.pending { background: #e2e8f0; color: #4a5568; }
+        .status-badge.active { background: #c6f6d5; color: #22543d; }
+        .status-badge.completed { background: #bee3f8; color: #2a4365; }
+        .status-badge.planned { background: #f7fafc; color: #4a5568; }
+        .status-badge.cancelled { background: #fed7d7; color: #742a2a; }
+        .status-badge.open { background: #fed7d7; color: #742a2a; }
+        .status-badge.in-progress { background: #feebc8; color: #7b341e; }
+
+        .current-role {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+
+        .role-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .role-value {
+            font-size: 1rem;
+            color: #2d3748;
+            font-weight: 600;
+            background: #f7fafc;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .quick-actions {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            
+            .action-btn {
+                flex: 1;
+                min-width: calc(50% - 0.375rem);
+            }
+        }
+    </style>
 {% endblock %}
