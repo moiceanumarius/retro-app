@@ -652,9 +652,7 @@
                                                 {% if item.isDiscussed %}
                                                     <span class="discussed-badge">Discussed</span>
                                                 {% endif %}
-                                                {% if elementData.votes > 0 %}
-                                                    <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
-                                                {% endif %}
+                                                <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -677,9 +675,7 @@
                                                 {% if elementData.isDiscussed %}
                                                     <span class="discussed-badge">Discussed</span>
                                                 {% endif %}
-                                                {% if elementData.votes > 0 %}
-                                                    <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
-                                                {% endif %}
+                                                <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
                                             </div>
                                         </div>
                                     </div>
