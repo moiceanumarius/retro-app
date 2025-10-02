@@ -5,393 +5,146 @@
 {% block page_title %}Team Selection{% endblock %}
 
 {% block stylesheets %}
-    <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
-    <style>
-    .dashboard-container {
-        min-height: 100vh;
-        width: 100%;
-        background: #f8fafc;
-        padding: 2rem;
-    }
-
-    .team-selection-container {
-        max-width: 1000px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-    }
-
-    .page-header {
-        background: #374151;
-        color: white;
-        padding: 2rem;
-        text-align: center;
-    }
-
-    .page-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin: 0 0 0.5rem 0;
-    }
-
-    .page-header p {
-        font-size: 1.125rem;
-        opacity: 0.9;
-        margin: 0;
-    }
-
-    .content-section {
-        padding: 2rem;
-    }
-
-    .section-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin-bottom: 1.5rem;
-        text-align: center;
-    }
-
-    .teams-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2rem;
-    }
-
-    .team-card {
-        background: white;
-        border: 2px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 1.5rem;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .team-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, #4f46e5 0%, #7c3aed 100%);
-        transform: scaleX(0);
-        transition: transform 0.3s ease;
-    }
-
-    .team-card:hover {
-        border-color: #4f46e5;
-        box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
-        transform: translateY(-2px);
-    }
-
-    .team-card:hover::before {
-        transform: scaleX(1);
-    }
-
-    .team-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-
-    .team-name {
-        font-size: 1.25rem;
-        font-weight: 600;
-        color: #1f2937;
-        margin: 0;
-    }
-
-    .team-crown {
-        color: #f59e0b;
-        font-size: 1.25rem;
-    }
-
-    .team-meta {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-    }
-
-    .meta-item {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-
-    .meta-icon {
-        flex-shrink: 0;
-        opacity: 0.7;
-    }
-
-    .team-stats {
-        display: flex;
-        gap: 1rem;
-        margin-top: auto;
-    }
-
-    .stat-item {
-        flex: 1;
-        text-align: center;
-        padding: 0.75rem;
-        background: #f8fafc;
-        border-radius: 8px;
-        border: 1px solid #e5e7eb;
-    }
-
-    .stat-number {
-        display: block;
-        font-size: 1.25rem;
-        font-weight: bold;
-        color: #4f46e5;
-        margin-bottom: 0.2rem;
-    }
-
-    .stat-label {
-        font-size: 0.75rem;
-        color: #6b7280;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .actions-section {
-        padding: 1.5rem;
-        background: #f8fafc;
-        border-top: 1px solid #e5e7eb;
-        text-align: center;
-    }
-
-    .action-description {
-        color: #6b7280;
-        margin-bottom: 1rem;
-        font-size: 0.875rem;
-    }
-
-    .back-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: #6b7280;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-
-    .back-button:hover {
-        background: #4b5563;
-        transform: translateY(-1px);
-    }
-
-    .no-teams {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: #6b7280;
-    }
-
-    .no-teams-icon {
-        opacity: 0.3;
-        margin-bottom: 2rem;
-        color: #9ca3af;
-    }
-
-    .no-teams h3 {
-        margin: 0 0 1rem 0;
-        color: #374151;
-        font-size: 1.5rem;
-        font-weight: 600;
-    }
-
-    .no-teams p {
-        margin: 0 0 2rem 0;
-        font-size: 1rem;
-        color: #6b7280;
-        line-height: 1.6;
-    }
-
-    .create-team-button {
-        display: inline-flex;
-        align-items: center;
-        gap: 0.5rem;
-        background: #4f46e5;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.875rem 1.5rem;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-        text-decoration: none;
-    }
-
-    .create-team-button:hover {
-        background: #3730a3;
-        transform: translateY(-1px);
-    }
-
-    @media (max-width: 768px) {
-        .dashboard-container {
-            padding: 1rem;
-        }
-        
-        .page-header {
-            padding: 1.5rem;
-        }
-        
-        .page-header h1 {
-            font-size: 2rem;
-        }
-        
-        .content-section {
-            padding: 1.5rem;
-        }
-        
-        .teams-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .team-card {
-            padding: 1rem;
-        }
-        
-        .team-stats {
-            gap: 0.75rem;
-        }
-        
-        .stat-item {
-            padding: 0.5rem;
-        }
-        
-        .stat-number {
-            font-size: 1.1rem;
-        }
-    }
-    </style>
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
 {% endblock %}
 
 {% block body %}
-<div class="dashboard-container">
-    <div class="team-selection-container">
-        <!-- Page Header -->
-        <div class="page-header">
-            <h1>Select Team</h1>
-            <p>Choose a team to view and manage actions</p>
+    <div class="team-management">
+        <!-- Header Section -->
+        <div class="team-header">
+            <div class="header-content">
+                <h1>Action Management</h1>
+                <p>Select a team to view and manage action items from retrospectives</p>
+            </div>
+            <div class="header-actions">
+                <a href="{{ path('app_dashboard') }}" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                    Back to Dashboard
+                </a>
+            </div>
         </div>
 
-        <!-- Content Section -->
-        <div class="content-section">
-            {% if teams|length > 0 %}
-                <h2 class="section-title">Your Teams</h2>
-                
-                <div class="teams-grid">
-                    {% for team in teams %}
-                        <div class="team-card" onclick="window.location.href='{{ path('app_actions_by_team', {teamId: team.id}) }}'">
-                            <div class="team-header">
-                                <h3 class="team-name">{{ team.name }}</h3>
-                                {% if team.owner == app.user %}
-                                    <span class="team-crown" title="You own this team">
-                                        <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
-                                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902**
+        <!-- Teams Overview -->
+        <div class="teams-overview">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ teams|length }}</h3>
+                    <p>Available Teams</p>
+                </div>
+            </div>
+            <div class="stats-card">
+                {% set ownedCount = teams|filter(t => t.owner == app.user)|length %}
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.92-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0。
 
-                                        </svg>
-                                    </span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="team-meta">
-                                <div class="meta-item">
-                                    <svg class="meta-icon" width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    <span>
-                                        {% if team.owner == app.user %}
-                                            You are the owner
-                                        {% else %}
-                                            <strong>{{ team.owner.firstName }} {{ team.owner.lastName }}</strong> (Owner)
-                                        {% endif %}
-                                    </span>
-                                </div>
-                                
-                                <div class="meta-item">
-                                    <svg class="meta-icon" width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                                    </svg>
-                                    <span>{{ team.teamMembers|length }} members</span>
-                                </div>
+95-.69L9.049 2.927z"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ ownedCount }}</h3>
+                    <p>Teams I Own</p>
+                </div>
+            </div>
+            <div class="stats-card">
+                {% set memberCount = teams|filter(t => t.owner != app.user)|length %}
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ memberCount }}</h3>
+                    <p>Teams I'm In</p>
+                </div>
+            </div>
+        </div>
 
-                                {% if team.description %}
-                                    <div class="meta-item">
-                                        <svg class="meta-icon" width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                        </svg>
-                                        <span>{{ team.description|length > 50 ? team.description|slice(0, 50) ~ '...' : team.description }}</span>
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="team-stats">
-                                <div class="stat-item">
-                                    <span class="stat-number">{{ team.retrospectives|length }}</span>
-                                    <span class="stat-label">Retrospectives</span>
-                                </div>
-                                <div class="stat-item">
-                                    {% set totalActions = 0 %}
-                                    {% for retrospective in team.retrospectives %}
-                                        {% set totalActions = totalActions + retrospective.actions|length %}
-                                    {% endfor %}
-                                    <span class="stat-number">{{ totalActions }}</span>
-                                    <span class="stat-label">Actions</span>
-                                </div>
-                            </div>
+        <!-- Teams Grid -->
+        {% if teams|length > 0 %}
+        <div class="teams-section">
+            <div class="section-header">
+                <h2>Your Teams</h2>
+                <p>Click on a team card to view and manage actions for that team</p>
+            </div>
+            <div class="teams-grid">
+                {% for team in teams %}
+                <div class="team-card {{ team.owner == app.user ? 'owned' : 'member' }}" 
+                     onclick="window.location.href='{{ path('app_actions_by_team', {teamId: team.id}) }}'">
+                    <div class="team-header">
+                        <div class="team-info">
+                            <h3>{{ team.name }}</h3>
+                            {% if team.description %}
+                                <p>{{ team.description }}</p>
+                            {% endif %}
                         </div>
-                    {% endfor %}
-                </div>
-            {% else %}
-                <div class="no-teams">
-                    <div class="no-teams-icon">
-                        <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                        </svg>
+                        <div class="team-color" style="background-color: {{ team.color ?: '#667eea' }}"></div>
                     </div>
-                    <h3>No Teams Found</h3>
-                    <p>You are not a member of any teams yet. Teams need to be created or you need to be invited to teams to manage actions.</p>
-                    <a href="{{ path('app_teams_create') }}" class="create-team-button">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                        </svg>
-                        Create New Team
-                    </a>
+                    
+                    <div class="team-stats">
+                        <div class="stat">
+                            <span class="stat-number">{{ team.teamMembers|length }}</span>
+                            <span class="stat-label">Members</span>
+                        </div>
+                        <div class="stat">
+                            {% set totalActions = 0 %}
+                            {% for retrospective in team.retrospectives %}
+                                {% set totalActions = totalActions + retrospective.actions|length %}
+                            {% endfor %}
+                            <span class="stat-number">{{ totalActions }}</span>
+                            <span class="stat-label">Actions</span>
+                        </div>
+                    </div>
+
+                    <div class="team-actions">
+                        <a href="{{ path('app_actions_by_team', {teamId: team.id}) }}" class="btn btn-sm btn-primary"
+                           onclick="event.stopPropagation()">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                            </svg>
+                            View Actions
+                        </a>
+                        <a href="{{ path('app_teams_show', {'id': team.id}) }}" class="btn btn-sm btn-secondary"
+                           onclick="event.stopPropagation()">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
+                                <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                            </svg>
+                            View Team
+                        </a>
+                    </div>
                 </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-icon">
+                <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <h3>No teams available</h3>
+            <p>You are not a member of any teams yet. Teams need to be created or you need to be invited to teams to manage actions.</p>
+            {% if app.user.hasRole('ROLE_ADMIN') or app.user.hasRole('ROLE_TEAM_LEAD') or app.user.hasRole('ROLE_FACILITATOR') %}
+            <a href="{{ path('app_teams_create') }}" class="btn btn-primary">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                </svg>
+                Create Your First Team
+            </a>
+            {% else %}
+            <p class="text-muted">Only Administrators, Team Leads, and Facilitators can create teams.</p>
             {% endif %}
         </div>
-
-        <!-- Actions Section -->
-        <div class="actions-section">
-            <div class="action-description">
-                Click on any team card above to view and manage actions for that team.
-            </div>
-            <a href="{{ path('app_dashboard') }}" class="back-button">
-                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd"></path>
-                </svg>
-                Back to Dashboard
-            </a>
-        </div>
+        {% endif %}
     </div>
-</div>
 {% endblock %}

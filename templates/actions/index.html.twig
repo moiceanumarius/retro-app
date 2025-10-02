@@ -1,691 +1,807 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Action Management{% endblock %}
-
-{% block page_title %}Action Management{% endblock %}
+{% block title %}Actions{% if team %} - {{ team.name }}{% endif %}{% endblock %}
+{% block page_title %}Action Management{% if team %} - {{ team.name }}{% endif %}{% endblock %}
 
 {% block stylesheets %}
-    <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
     <style>
-    .dashboard-container {
-        min-height: 100vh;
-        width: 100%;
-        background: #f8fafc;
-        padding: 2rem;
-    }
-
-    .actions-management {
-        max-width: 1400px;
-        margin: 0 auto;
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        overflow: hidden;
-    }
-
-    .page-header {
-        background: #374151;
-        color: white;
-        padding: 2rem;
-        text-align: center;
-    }
-
-    .page-header h1 {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin: 0 0 0.5rem 0;
-    }
-
-    .page-header p {
-        font-size: 1.125rem;
-        opacity: 0.9;
-        margin: 0;
-    }
-
-    .stats-section {
-        display: flex;
-        gap: 1rem;
-        padding: 1.5rem 2rem;
-        background: #f8fafc;
-        border-bottom: 1px solid #e2e8f0;
-        justify-content: center;
-    }
-
-    .stat-item {
-        text-align: center;
-        padding: 1rem 1.5rem;
-        background: white;
-        border-radius: 12px;
-        min-width: 120px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-        border: 1px solid #e2e8f0;
-    }
-
-    .stat-number {
-        display: block;
-        font-size: 2rem;
-        font-weight: bold;
-        color: #4f46e5;
-        margin-bottom: 0.25rem;
-    }
-
-    .stat-label {
-        Font-size: 0.75rem;
-        Color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-weight: 600;
-    }
-
-    .filters-section {
-        padding: 2rem;
-        background: white;
-        border-bottom: 1px solid #e2e8f0;
-    }
-
-    .filters-grid {
-        display: grid;
-        grid-template-columns: auto auto 2fr auto;
-        gap: 1rem;
-        align-items: center;
-    }
-
-    .search-box {
-        padding: 0.875rem 1rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        width: 100%;
-        margin-right: 1rem;
-    }
-
-    .search-box:focus {
-        outline: none;
-        border-color: #4f46e5;
-        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-    }
-
-    .filter-dropdown {
-        padding: 0.75rem 0.75rem;
-        border: 2px solid #e2e8f0;
-        border-radius: 8px;
-        background: white;
-        font-size: 0.875rem;
-        min-width: 120px;
-        max-width: 140px;
-    }
-
-    .filter-dropdown:focus {
-        outline: none;
-        border-color: #4f46e5;
-    }
-
-    .clear-filters-btn {
-        padding: 0.875rem 1.5rem;
-        background: #6b7280;
-        color: white;
-        border: none;
-        border-radius: 8px;
-        font-size: 0.875rem;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
-
-    .clear-filters-btn:hover {
-        background: #4b5563;
-        transform: translateY(-1px);
-    }
-
-    .table-container {
-        overflow-x: auto;
-        padding: 0;
-    }
-
-    .actions-table {
-        width: 100%;
-        border-collapse: collapse;
-        background: white;
-    }
-
-    .actions-table thead th {
-        background: #f8fafc;
-        padding: 1rem;
-        text-align: left;
-        font-weight: 600;
-        color: #374151;
-        border-bottom: 2px solid #e2e8f0;
-        font-size: 0.875rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-    }
-
-    .actions-table tbody tr {
-        border-bottom: 1px solid #f1f5f9;
-        transition: background-color 0.2s;
-    }
-
-    .actions-table tbody tr:hover {
-        background: #f8fafc;
-    }
-
-    .actions-table tbody td {
-        padding: 1rem;
-        vertical-align: middle;
-        font-size: 0.875rem;
-    }
-
-    .status-badge {
-        padding: 0.375rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        display: inline-block;
-    }
-
-    .status-badge.pending {
-        background: #fef3c7;
-        color: #92400e;
-    }
-
-    .status-badge.in_progress {
-        background: #dbeafe;
-        color: #1e40af;
-    }
-
-    .status-badge.completed {
-        background: #dcfce7;
-        color: #166534;
-    }
-
-    .status-badge.cancelled {
-        background: #f3f4f6;
-        color: #374151;
-    }
-
-    .action-description {
-        font-weight: 500;
-        color: #1f2937;
-        max-width: 300px;
-        line-height: 1.5;
-    }
-
-    .assignee-info {
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        color: #6b7280;
-    }
-
-    .assignee-avatar {
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: #4f46e5;
-        color: white;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .due-date {
-        color: #6b7280;
-        font-size: 0.875rem;
-    }
-
-    .due-date.overdue {
-        color: #dc2626;
-        font-weight: 600;
-    }
-
-    .retrospective-link {
-        color: #4f46e5;
-        text-decoration: none;
-        font-weight: 500;
-        font-size: 0.875rem;
-    }
-
-    .retrospective-link:hover {
-        text-decoration: underline;
-    }
-
-    .status-controls {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-    }
-
-    .status-select {
-        padding: 0.5rem 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        background: white;
-        font-size: 0.875rem;
-        color: #374151;
-        cursor: pointer;
-        min-width: 110px;
-        max-width: 130px;
-    }
-
-    .status-select:hover,
-    .status-select:focus {
-        border-color: #4f46e5;
-        outline: none;
-    }
-
-    .no-actions {
-        text-align: center;
-        padding: 4rem 2rem;
-        color: #6b7280;
-        background: white;
-    }
-
-    .no-actions-icon {
-        opacity: 0.3;
-        margin-bottom: 2rem;
-        color: #9ca3af;
-    }
-
-    .no-actions h3 {
-        margin: 0 0 1rem 0;
-        color: #374151;
-        font-size: 1.5rem;
-        font-weight: 600;
-    }
-
-    .no-actions p {
-        margin: 0;
-        font-size: 1rem;
-        color: #6b7280;
-        line-height: 1.6;
-    }
-
-    @media (max-width: 1024px) {
-        .filters-grid {
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-        
-        .stats-section {
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        
-        .action-description {
-            max-width: 250px;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .dashboard-container {
-            padding: 1rem;
-        }
-        
+        /* Action-specific styles to extend team-management.css */
         .actions-management {
-            border-radius: 12px;
+            padding: 0;
+            max-width: 1400px;
+            margin: 0 auto;
         }
-        
-        .page-header {
-            padding: 1.5rem;
-        }
-        
-        .page-header h1 {
-            font-size: 2rem;
-        }
-        
-        .stats-section {
-            padding: 1rem;
-            gap: 0.75rem;
-        }
-        
-        .stat-item {
-            min-width: 100px;
-            padding: 0.75rem 1rem;
-        }
-        
-        .stat-number {
-            font-size: 1.75rem;
-        }
-        
+
         .filters-section {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
             padding: 1.5rem;
+            margin-bottom: 2rem;
         }
-        
-        .actions-table th,
+
+        .filters-grid {
+            display: grid;
+            grid-template-columns: auto auto 2fr auto;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.875rem;
+        }
+
+        .filter-dropdown {
+            min-width: 120px;
+            max-width: 140px;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-dropdown:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-box {
+            padding: 0.75rem 1rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .clear-filters-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .clear-filters-btn:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .actions-table-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            overflow: hidden;
+        }
+
+        .actions-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .actions-table thead {
+            background: #f8f9fa;
+        }
+
+        .actions-table th {
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
         .actions-table td {
-            padding: 0.75rem 0.5rem;
+            padding: 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: top;
         }
-        
-        .action-description {
-            max-width: 200px;
+
+        .actions-table tbody tr {
+            transition: all 0.3s ease;
+        }
+
+        .actions-table tbody tr:hover {
+            background: #f8fafc;
+        }
+
+        .actions-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .action-id {
+            font-weight: 600;
+            color: #6c757d;
             font-size: 0.8rem;
         }
-        
-        .assignee-info {
-            flex-direction: column;
-            gap: 0.25rem;
-            text-align: center;
-        }
-        
-        .assignee-avatar {
-            width: 28px;
-            height: 28px;
-            font-size: 0.7rem;
-        }
-    }
 
-    @media (max-width: 640px) {
-        .actions-table {
+        .action-description {
+            color: #2d3748;
+            font-weight: 500;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+
+        .assignee-info {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .assignee-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-size: 0.75rem;
+            font-weight: 600;
+            color: #6c757d;
         }
-        
-        .actions-table th,
-        .actions-table td {
-            padding: 0.5rem 0.25rem;
+
+        .assignee-name {
+            color: #495057;
+            font-weight: 500;
+            font-size: 0.875rem;
         }
-        
+
+        .due-date {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .due-date.overdue {
+            color: #e53e3e;
+        }
+
+        .due-date.due-soon {
+            color: #d69e2e;
+        }
+
+        .due-date.normal {
+            color: #38a169;
+        }
+
+        .retrospective-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .retrospective-link:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+
+        .action-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
         .status-badge {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.625rem;
-        }
-        
-        .status-select {
-            min-width: 90px;
-            max-width: 110px;
+            padding: 0.375rem 0.75rem;
+            border-radius: 12px;
             font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-    }
+
+        .status-badge.open {
+            background: #ff6b6b;
+            color: white;
+        }
+
+        .status-badge.in-progress {
+            background: #ffd93d;
+            color: #744210;
+        }
+
+        .status-badge.completed {
+            background: #6bcf7f;
+            color: white;
+        }
+
+        .status-badge.cancelled {
+            background: #94a3b8;
+            color: white;
+        }
+
+        .status-select {
+            min-width: 110px;
+            max-width: 130px;
+            padding: 0.5rem;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.3<｜tool▁call▁begin｜>
+        }
+
+        .status-select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+        }
+
+        .actions-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .team-context {
+            background: #f0f4ff;
+            border: 1px solid #e0e7ff;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            color: #3730a3;
+            font-weight: 500;
+        }
+
+        .switch-team-link {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .switch-team-link:hover {
+            color: #5a67d8;
+            text-decoration: underline;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+        }
+
+        .empty-state-icon {
+            color: #cbd5e0;
+            margin-bottom: 1.5rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0 0 0.5rem 0;
+        }
+
+        .empty-state p {
+            color: #64748b;
+            margin: 0 0 2rem 0;
+        }
+
+        /* Stats Cards */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+        }
+
+        .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        .stat-card.open .stat-icon {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        }
+
+        .stat-card.in-progress .stat-icon {
+            background: linear-gradient(135deg, #ffd93d 0%, #f6ad55 100%);
+        }
+
+        .stat-card.completed .stat-icon {
+            background: linear-gradient(135deg, #6bcf7f 0%, #48bb78 100%);
+        }
+
+        .stat-card.overdue .stat-icon {
+            background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        }
+
+        .stat-content h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2d3748;
+            margin: 0;
+        }
+
+        .stat-content p {
+            color: #64748b;
+            font-size: 0.875rem;
+            margin: 0.25rem 0 0 0;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .filters-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+
+            .filter-dropdown,
+            .search-box,
+            .clear-filters-btn {
+                width: 100%;
+            }
+
+            .actions-table {
+                font-size: 0.8rem;
+            }
+
+            .actions-table th,
+            .actions-table td {
+                padding: 0.75rem 0.5rem;
+            }
+
+            .action-description {
+                max-width: 200px;
+            }
+
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+
+            .actions-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 {% endblock %}
 
 {% block body %}
-<div class="dashboard-container">
-    <div class="actions-management">
-        <!-- Page Header -->
-        <div class="page-header">
+<div class="actions-management">
+    <!-- Header Section -->
+    <div class="team-header">
+        <div class="header-content">
             <h1>Action Management{% if team %} - {{ team.name }}{% endif %}</h1>
-            <p>Manage and track action items{% if team %} for {{ team.name }}{% endif %}</p>
+            <p>Track and manage action items from retrospectives{% if team %} for {{ team.name }}{% endif %}</p>
+        </div>
+        <div class="header-actions">
             {% if team %}
-                <div style="margin-top: 1rem;">
-                    <a href="{{ path('app_actions_team_selection') }}" style="color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.875rem;">
-                        ← Switch to another team
-                    </a>
-                </div>
+                <a href="{{ path('app_actions_team_selection') }}" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 7a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 11a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM14 15a1 1 0 00-1-1H4a1 1 0 00-1 1v1a1 1 0 001 1h10a1 1 0 001-1v-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Switch Team
+                </a>
+            {% else %}
+                <a href="{{ path('app_actions_team_selection') }}" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                    </svg>
+                    Select Team
+                </a>
             {% endif %}
         </div>
+    </div>
 
-        <!-- Statistics Section -->
-        <div class="stats-section">
-            <div class="stat-item">
-                <span class="stat-number">{{ actions|length }}</span>
-                <span class="stat-label">Total</span>
+    {% if actions|length > 0 %}
+        <!-- Stats Overview -->
+        <div class="stats-row">
+            {% set openActions = actions|filter(a => a.status == 'open')|length %}
+            {% set inProgressActions = actions|filter(a => a.status == 'in-progress')|length %}
+            {% set completedActions = actions|filter(a => a.status == 'completed')|length %}
+            {% set overdueActions = actions|filter(a => a.dueAt and a.dueAt.date < 'now'|date('Y-m-d') and a.status != 'completed')|length %}
+
+            <div class="stat-card open">
+                <div class="stat-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ openActions }}</h3>
+                    <p>Open Actions</p>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-number">{{ groupedActions.pending|length }}</span>
-                <span class="stat-label">Pending</span>
+
+            <div class="stat-card in-progress">
+                <div class="stat-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.293l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ inProgressActions }}</h3>
+                    <p>In Progress</p>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-number">{{ groupedActions.in_progress|length }}</span>
-                <span class="stat-label">In Progress</span>
+
+            <div class="stat-card completed">
+                <div class="stat-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ completedActions }}</h3>
+                    <p>Completed</p>
+                </div>
             </div>
-            <div class="stat-item">
-                <span class="stat-number">{{ groupedActions.completed|length }}</span>
-                <span class="stat-label">Completed</span>
-            </div>
-            <div class="stat-item">
-                <span class="stat-number">{{ groupedActions.cancelled|length }}</span>
-                <span class="stat-label">Cancelled</span>
+
+            <div class="stat-card overdue">
+                <div class="stat-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ overdueActions }}</h3>
+                    <p>Overdue</p>
+                </div>
             </div>
         </div>
 
         <!-- Filters Section -->
         <div class="filters-section">
             <div class="filters-grid">
-                <label for="statusFilter" style="font-weight: 600; color: #374151;">Status:</label>
-                <select id="statusFilter" class="filter-dropdown">
-                    <option value="all">All Actions</option>
-                    <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
+                <label class="filter-label">Status:</label>
+                <select class="filter-dropdown" id="statusFilter">
+                    <option value="">All Status</option>
+                    <option value="open">Open</option>
+                    <option value="in-progress">In Progress</option>
                     <option value="completed">Completed</option>
                     <option value="cancelled">Cancelled</option>
                 </select>
                 
-                <input type="text" id="searchBox" class="search-box" placeholder="Search by description or retrospective...">
+                <input type="text" class="search-box" id="searchBox" placeholder="Search actions, retrospectives, or assignees...">
                 
-                <button type="button" class="clear-filters-btn" onclick="clearFilters()">Clear All</button>
+                <button class="clear-filters-btn" onclick="clearFilters()">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                    Clear Filters
+                </button>
             </div>
         </div>
 
         <!-- Actions Table -->
-        <div class="table-container">
-            {% if actions|length > 0 %}
-                <table class="actions-table">
-                    <thead>
-                        <tr>
-                            <th>Action</th>
-                            <th>Status</th>
-                            <th>Assignee</th>
-                            <th>Due Date</th>
-                            <th>Retrospective</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for action in actions %}
-                            <tr data-status="{{ action.status }}" data-description="{{ action.description|lower }}" data-retrospective="{{ action.retrospective.title|lower }}">
-                                <td>
-                                    <div class="action-description">{{ action.description }}</div>
-                                </td>
-                                <td>
-                                    <span class="status-badge {{ action.status }}">{{ action.status }}</span>
-                                </td>
-                                <td>
-                                    {% if action.assignedTo %}
-                                        <div class="assignee-info">
-                                            <div class="assignee-avatar">{{ action.assignedTo.firstName|first }}{{ action.assignedTo.lastName|first }}</div>
-                                            <span>{{ action.assignedTo.firstName }} {{ action.assignedTo.lastName }}</span>
-                                        </div>
-                                    {% else %}
-                                        <span style="color: #9ca3af; font-style: italic;">Unassigned</span>
-                                    {% endif %}  
-                                </td>
-                                <td>
-                                    {% if action.dueDate %}
-                                        {% set isOverdue = action.dueDate|date('U') < 'now'|date('U') and action.status not in ['completed', 'cancelled'] %}
-                                        <span class="due-date {% if isOverdue %}overdue{% endif %}">
-                                            {{ action.dueDate|date('M d, Y') }}
-                                        </span>
-                                    {% else %}
-                                        <span style="color: #9ca3af; font-style: italic;">No due date</span>
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <a href="{{ path('app_retrospectives_show', {id: action.retrospective.id}) }}" class="retrospective-link">
-                                        {{ action.retrospective.title }}
-                                    </a>
-                                </td>
-                                <td>
-                                    {% if action.assignedTo == app.user or app.user.hasAnyRole(['ROLE_ADMIN', 'ROLE_TEAM_LEAD', 'ROLE_FACILITATOR']) %}
-                                        <div class="status-controls">
-                                            <select class="status-select" data-action-id="{{ action.id }}">
-                                                <option value="pending" {% if action.status == 'pending' %}selected{% endif %}>Pending</option>
-                                                <option value="in_progress" {% if action.status == 'in_progress' %}selected{% endif %}>In Progress</option>
-                                                <option value="completed" {% if action.status == 'completed' %}selected{% endif %}>Completed</option>
-                                                <option value="cancelled" {% if action.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
-                                            </select>
-                                        </div>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <div class="no-actions">
-                    <div class="no-actions-icon">
-                        <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-                        </svg>
-                    </div>
-                    <h3>No Actions Found</h3>
-                    <p>You don't have any action items yet. Actions are created during retrospectives.</p>
-                </div>
-            {% endif %}
+        <div class="actions-table-container">
+            <table class="actions-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Description</th>
+                        <th>Assignee</th>
+                        <th>Due Date</th>
+                        <th>Retrospective</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="actionsTableBody">
+                    {% for action in actions %}
+                    <tr data-status="{{ action.status }}" 
+                        data-description="{{ action.description|lower }}" 
+                        data-retrospective="{{ action.retrospective.title|lower }}"
+                        data-assignee="{{ action.assignee ? action.assignee.email|lower : '' }}">
+                        <td>
+                            <span class="action-id">#{{ action.id }}</span>
+                        </td>
+                        <td>
+                            <div class="action-description">{{ action.description }}</div>
+                        </td>
+                        <td>
+                            {% if action.assignee %}
+                                <div class="assignee-info">
+                                    <div class="assignee-avatar">
+                                        {{ action.assignee.email|slice(0,1)|upper }}
+                                    </div>
+                                    <span class="assignee-name">{{ action.assignee.email }}</span>
+                                </div>
+                            {% else %}
+                                <span style="color: #9ca3af; font-style: italic;">Unassigned</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if action.dueAt %}
+                                {% set dueDate = action.dueAt.date('Y-m-d') %}
+                                {% set now = 'now'|date('Y-m-d') %}
+                                {% set diff = action.dueAt.diff(date(now))|date('%a') %}
+                                <span class="due-date {% if dueDate < now and action.status != 'completed' %}overdue
+                                {% elseif diff <= 3 and diff >= 0 %}due-soon
+                                {% else %}normal{% endif %}">
+                                    {{ action.dueAt|date('M d, Y') }}
+                                </span>
+                            {% else %}
+                                <span style="color: #9ca3af;">No due date</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ path('app_retrospectives_show', {'id': action.retrospective.id}) }}" 
+                               class="retrospective-link" target="_blank">
+                                {{ action.retrospective.title }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if app.user == action.assignee or app.user == action.retrospective.team.owner or is_granted('ROLE_ADMIN') %}
+                                <select class="status-select" 
+                                        data-action-id="{{ action.id }}"
+                                        value="{{ action.status }}"
+                                        onchange="updateActionStatus({{ action.id }}, this.value)">
+                                    <option value="open" {{ action.status == 'open' ? 'selected' : '' }}>Open</option>
+                                    <option value="in-progress" {{ action.status == 'in-progress' ? 'selected' : '' }}>In Progress</option>
+                                    <option value="completed" {{ action.status == 'completed' ? 'selected' : '' }}>Completed</option>
+                                    <option value="cancelled" {{ action.status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                                </select>
+                            {% else %}
+                                <span class="status-badge {{ action.status }}">{{ action.status|replace({'-': ' '})|title }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="action-actions">
+                                {% if app.user == action.assignee or app.user == action.retrospective.team.owner or is_granted('ROLE_ADMIN') %}
+                                    <button class="btn btn-sm btn-primary" 
+                                            onclick="assignAction({{ action.id }})"
+                                            style="padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.75rem;">
+                                        Assign
+                                    </button>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
+    {% else %}
+        <!-- Empty State -->
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <h3>No Actions Found</h3>
+            <p>{% if team %}No action items found for {{ team.name }} yet.{% else %}No action items found{% endif %} Create retrospectives and add action items to start tracking progress.</p>
+        </div>
+    {% endif %}
 </div>
-{% endblock %}
 
-{% block javascripts %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Get filter elements
-    const statusFilter = document.getElementById('statusFilter');
-    const searchBox = document.getElementById('searchBox');
-    const tableRows = document.querySelectorAll('.actions-table tbody tr');
-    
-    // Initialize filtering on page load
-    setTimeout(() => {
-        filterTable();
-    }, 200);
-
-    // Status filter functionality
-    if (statusFilter) {
-        statusFilter.addEventListener('change', function() {
-            filterTable();
-        });
-    }
-    
-    // Search functionality
-    if (searchBox) {
-        searchBox.addEventListener('input', function() {
-            filterTable();
-        });
-    }
-    
-    // Filter table based on status and search
+    // Filter functions
     function filterTable() {
-        if (!statusFilter || !searchBox) {
-            return;
+        const statusFilter = document.getElementById('statusFilter');
+        const searchBox = document.getElementById('searchBox');
+        const tableRows = document.querySelectorAll('#actionsTableBody tr');
+        
+        const statusValue = statusFilter ? statusFilter.value : '';
+        const searchValue = searchBox ? searchBox.value.toLowerCase().trim() : '';
+        
+        tableRows.forEach(row => {
+            const status = row.getAttribute('data-status');
+            const description = row.getAttribute('data-description');
+            const retrospective = row.getAttribute('data-retrospective');
+            const assignee = row.getAttribute('data-assignee');
+            
+            let showRow = true;
+            
+            // Filter by status
+            if (statusValue && status !== statusValue) {
+                showRow = false;
+            }
+            
+            // Filter by search term
+            if (searchValue) {
+                const searchMatch = description.includes(searchValue) ||
+                                 retrospective.includes(searchValue) ||
+                                 assignee.includes(searchValue);
+                if (!searchMatch) {
+                    showRow = false;
+                }
+            }
+            
+            row.style.display = showRow ? '' : 'none';
+        });
+    }
+
+    function clearFilters() {
+        const statusFilter = document.getElementById('statusFilter');
+        const searchBox = document.getElementById('searchBox');
+        
+        if (statusFilter) statusFilter.value = '';
+        if (searchBox) searchBox.value = '';
+        
+        filterTable();
+    }
+
+    // Initialize filters
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusFilter = document.getElementById('statusFilter');
+        const searchBox = document.getElementById('searchBox');
+        
+        if (statusFilter) {
+            statusFilter.addEventListener('change', filterTable);
         }
         
-        const statusValue = statusFilter.value;
-        const searchValue = searchBox.value.toLowerCase().trim();
+        if (searchBox) {
+            searchBox.addEventListener('input', filterTable);
+        }
         
-        tableRows.forEach((row, index) => {
-            const rowStatus = row.dataset.status;
-            const description = row.dataset.description || '';
-            const retrospective = row.dataset.retrospective || '';
-            
-            // Status filter
-            let statusMatch = true;
-            if (statusValue !== 'all') {
-                statusMatch = rowStatus === statusValue;
-            }
-            
-            // Search filter
-            let searchMatch = true;
-            if (searchValue.length > 0) {
-                const descMatch = description.includes(searchValue);
-                const retroMatch = retrospective.includes(searchValue);
-                searchMatch = descMatch || retroMatch;
-            }
-            
-            // Show/hide row
-            if (statusMatch && searchMatch) {
-                row.style.display = '';
+        // Initial filter applied
+        setTimeout(filterTable, 100);
+    });
+
+    // Action management functions
+    function updateActionStatus(actionId, newStatus) {
+        fetch(`/actions/${actionId}/update-status`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ status: newStatus })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                // Update status badge
+                const statusSelect = document.querySelector(`select[data-action-id="${actionId}"]`);
+                if (statusSelect) {
+                    statusSelect.closest('td').querySelector('.status-badge').textContent = 
+                        newStatus.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                }
+                
+                // Update stats cards
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
             } else {
-                row.style.display = 'none';
+                showMessage(data.message || 'Error updating status', 'error');
+                // Revert select value on error
+                event.target.select(data.previousValue);
             }
+        })
+        .catch(error => {
+            console.error('Error updating action status:', error);
+            showMessage('Error updating action status. Please try again.', 'error');
         });
     }
-    
-    // Clear filters functionality
-    window.clearFilters = function() {
-        if (statusFilter) statusFilter.value = 'all';
-        if (searchBox) searchBox.value = '';
-        filterTable();
-    };
-    
 
-    // Status update functionality
-    const statusSelects = document.querySelectorAll('.status-select');
-    
-    statusSelects.forEach(select => {
-        select.addEventListener('change', function() {
-            const actionId = this.dataset.actionId;
-            const newStatus = this.value;
-            
-            fetch(`/actions/${actionId}/update-status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ status: newStatus }),
-                credentials: 'include'
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Update UI
-                    const actionCard = document.querySelector(`[data-action-id="${actionId}"]`);
-                    actionCard.classList.remove('pending', 'in_progress', 'completed', 'cancelled');
-                    actionCard.classList.add(newStatus);
-                    actionCard.dataset.status = newStatus;
-                    
-                    // Update status badge
-                    const statusBadge = actionCard.querySelector('.action-status-badge');
-                    statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
-                    statusBadge.classList.remove('pending', 'in_progress', 'completed', 'cancelled');
-                    statusBadge.classList.add(newStatus);
-                    
-                    // Show success message
-                    showMessage('Action status updated successfully!', 'success');
-                } else {
-                    showMessage(data.message || 'Failed to update action status', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error updating action status:', error);
-                showMessage('Failed to update action status', 'error');
-            });
+    function assignAction(actionId) {
+        // Get current user info
+        fetch(`/actions/${actionId}/assign`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({ userId: {{ app.user.id }} })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 1000);
+            } else {
+                showMessage(data.message || 'Error assigning action', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error assigning action:', error);
+            showMessage('Error assigning action. Please try again.', 'error');
         });
-    });
-    
+    }
+
     function showMessage(message, type) {
-        // Remove any existing messages
-        document.querySelectorAll('.action-message').forEach(msg => msg.remove());
-        
         // Create message element
         const messageEl = document.createElement('div');
-        messageEl.className = `action-message ${type}`;
-        messageEl.textContent = message;
+        messageEl.className = `alert alert-${type}`;
         messageEl.style.cssText = `
             position: fixed;
             top: 20px;
             right: 20px;
+            z-index: 1000;
             padding: 1rem 1.5rem;
             border-radius: 8px;
-            font-weight: 600;
-            z-index: 1000;
             color: white;
-            background: ${type === 'success' ? '#10b981' : '#ef4444'};
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            font-size: 0.875rem;
+            font-weight: 500;
+            animation: slideInRight 0.3s ease;
+            max-width: 400px;
+            word-wrap: break-word;
         `;
         
+        if (type === 'success') {
+            messageEl.style.background = '#10b981';
+            messageEl.style.border = '1px solid #059669';
+        } else if (type === 'error') {
+            messageEl.style.background = '#ef4444';
+            messageEl.style.border = '1px solid #dc2626';
+        }
+        
+        messageEl.textContent = message;
+        
+        // Add CSS animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Add to page
         document.body.appendChild(messageEl);
         
-        // Auto remove after 3 seconds
+        // Remove after 4 seconds
         setTimeout(() => {
-            messageEl.remove();
-        }, 3000);
+            messageEl.style.animation = 'slideOutRight 0.3s ease';
+            setTimeout(() => {
+                if (messageEl.parentNode) {
+                    messageEl.parentNode.removeChild(messageEl);
+                }
+            }, 300);
+        }, 4000);
     }
-});
 </script>
 {% endblock %}
