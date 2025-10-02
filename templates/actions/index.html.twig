@@ -7,10 +7,18 @@
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
     <style>
+    .dashboard-container {
+        min-height: 100vh;
+        width: 100%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 0;
+    }
+
     .actions-management {
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 0 2rem;
+        max-width: none;
+        margin: 0;
+        padding: 2rem;
+        width: 100%;
     }
 
     .retrospective-header {
@@ -285,7 +293,11 @@
 
     @media (max-width: 768px) {
         .actions-management {
-            padding: 0 1rem;
+            padding: 1rem;
+        }
+        
+        .dashboard-container {
+            padding: 0;
         }
         
         .retrospective-header {
@@ -332,6 +344,7 @@
 {% endblock %}
 
 {% block body %}
+<div class="dashboard-container">
     <div class="actions-management">
         <!-- Header Section -->
         <div class="retrospective-header">
@@ -446,6 +459,7 @@
             {% endif %}
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block javascripts %}
