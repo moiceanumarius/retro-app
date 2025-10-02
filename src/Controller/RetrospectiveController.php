@@ -7,6 +7,7 @@ use App\Entity\RetrospectiveItem;
 use App\Entity\RetrospectiveAction;
 use App\Entity\RetrospectiveGroup;
 use App\Entity\Team;
+use App\Entity\User;
 use App\Entity\Vote;
 use App\Form\RetrospectiveType;
 use App\Form\RetrospectiveItemType;
