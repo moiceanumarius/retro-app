@@ -664,32 +664,16 @@
         .sort-icon {
             margin-left: 0.5rem;
             transition: all 0.2s ease;
-            fill: #9ca3af;
-            flex-shrink: 0;
-            width: 12px;
-            height: 12px;
-            align-self: center;
+            color: #9ca3af;
+            font-size: 12px;
         }
 
         .sortable:hover .sort-icon {
-            fill: #667eea;
+            color: #667eea;
         }
 
         .sortable.active .sort-icon {
-            fill: #667eea;
-        }
-
-        .header-content {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            width: 100%;
-            gap: 0.5rem;
-        }
-
-        .header-text {
-            flex: 1;
-            white-space: nowrap;
+            color: #667eea;
         }
 
         /* Pagination Styles */
@@ -1184,28 +1168,16 @@
                         <th>Description</th>
                         <th>Assignee</th>
                         <th class="sortable" data-sort="due_date">
-                            <span class="header-content">
-                                <span class="header-text">Due Date</span>
-                                <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                            </span>
+                            Due Date
+                            <i class="fas fa-sort sort-icon"></i>
                         </th>
                         <th class="sortable" data-sort="created_at">
-                            <span class="header-content">
-                                <span class="header-text">Created At</span>
-                                <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                            </span>
+                            Created At
+                            <i class="fas fa-sort sort-icon"></i>
                         </th>
                         <th class="sortable" data-sort="status">
-                            <span class="header-content">
-                                <span class="header-text">Status</span>
-                                <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                            </span>
+                            Status
+                            <i class="fas fa-sort sort-icon"></i>
                         </th>
                         <th>Actions</th>
                     </tr>
