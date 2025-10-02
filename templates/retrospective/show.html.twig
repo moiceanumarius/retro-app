@@ -543,12 +543,22 @@
                                         {% set allElements = allElements|merge([itemData]) %}
                                     {% elseif element.type == 'group' %}
                                         {% set group = element.entity %}
+                                        {# Calculate total votes from all items in the group #}
+                                        {% set groupTotalVotes = 0 %}
+                                        {% set groupHasDiscussed = false %}
+                                        {% for groupItem in group.getItems() %}
+                                            {% set groupTotalVotes = groupTotalVotes + groupItem.votes|length %}
+                                            {% if groupItem.isDiscussed %}
+                                                {% set groupHasDiscussed = true %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
                                         {% set groupData = {
                                             'type': 'group',
                                             'group': group,
                                             'category': group.getPositionX() == 0 ? 'wrong' : group.getPositionX() == 1 ? 'good' : group.getPositionX() == 2 ? 'improved' : 'random',
-                                            'isDiscussed': false,
-                                            'votes': 0,
+                                            'isDiscussed': groupHasDiscussed,
+                                            'votes': groupTotalVotes,
                                             'itemCount': group.getItems()|length
                                         } %}
                                         {% set allElements = allElements|merge([groupData]) %}
@@ -653,7 +663,7 @@
                                         </div>
                                         <div class="card-footer">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <span class="total-votes">{{ elementData.itemCount }} {{ elementData.itemCount == 1 ? 'vote' : 'votes' }}</span>
+                                                <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
                                             </div>
                                         </div>
                                     </div>
