@@ -533,7 +533,7 @@
                                 {% for element in categoryItems %}
                                     {% if element.type == 'item' %}
                                         {% set item = element.entity %}
-                                        {# Calculate total votes like in getItemsWithAggregatedVotes #}
+                                        {# Calculate total votes manually like in controller #}
                                         {% set totalVotes = 0 %}
                                         {% for vote in item.votes %}
                                             {% set totalVotes = totalVotes + vote.voteCount %}
@@ -544,12 +544,13 @@
                                             'item': item,
                                             'category': item.category,
                                             'isDiscussed': item.isDiscussed ? true : false,
-                                            'votes': totalVotes
+                                            'votes': totalVotes,
+                                            'position': element.position|default(0)
                                         } %}
                                         {% set allElements = allElements|merge([itemData]) %}
                                     {% elseif element.type == 'group' %}
                                         {% set group = element.entity %}
-                                        {# Calculate total votes from all items in the group (sum voteCount like in getItemsWithAggregatedVotes) #}
+                                        {# Calculate total votes from all items in the group manually like in controller #}
                                         {% set groupTotalVotes = 0 %}
                                         {% set groupHasDiscussed = false %}
                                         {% for groupItem in group.getItems() %}
@@ -561,7 +562,7 @@
                                             {% endif %}
                                         {% endfor %}
                                         
-                                        {# Note: In template we can only sum item votes, not group-level votes like in controller #}
+                                        {# Note: Template can only calculate votes from individual items in group, not group-level votes #}
                                         
                                         {% set groupData = {
                                             'type': 'group',
@@ -569,7 +570,7 @@
                                             'category': group.getPositionX() == 0 ? 'wrong' : group.getPositionX() == 1 ? 'good' : group.getPositionX() == 2 ? 'improved' : 'random',
                                             'isDiscussed': groupHasDiscussed,
                                             'votes': groupTotalVotes,
-                                            'itemCount': group.getItems()|length
+                                            'position': element.position|default(0)
                                         } %}
                                         {% set allElements = allElements|merge([groupData]) %}
                                     {% endif %}
@@ -673,7 +674,12 @@
                                         </div>
                                         <div class="card-footer">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                {% if elementData.isDiscussed %}
+                                                    <span class="discussed-badge">Discussed</span>
+                                                {% endif %}
+                                                {% if elementData.votes > 0 %}
+                                                    <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>
