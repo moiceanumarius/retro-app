@@ -93,6 +93,8 @@ class ActionController extends AbstractController
         $filterStatus = $request->query->get('status', 'all');
         $page = $request->query->getInt('page', 1);
         $limit = $request->query->getInt('limit', 10); // Default 10 items per page
+        $sortField = $request->query->get('sort', 'created_at'); // Default sort by created_at
+        $sortDirection = $request->query->get('direction', 'desc'); // Default desc
         
         // Create query builder for pagination
         $qb = $this->entityManager->createQueryBuilder();
@@ -100,8 +102,30 @@ class ActionController extends AbstractController
            ->from(\App\Entity\RetrospectiveAction::class, 'a')
            ->leftJoin('a.retrospective', 'r')
            ->where('r.team = :team')
-           ->setParameter('team', $team)
-           ->orderBy('a.createdAt', 'DESC');
+           ->setParameter('team', $team);
+        
+        // Apply sorting
+        $allowedSortFields = ['created_at', 'due_date', 'status'];
+        $allowedDirections = ['asc', 'desc'];
+        
+        if (in_array($sortField, $allowedSortFields) && in_array($sortDirection, $allowedDirections)) {
+            $fieldMapping = [
+                'created_at' => 'a.createdAt',
+                'due_date' => 'a.dueDate',
+                'status' => 'a.status'
+            ];
+            
+            // For due_date, handle null values properly
+            if ($sortField === 'due_date') {
+                $qb->orderBy('CASE WHEN a.dueDate IS NULL THEN 1 ELSE 0 END', 'ASC') // NULLs last
+                   ->addOrderBy('a.dueDate', strtoupper($sortDirection));
+            } else {
+                $qb->orderBy($fieldMapping[$sortField], strtoupper($sortDirection));
+            }
+        } else {
+            // Default sorting
+            $qb->orderBy('a.createdAt', 'DESC');
+        }
         
         // Apply status filter if not 'all'
         if ($filterStatus !== 'all') {
@@ -136,6 +160,8 @@ class ActionController extends AbstractController
             'actions' => $paginator,
             'team' => $team,
             'filterStatus' => $filterStatus,
+            'sortField' => $sortField,
+            'sortDirection' => $sortDirection,
             'pagination' => [
                 'current_page' => $page,
                 'total_pages' => $totalPages,
@@ -143,6 +169,8 @@ class ActionController extends AbstractController
                 'items_per_page' => $limit,
                 'has_previous' => $page > 1,
                 'has_next' => $page < $totalPages,
+                'sort' => $sortField,
+                'direction' => $sortDirection,
             ],
             'statusStats' => $statusStats,
         ]);
