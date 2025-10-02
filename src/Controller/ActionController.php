@@ -21,6 +21,88 @@ class ActionController extends AbstractController
     {
     }
 
+    #[Route('/team-selection', name: 'app_actions_team_selection', methods: ['GET'])]
+    public function teamSelection(): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        // Get teams where user is owner or member
+        $userTeams = [];
+        
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_TEAM_LEAD') || $this->isGranted('ROLE_FACILITATOR')) {
+            // For admins, team leads and facilitators, show all teams
+            $userTeams = $this->entityManager->createQueryBuilder()
+                ->select('t')
+                ->from(\App\Entity\Team::class, 't')
+                ->leftJoin('t.members', 'tm')
+                ->where('t.owner = :user OR tm.user = :user')
+                ->setParameter('user', $user)
+                ->orderBy('t.name', 'ASC')
+                ->getQuery()
+                ->getResult();
+        } else {
+            // For regular users, only show teams they're members of
+            $userTeams = $this->entityManager->createQueryBuilder()
+                ->select('t')
+                ->from(\App\Entity\Team::class, 't')
+                ->leftJoin('t.members', 'tm')
+                ->where('tm.user = :user')
+                ->setParameter('user', $user)
+                ->orderBy('t.name', 'ASC')
+                ->getQuery()
+                ->getResult();
+        }
+
+        return $this->render('actions/team_selection.html.twig', [
+            'teams' => $userTeams,
+        ]);
+    }
+
+    #[Route('/team/{teamId}', name: 'app_actions_by_team', methods: ['GET'])]
+    public function actionsByTeam(Request $request, int $teamId): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->redirectToRoute('app_login');
+        }
+
+        $team = $this->entityManager->find(\App\Entity\Team::class, $teamId);
+        if (!$team) {
+            throw $this->createNotFoundException('Team not found');
+        }
+
+        // Check if user has access to this team
+        $hasAccess = false;
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_TEAM_LEAD') || $this->isGranted('ROLE_FACILITATOR')) {
+            $hasAccess = true;
+        } else {
+            $hasAccess = $team->getOwner() === $user || 
+                        $team->getMembers()->exists(fn($m) => $m->getUser() === $user);
+        }
+
+        if (!$hasAccess) {
+            throw $this->createAccessDeniedException('You do not have access to this team');
+        }
+
+        $filterStatus = $request->query->get('status', 'all');
+        
+        // Get actions for this specific team
+        if ($filterStatus === 'all') {
+            $actions = $this->actionRepository->findByTeam($team);
+        } else {
+            $actions = $this->actionRepository->findByTeamAndStatus($team, $filterStatus);
+        }
+
+        return $this->render('actions/index.html.twig', [
+            'actions' => $actions,
+            'team' => $team,
+            'filterStatus' => $filterStatus,
+        ]);
+    }
+
     #[Route('/', name: 'app_actions_index', methods: ['GET'])]
     public function index(Request $request): Response
     {

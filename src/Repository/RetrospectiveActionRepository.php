@@ -92,4 +92,28 @@ class RetrospectiveActionRepository extends ServiceEntityRepository
             ->getQuery()
             ->getResult();
     }
+
+    public function findByTeam(\App\Entity\Team $team): array
+    {
+        return $this->createQueryBuilder('ra')
+            ->leftJoin('ra.retrospective', 'r')
+            ->where('r.team = :team')
+            ->setParameter('team', $team)
+            ->orderBy('ra.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findByTeamAndStatus(\App\Entity\Team $team, string $status): array
+    {
+        return $this->createQueryBuilder('ra')
+            ->leftJoin('ra.retrospective', 'r')
+            ->where('ra.status = :status')
+            ->andWhere('r.team = :team')
+            ->setParameter('status', $status)
+            ->setParameter('team', $team)
+            ->orderBy('ra.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
 }
