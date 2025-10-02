@@ -366,7 +366,8 @@ class RetrospectiveController extends AbstractController
 
             // DEBUG: Log the request data
             error_log("DEBUG Add Action - Description: " . $description);
-            error_log("DEBUG Add Action - AssignedToId: " . ($assignedToId ? $assignedToId : 'null'));
+            error_log("DEBUG Add Action - AssignedToId raw: " . var_export($assignedToId, true));
+            error_log("DEBUG Add Action - AssignedToId type: " . gettype($assignedToId));
             error_log("DEBUG Add Action - User: " . ($this->getUser() ? $this->getUser()->getEmail() : 'null'));
 
             $action = new RetrospectiveAction();
@@ -385,9 +386,11 @@ class RetrospectiveController extends AbstractController
             }
             
             // Assignee is optional
-            if ($assignedToId) {
+            if ($assignedToId && $assignedToId !== '' && $assignedToId !== '0') {
+                error_log("DEBUG Add Action - Looking up user ID: " . $assignedToId);
                 $assignedTo = $this->entityManager->getRepository(User::class)->find($assignedToId);
                 if (!$assignedTo) {
+                    error_log("DEBUG Add Action - User not found for ID: " . $assignedToId);
                     return $this->json(['success' => false, 'message' => 'Assigned user not found'], 404);
                 }
                 $action->setAssignedTo($assignedTo);
