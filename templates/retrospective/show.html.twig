@@ -573,20 +573,19 @@
                         {% for elementData in sortedElements %}
                             {% if elementData.type == 'item' %}
                                 {% set item = elementData.item %}
-                                {% set categoryColor = elementData.category == 'wrong' ? '#ef4444' : 
-                                              elementData.category == 'good' ? '#22c55e' : 
-                                              elementData.category == 'improved' ? '#3b82f6' : '#f59e0b' %}
-                                <div class="discussion-item-card">
-                                    <div class="category-indicator" style="background-color: {{ categoryColor }};"></div>
-                                    <div class="item-content">
-                                        <div class="item-text">{{ item.content }}</div>
-                                        <div class="item-badges">
-                                            {% if item.isDiscussed %}
-                                                <span class="discussed-badge">Discussed</span>
-                                            {% endif %}
-                                            {% if elementData.votes > 0 %}
-                                                <span class="vote-count">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
-                                            {% endif %}
+                                <div class="discussion-card">
+                                    <div class="category-indicator {{ elementData.category }}"></div>
+                                    <div class="card-content">
+                                        <div class="card-text">{{ item.content }}</div>
+                                        <div class="card-footer">
+                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                {% if item.isDiscussed %}
+                                                    <span class="discussed-badge">Discussed</span>
+                                                {% endif %}
+                                                {% if elementData.votes > 0 %}
+                                                    <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                {% endif %}
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
