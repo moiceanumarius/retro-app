@@ -571,6 +571,149 @@
             flex-shrink: 0;
         }
 
+        /* Pagination Styles */
+        .pagination-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 2rem;
+            padding: 1rem 0;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .pagination-info {
+            font-size: 0.875rem;
+            color: #6b7280;
+        }
+
+        .pagination-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .pagination-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .pagination-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .pagination-btn.pagination-disabled {
+            background: #d1d5db;
+            color: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .pagination-pages {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .pagination-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: #667eea;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .pagination-page:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .pagination-page.pagination-active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .pagination-ellipsis {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            color: #9ca3af;
+            font-weight: 500;
+        }
+
+        .pagination-size {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .pagination-size label {
+            font-size: 0.875rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .pagination-size select {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            background: white;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+
+        .pagination-size select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        /* Mobile Responsiveness for Pagination */
+        @media (max-width: 768px) {
+            .pagination-container {
+                flex-direction: column;
+                gap: 1rem;
+                text-align: center;
+            }
+
+            .pagination-controls {
+                order: -1;
+                justify-content: center;
+            }
+
+            .pagination-pages {
+                gap: 0.125rem;
+            }
+
+            .pagination-page {
+                width: 28px;
+                height: 28px;
+                font-size: 0.75rem;
+            }
+        }
+
         .action-description-detail {
             background: #f9fafb;
             border-radius: 8px;
@@ -1047,6 +1190,91 @@
             </div>
             <h3>No Actions Found</h3>
             <p>{% if team %}No action items found for {{ team.name }} yet.{% else %}No action items found{% endif %} Create retrospectives and add action items to start tracking progress.</p>
+        </div>
+    {% endif %}
+
+    <!-- Pagination Controls -->
+    {% if pagination.total_pages > 1 %}
+        <div class="pagination-container">
+            <div class="pagination-info">
+                Showing {{ ((pagination.current_page - 1) * pagination.items_per_page) + 1 }} to 
+                {{ pagination.current_page == pagination.total_pages ? pagination.total_items : pagination.current_page * pagination.items_per_page }} 
+                of {{ pagination.total_items }} actions
+            </div>
+            
+            <div class="pagination-controls">
+                {% if pagination.has_previous %}
+                    <a href="{{ path('app_actions_by_team', {teamId: team.id, page: pagination.current_page - 1, status: filterStatus}) }}" 
+                       class="pagination-btn pagination-prev">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        Previous
+                    </a>
+                {% else %}
+                    <span class="pagination-btn pagination-disabled">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        Previous
+                    </span>
+                {% endif %}
+
+                <div class="pagination-pages">
+                    {% set start_page = max(1, pagination.current_page - 2) %}
+                    {% set end_page = min(pagination.total_pages, pagination.current_page + 2) %}
+                    
+                    {% if start_page > 1 %}
+                        <a href="{{ path('app_actions_by_team', {teamId: team.id, page: 1, status: filterStatus}) }}" 
+                           class="pagination-page">1</a>
+                        {% if start_page > 2 %}
+                            <span class="pagination-ellipsis">...</span>
+                        {% endif %}
+                    {% endif %}
+
+                    {% for page_num in start_page..end_page %}
+                        <a href="{{ path('app_actions_by_team', {teamId: team.id, page: page_num, status: filterStatus}) }}" 
+                           class="pagination-page {{ page_num == pagination.current_page ? 'pagination-active' : '' }}">
+                           {{ page_num }}
+                        </a>
+                    {% endfor %}
+
+                    {% if end_page < pagination.total_pages %}
+                        {% if end_page < pagination.total_pages - 1 %}
+                            <span class="pagination-ellipsis">...</span>
+                        {% endif %}
+                        <a href="{{ path('app_actions_by_team', {teamId: team.id, page: pagination.total_pages, status: filterStatus}) }}" 
+                           class="pagination-page">{{ pagination.total_pages }}</a>
+                    {% endif %}
+                </div>
+
+                {% if pagination.has_next %}
+                    <a href="{{ path('app_actions_by_team', {teamId: team.id, page: pagination.current_page + 1, status: filterStatus}) }}" 
+                       class="pagination-btn pagination-next">
+                        Next
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </a>
+                {% else %}
+                    <span class="pagination-btn pagination-disabled">
+                        Next
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                    </span>
+                {% endif %}
+            </div>
+
+            <div class="pagination-size">
+                <label for="itemsPerPage">Items per page:</label>
+                <select id="itemsPerPage" onchange="changeItemsPerPage(this.value)">
+                    <option value="10" {{ pagination.items_per_page == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ pagination.items_per_page == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ pagination.items_per_page == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ pagination.items_per_page == 100 ? 'selected' : '' }}>100</option>
+                </select>
+            </div>
         </div>
     {% endif %}
 
@@ -1795,5 +2023,13 @@
         }
     `;
     document.head.appendChild(spinnerStyle);
+
+    // Pagination functionality
+    function changeItemsPerPage(newLimit) {
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.set('limit', newLimit);
+        currentUrl.searchParams.set('page', '1'); // Reset to first page when changing limit
+        window.location.href = currentUrl.toString();
+    }
 </script>
 {% endblock %}

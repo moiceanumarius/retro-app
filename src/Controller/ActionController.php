@@ -6,6 +6,7 @@ use App\Entity\RetrospectiveAction;
 use App\Entity\User;
 use App\Repository\RetrospectiveActionRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -90,18 +91,60 @@ class ActionController extends AbstractController
         }
 
         $filterStatus = $request->query->get('status', 'all');
+        $page = $request->query->getInt('page', 1);
+        $limit = $request->query->getInt('limit', 10); // Default 10 items per page
         
-        // Get actions for this specific team
-        if ($filterStatus === 'all') {
-            $actions = $this->actionRepository->findByTeam($team);
-        } else {
-            $actions = $this->actionRepository->findByTeamAndStatus($team, $filterStatus);
+        // Create query builder for pagination
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('a')
+           ->from(\App\Entity\RetrospectiveAction::class, 'a')
+           ->leftJoin('a.retrospective', 'r')
+           ->where('r.team = :team')
+           ->setParameter('team', $team)
+           ->orderBy('a.createdAt', 'DESC');
+        
+        // Apply status filter if not 'all'
+        if ($filterStatus !== 'all') {
+            $qb->andWhere('a.status = :status')
+               ->setParameter('status', $filterStatus);
+        }
+        
+        // Apply pagination
+        $offset = ($page - 1) * $limit;
+        $qb->setFirstResult($offset)
+           ->setMaxResults($limit);
+        
+        $paginator = new Paginator($qb);
+        $totalItems = count($paginator);
+        $totalPages = ceil($totalItems / $limit);
+        
+        // Get all actions for statistics (unfiltered)
+        $qbStats = $this->entityManager->createQueryBuilder();
+        $qbStats->select('a.status, COUNT(a) as count')
+                ->from(\App\Entity\RetrospectiveAction::class, 'a')
+                ->leftJoin('a.retrospective', 'r')
+                ->where('r.team = :team')
+                ->setParameter('team', $team)
+                ->groupBy('a.status');
+        
+        $statusStats = [];
+        foreach ($qbStats->getQuery()->getResult() as $stat) {
+            $statusStats[$stat['status']] = $stat['count'];
         }
 
         return $this->render('actions/index.html.twig', [
-            'actions' => $actions,
+            'actions' => $paginator,
             'team' => $team,
             'filterStatus' => $filterStatus,
+            'pagination' => [
+                'current_page' => $page,
+                'total_pages' => $totalPages,
+                'total_items' => $totalItems,
+                'items_per_page' => $limit,
+                'has_previous' => $page > 1,
+                'has_next' => $page < $totalPages,
+            ],
+            'statusStats' => $statusStats,
         ]);
     }
 
