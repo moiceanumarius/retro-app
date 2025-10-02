@@ -139,47 +139,6 @@ class ActionController extends AbstractController
         ]);
     }
 
-    #[Route('/{id}/update-status', name: '_update_status', methods: ['POST'])]
-    public function updateStatus(Request $request, int $id): Response
-    {
-        $action = $this->actionRepository->find($id);
-        
-        if (!$action) {
-            throw $this->createNotFoundException('Action not found');
-        }
-
-        $user = $this->getUser();
-        
-        // Check permissions
-        if (!$user->hasRole('ROLE_ADMIN') && 
-            !$action->getAssignedTo()->equals($user) &&
-            !$action->getRetrospective()->getFacilitator()->equals($user)) {
-            throw $this->createAccessDeniedException('You do not have permission to update this action');
-        }
-
-        $data = json_decode($request->getContent(), true);
-        $newStatus = $data['status'] ?? null;
-
-        if (!in_array($newStatus, ['pending', 'in_progress', 'completed', 'cancelled'])) {
-            return $this->json(['success' => false, 'message' => 'Invalid status'], 400);
-        }
-
-        $action->setStatus($newStatus);
-        $action->setUpdatedAt(new \DateTime());
-        
-        $this->entityManager->persist($action);
-        $this->entityManager->flush();
-
-        return $this->json([
-            'success' => true,
-            'message' => 'Action status updated successfully',
-            'action' => [
-                'id' => $action->getId(),
-                'status' => $action->getStatus(),
-                'description' => $action->getDescription()
-            ]
-        ]);
-    }
 
     #[Route('/{id}/assign', name: '_assign', methods: ['POST'])]
     public function assign(Request $request, int $id): Response
