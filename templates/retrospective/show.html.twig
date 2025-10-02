@@ -535,8 +535,21 @@
                         
                         {# Separate into discussed and non-discussed arrays #}
                         {% for elementData in allElements %}
-                            {% if elementData.isDiscussed %}
+                            {% set entity = elementData.entity %}
+                            {% if elementData.type == 'item' and entity.isDiscussed %}
                                 {% set discussedElements = discussedElements|merge([elementData]) %}
+                            {% elseif elementData.type == 'group' %}
+                                {% set groupHasDiscussed = false %}
+                                {% for groupItem in entity.getItems() %}
+                                    {% if groupItem.isDiscussed %}
+                                        {% set groupHasDiscussed = true %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% if groupHasDiscussed %}
+                                    {% set discussedElements = discussedElements|merge([elementData]) %}
+                                {% else %}
+                                    {% set nonDiscussedElements = nonDiscussedElements|merge([elementData]) %}
+                                {% endif %}
                             {% else %}
                                 {% set nonDiscussedElements = nonDiscussedElements|merge([elementData]) %}
                             {% endif %}
@@ -551,7 +564,7 @@
                             {% else %}
                                 {% set tempArray = [] %}
                                 {% for sortedElement in sortedDiscussedElements %}
-                                    {% if not inserted and elementData.votes > sortedElement.votes %}
+                                    {% if not inserted and elementData.totalVotes > sortedElement.totalVotes %}
                                         {% set tempArray = tempArray|merge([elementData, sortedElement]) %}
                                         {% set inserted = true %}
                                     {% else %}
@@ -574,7 +587,7 @@
                             {% else %}
                                 {% set tempArray = [] %}
                                 {% for sortedElement in sortedNonDiscussedElements %}
-                                    {% if not inserted and elementData.votes > sortedElement.votes %}
+                                    {% if not inserted and elementData.totalVotes > sortedElement.totalVotes %}
                                         {% set tempArray = tempArray|merge([elementData, sortedElement]) %}
                                         {% set inserted = true %}
                                     {% else %}
@@ -593,7 +606,7 @@
                         
                         {% for elementData in sortedElements %}
                             {% if elementData.type == 'item' %}
-                                {% set item = elementData.item %}
+                                {% set item = elementData.entity %}
                                 <div class="discussion-card">
                                     <div class="category-indicator {{ elementData.category }}"></div>
                                     <div class="card-content">
@@ -603,13 +616,13 @@
                                                 {% if item.isDiscussed %}
                                                     <span class="discussed-badge">Discussed</span>
                                                 {% endif %}
-                                                <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                <span class="total-votes">{{ elementData.totalVotes }} {{ elementData.totalVotes == 1 ? 'vote' : 'votes' }}</span>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             {% elseif elementData.type == 'group' %}
-                                {% set group = elementData.group %}
+                                {% set group = elementData.entity %}
                                 <div class="discussion-card group-card">
                                     <div class="category-indicator {{ elementData.category }}"></div>
                                     <div class="card-content">
@@ -623,10 +636,16 @@
                                         </div>
                                         <div class="card-footer">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                {% if elementData.isDiscussed %}
+                                                {% set groupHasDiscussed = false %}
+                                                {% for groupItem in group.getItems() %}
+                                                    {% if groupItem.isDiscussed %}
+                                                        {% set groupHasDiscussed = true %}
+                                                    {% endif %}
+                                                {% endfor %}
+                                                {% if groupHasDiscussed %}
                                                     <span class="discussed-badge">Discussed</span>
                                                 {% endif %}
-                                                <span class="total-votes">{{ elementData.votes }} {{ elementData.votes == 1 ? 'vote' : 'votes' }}</span>
+                                                <span class="total-votes">{{ elementData.totalVotes }} {{ elementData.totalVotes == 1 ? 'vote' : 'votes' }}</span>
                                             </div>
                                         </div>
                                     </div>
