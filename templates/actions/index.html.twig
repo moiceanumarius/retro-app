@@ -789,22 +789,6 @@
             color: #1f2937;
         }
 
-        .status-select {
-            min-width: 110px;
-            max-width: 130px;
-            padding: 0.5rem;
-            border-radius: 6px;
-            border: 1px solid #e2e8f0;
-            font-size: 0.75rem;
-            cursor: pointer;
-            transition: all 0.3<｜tool▁call▁begin｜>
-        }
-
-        .status-select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-        }
 
         .actions-header {
             display: flex;
@@ -1147,20 +1131,7 @@
                             <span class="created-at-text">{{ action.createdAt|date('M d, Y H:i') }}</span>
                         </td>
                         <td>
-                            {% if app.user == action.assignedTo or app.user == action.retrospective.team.owner or is_granted('ROLE_ADMIN') %}
-                                <select class="status-select" 
-                                        data-action-id="{{ action.id }}"
-                                        value="{{ action.status }}"
-                                        onchange="updateActionStatus({{ action.id }}, this.value)">
-                                    <option value="pending" {{ action.status == 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="open" {{ action.status == 'open' ? 'selected' : '' }}>Open</option>
-                                    <option value="in-progress" {{ action.status == 'in-progress' ? 'selected' : '' }}>In Progress</option>
-                                    <option value="completed" {{ action.status == 'completed' ? 'selected' : '' }}>Completed</option>
-                                    <option value="cancelled" {{ action.status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                </select>
-                            {% else %}
-                                <span class="status-badge {{ action.status }}">{{ action.status|replace({'-': ' '})|title }}</span>
-                            {% endif %}
+                            <span class="status-badge {{ action.status }}">{{ action.status|replace({'-': ' '})|title }}</span>
                         </td>
                         <td>
                             <div class="action-actions">
@@ -1356,42 +1327,6 @@
     });
 
     // Action management functions
-    function updateActionStatus(actionId, newStatus) {
-        fetch(`/actions/${actionId}/update-status`, {
-            method: 'POST',
-            credentials: 'include',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify({ status: newStatus })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showMessage(data.message, 'success');
-                // Update status badge
-                const statusSelect = document.querySelector(`select[data-action-id="${actionId}"]`);
-                if (statusSelect) {
-                    statusSelect.closest('td').querySelector('.status-badge').textContent = 
-                        newStatus.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
-                }
-                
-                // Update stats cards
-                setTimeout(() => {
-                    location.reload();
-                }, 1000);
-            } else {
-                showMessage(data.message || 'Error updating status', 'error');
-                // Revert select value on error
-                event.target.select(data.previousValue);
-            }
-        })
-        .catch(error => {
-            console.error('Error updating action status:', error);
-            showMessage('Error updating action status. Please try again.', 'error');
-        });
-    }
 
     function editActionDescription(actionId) {
         const actionText = document.getElementById(`action-text-${actionId}`);
