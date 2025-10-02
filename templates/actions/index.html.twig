@@ -578,34 +578,73 @@
             user-select: none;
             cursor: pointer;
             transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
 
         .sortable:hover {
             background: rgba(102, 126, 234, 0.05);
         }
 
+        .sort-icons {
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+            margin-left: auto;
+        }
+
         .sort-icon {
-            margin-left: 0.5rem;
             transition: all 0.2s ease;
-            fill: #9ca3af;
+            fill: #d1d5db;
+            opacity: 0.5;
         }
 
         .sortable:hover .sort-icon {
             fill: #667eea;
+            opacity: 0.8;
+        }
+
+        .sort-icon.sort-up {
+            transform: translateY(1px);
+        }
+
+        .sort-icon.sort-down {
+            transform: translateY(-1px);
         }
 
         .sortable.active .sort-icon {
+            opacity: 1;
+        }
+
+        .sortable.active .sort-icon.sort-up {
             fill: #667eea;
+            opacity: 1;
         }
 
-        .th {
-            position: relative;
-            padding-left: 1rem;
-            padding-right: 1rem;
+        .sortable.active .sort-icon.sort-down {
+            fill: #9ca3af;
+            opacity: 0.6;
         }
 
-        .sortable th {
-            background: linear-gradient(to right, transparent, rgba(102, 126, 234, 0.05));
+        .sortable[data-direction="asc"] .sort-icon.sort-up {
+            fill: #667eea;
+            opacity: 1;
+        }
+
+        .sortable[data-direction="asc"] .sort-icon.sort-down {
+            fill: #9ca3af;
+            opacity: 0.4;
+        }
+
+        .sortable[data-direction="desc"] .sort-icon.sort-up {
+            fill: #9ca3af;
+            opacity: 0.4;
+        }
+
+        .sortable[data-direction="desc"] .sort-icon.sort-down {
+            fill: #667eea;
+            opacity: 1;
         }
 
         /* Pagination Styles */
@@ -1101,24 +1140,36 @@
                         <th>Assignee</th>
                         <th class="sortable" data-sort="due_date">
                             Due Date
-                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M5 8a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM5 12a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"></path>
-                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L9 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3z" clip-rule="evenodd"></path>
-                            </svg>
+                            <div class="sort-icons">
+                                <svg class="sort-icon sort-up" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11A.5.5 0 0 1 8 2zM3.5 6a.5.5 0 0 1 .707-.708L8 9.293l3.793-3a.5.5 0 0 1 .707.708l-4 4a.5.5 0 0 1-.707 0l-4-4a.5.5 0 0 1-.293-.792z"/>
+                                </svg>
+                                <svg class="sort-icon sort-down" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M8 14a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-1 0v11a.5.5 0 0 0 .5.5zM12.5 10a.5.5 0 0 0-.707-.708L8 13.293l-3.793-3a.5.5 0 0 0-.707.708l4 4a.5.5 0 0 0 .707 0l4-4a.5.5 0 0 0 .293-.792z"/>
+                                </svg>
+                            </div>
                         </th>
                         <th class="sortable" data-sort="created_at">
                             Created At
-                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M5 8a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM5 12a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"></path>
-                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L9 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3z" clip-rule="evenodd"></path>
-                            </svg>
+                            <div class="sort-icons">
+                                <svg class="sort-icon sort-up" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11A.5.5 0 0 1 8 2zM3.5 6a.5.5 0 0 1 .707-.708L8 9.293l3.793-3a.5.5 0 0 1 .707.708l-4 4a.5.5 0 0 1-.707 0l-4-4a.5.5 0 0 1-.293-.792z"/>
+                                </svg>
+                                <svg class="sort-icon sort-down" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M8 14a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-1 0v11a.5.5 0 0 0 .5.5zM12.5 10a.5.5 0 0 0-.707-.708L8 13.293l-3.793-3a.5.5 0 0 0-.707.708l4 4a.5.5 0 0 0 .707 0l4-4a.5.5 0 0 0 .293-.792z"/>
+                                </svg>
+                            </div>
                         </th>
                         <th class="sortable" data-sort="status">
                             Status
-                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M5 8a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zM5 12a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1z"></path>
-                                <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-3-3a1 1 0 011.414-1.414L9 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3z" clip-rule="evenodd"></path>
-                            </svg>
+                            <div class="sort-icons">
+                                <svg class="sort-icon sort-up" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11A.5.5 0 0 1 8 2zM3.5 6a.5.5 0 0 1 .707-.708L8 9.293l3.793-3a.5.5 0 0 1 .707.708l-4 4a.5.5 0 0 1-.707 0l-4-4a.5.5 0 0 1-.293-.792z"/>
+                                </svg>
+                                <svg class="sort-icon sort-down" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
+                                    <path fill-rule="evenodd" d="M8 14a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-1 0v11a.5.5 0 0 0 .5.5zM12.5 10a.5.5 0 0 0-.707-.708L8 13.293l-3.793-3a.5.5 0 0 0-.707.708l4 4a.5.5 0 0 0 .707 0l4-4a.5.5 0 0 0 .293-.792z"/>
+                                </svg>
+                            </div>
                         </th>
                         <th>Actions</th>
                     </tr>
@@ -2054,17 +2105,19 @@
                 sortTable(dataSort);
             });
             
-            // Update icon based on current sort state
-            const icon = header.querySelector('.sort-icon');
+            // Update icons based on current sort state
             if (dataSort === currentSort) {
-                icon.style.fill = '#667eea';
-                // Rotate icon based on direction
+                header.classList.add('active');
+                header.setAttribute('data-direction', currentDirection);
+                
                 if (currentDirection === 'asc') {
-                    icon.style.transform = 'rotate(180deg)';
+                    header.classList.add('asc');
+                } else {
+                    header.classList.add('desc');
                 }
             } else {
-                icon.style.fill = '#9ca3af';
-                icon.style.transform = 'none';
+                header.classList.remove('active');
+                header.removeAttribute('data-direction');
             }
         });
     });
