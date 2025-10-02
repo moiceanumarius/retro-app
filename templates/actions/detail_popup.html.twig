@@ -2,14 +2,25 @@
 <div class="action-detail-group">
     <label class="action-detail-label">Description</label>
     <div class="action-description-detail">
-        <textarea class="action-edit-textarea" rows="4" id="modal-text-{{ action.id }}">{{ action.description }}</textarea>
-        <div class="action-edit-actions">
-            <button class="btn btn-sm btn-success save-action-btn" onclick="saveModalActionDescription({{ action.id }})">
-                <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                </svg>
-                Save Changes
-            </button>
+        <div class="action-description-view" id="modal-view-{{ action.id }}" onclick="editModalActionDescription({{ action.id }})">
+            {{ action.description }}
+        </div>
+        <div class="action-description-edit" id="modal-edit-{{ action.id }}" style="display: none;">
+            <textarea class="action-edit-textarea" rows="4" id="modal-text-{{ action.id }}">{{ action.description }}</textarea>
+            <div class="action-edit-actions">
+                <button class="btn btn-sm btn-success save-action-btn" onclick="saveModalActionDescription({{ action.id }})">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    Save Changes
+                </button>
+                <button class="btn btn-sm btn-secondary cancel-action-btn" onclick="cancelModalActionDescription({{ action.id }})">
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                    </svg>
+                    Cancel
+                </button>
+            </div>
         </div>
     </div>
 </div>

@@ -420,6 +420,40 @@
             line-height: 1.5;
         }
 
+        .action-description-view {
+            cursor: pointer;
+            padding: 1rem;
+            border-radius: 8px;
+            background: #f9fafb;
+            border: 1px dashed #cbd5e0;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .action-description-view:hover {
+            background: #e2e8f0;
+            border-color: #667eea;
+        }
+
+        .action-description-view::after {
+            content: 'Click to edit';
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            font-size: 0.75rem;
+            color: #6b7280;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .action-description-view:hover::after {
+            opacity: 1;
+        }
+
+        .action-description-edit {
+            margin-top: 0.5rem;
+        }
+
         .action-description-detail {
             background: #f9fafb;
             border-radius: 8px;
@@ -1143,6 +1177,17 @@
             if (data.success) {
                 showMessage(data.message || 'Action updated successfully', 'success');
                 
+                // Switch back to view mode
+                const modalView = document.getElementById(`modal-view-${actionId}`);
+                const modalEdit = document.getElementById(`modal-edit-${actionId}`);
+                
+                // Update the text in view mode
+                modalView.textContent = newDescription;
+                
+                // Hide edit form, show updated view
+                modalEdit.style.display = 'none';
+                modalView.style.display = 'block';
+                
                 // Also update the table if it exists
                 const tableText = document.getElementById(`action-text-${actionId}`);
                 if (tableText) {
@@ -1168,6 +1213,36 @@
                 Save Changes
             `;
         });
+    }
+
+    function editModalActionDescription(actionId) {
+        const modalView = document.getElementById(`modal-view-${actionId}`);
+        const modalEdit = document.getElementById(`modal-edit-${actionId}`);
+        const modalTextarea = document.getElementById(`modal-text-${actionId}`);
+        
+        // Hide the view, show the edit form
+        modalView.style.display = 'none';
+        modalEdit.style.display = 'block';
+        
+        // Focus and select the textarea
+        modalTextarea.focus();
+        modalTextarea.select();
+        
+        // Store original value for cancel functionality
+        modalTextarea.dataset.originalValue = modalTextarea.value;
+    }
+
+    function cancelModalActionDescription(actionId) {
+        const modalView = document.getElementById(`modal-view-${actionId}`);
+        const modalEdit = document.getElementById(`modal-edit-${actionId}`);
+        const modalTextarea = document.getElementById(`modal-text-${actionId}`);
+        
+        // Restore original value
+        modalTextarea.value = modalTextarea.dataset.originalValue;
+        
+        // Hide edit form, show view
+        modalEdit.style.display = 'none';
+        modalView.style.display = 'block';
     }
 
     function showActionDetails(actionId) {
