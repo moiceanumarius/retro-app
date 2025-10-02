@@ -1140,36 +1140,21 @@
                         <th>Assignee</th>
                         <th class="sortable" data-sort="due_date">
                             Due Date
-                            <div class="sort-icons">
-                                <svg class="sort-icon sort-up" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11A.5.5 0 0 1 8 2zM3.5 6a.5.5 0 0 1 .707-.708L8 9.293l3.793-3a.5.5 0 0 1 .707.708l-4 4a.5.5 0 0 1-.707 0l-4-4a.5.5 0 0 1-.293-.792z"/>
-                                </svg>
-                                <svg class="sort-icon sort-down" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 14a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-1 0v11a.5.5 0 0 0 .5.5zM12.5 10a.5.5 0 0 0-.707-.708L8 13.293l-3.793-3a.5.5 0 0 0-.707.708l4 4a.5.5 0 0 0 .707 0l4-4a.5.5 0 0 0 .293-.792z"/>
-                                </svg>
-                            </div>
+                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
                         </th>
                         <th class="sortable" data-sort="created_at">
                             Created At
-                            <div class="sort-icons">
-                                <svg class="sort-icon sort-up" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11A.5.5 0 0 1 8 2zM3.5 6a.5.5 0 0 1 .707-.708L8 9.293l3.793-3a.5.5 0 0 1 .707.708l-4 4a.5.5 0 0 1-.707 0l-4-4a.5.5 0 0 1-.293-.792z"/>
-                                </svg>
-                                <svg class="sort-icon sort-down" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 14a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-1 0v11a.5.5 0 0 0 .5.5zM12.5 10a.5.5 0 0 0-.707-.708L8 13.293l-3.793-3a.5.5 0 0 0-.707.708l4 4a.5.5 0 0 0 .707 0l4-4a.5.5 0 0 0 .293-.792z"/>
-                                </svg>
-                            </div>
+                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
                         </th>
                         <th class="sortable" data-sort="status">
                             Status
-                            <div class="sort-icons">
-                                <svg class="sort-icon sort-up" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11A.5.5 0 0 1 8 2zM3.5 6a.5.5 0 0 1 .707-.708L8 9.293l3.793-3a.5.5 0 0 1 .707.708l-4 4a.5.5 0 0 1-.707 0l-4-4a.5.5 0 0 1-.293-.792z"/>
-                                </svg>
-                                <svg class="sort-icon sort-down" width="10" height="10" fill="currentColor" viewBox="0 0 16 16">
-                                    <path fill-rule="evenodd" d="M8 14a.5.5 0 0 0 .5-.5v-11a.5.5 0 0 0-1 0v11a.5.5 0 0 0 .5.5zM12.5 10a.5.5 0 0 0-.707-.708L8 13.293l-3.793-3a.5.5 0 0 0-.707.708l4 4a.5.5 0 0 0 .707 0l4-4a.5.5 0 0 0 .293-.792z"/>
-                                </svg>
-                            </div>
+                            <svg class="sort-icon" width="12" height="12" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
                         </th>
                         <th>Actions</th>
                     </tr>
@@ -2105,19 +2090,19 @@
                 sortTable(dataSort);
             });
             
-            // Update icons based on current sort state
+            // Update icon based on current sort state
+            const icon = header.querySelector('.sort-icon');
             if (dataSort === currentSort) {
+                icon.style.fill = '#667eea';
                 header.classList.add('active');
-                header.setAttribute('data-direction', currentDirection);
-                
+                // Rotate icon based on direction
                 if (currentDirection === 'asc') {
-                    header.classList.add('asc');
-                } else {
-                    header.classList.add('desc');
+                    icon.style.transform = 'rotate(180deg)';
                 }
             } else {
+                icon.style.fill = '#9ca3af';
+                icon.style.transform = 'none';
                 header.classList.remove('active');
-                header.removeAttribute('data-direction');
             }
         });
     });
