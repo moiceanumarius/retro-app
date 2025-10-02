@@ -99,6 +99,22 @@ class RetrospectiveBoard {
         window.addEventListener('beforeunload', () => {
             this.leaveRetrospective();
         });
+        
+        // Action form controls
+        const showActionFormBtn = document.getElementById('showActionFormBtn');
+        if (showActionFormBtn) {
+            showActionFormBtn.addEventListener('click', () => this.showActionForm());
+        }
+        
+        const cancelActionBtn = document.getElementById('cancelActionBtn');
+        if (cancelActionBtn) {
+            cancelActionBtn.addEventListener('click', () => this.hideActionForm());
+        }
+        
+        const addActionForm = document.getElementById('addActionForm');
+        if (addActionForm) {
+            addActionForm.addEventListener('submit', (e) => this.handleAddAction(e));
+        }
     }
     
     async startTimer() {
@@ -2783,3 +2799,61 @@ RetrospectiveBoard.prototype.createGroupFromItems = async function(itemIds, cate
     }
 };
 
+
+// Action Item Management
+RetrospectiveBoard.prototype.showActionForm = function() {
+    document.getElementById('actionFormContainer').style.display = 'block';
+    document.getElementById('showActionFormBtn').style.display = 'none';
+};
+
+RetrospectiveBoard.prototype.hideActionForm = function() {
+    document.getElementById('actionFormContainer').style.display = 'none';
+    document.getElementById('showActionFormBtn').style.display = 'block';
+    document.getElementById('addActionForm').reset();
+};
+
+RetrospectiveBoard.prototype.handleAddAction = async function(e) {
+    e.preventDefault();
+    
+    const description = document.getElementById('actionDescription').value.trim();
+    const assignedToId = document.getElementById('actionAssignee').value;
+    const dueDate = document.getElementById('actionDueDate').value;
+    
+    if (!description) {
+        this.showMessage('Please enter a description', 'error');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/add-action`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                description: description,
+                assignedToId: assignedToId || null,
+                dueDate: dueDate || null
+            })
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            this.showMessage('Action item added successfully!', 'success');
+            this.hideActionForm();
+            // Reload page to show new action
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            const errorData = await response.json();
+            this.showMessage(errorData.message || 'Failed to add action item', 'error');
+        }
+    } catch (error) {
+        console.error('Error adding action:', error);
+        this.showMessage('Failed to add action item', 'error');
+    }
+};

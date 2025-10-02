@@ -395,18 +395,33 @@
                     {% for element in sortedItemsWithVotes %}
                         {% if element.type == 'item' %}
                             {% set item = element.entity %}
-                            <div class="discussion-card {{ element.category }}">
+                            <div class="discussion-card {{ element.category }}" data-item-id="{{ item.id }}" data-type="item">
                                 <div class="category-indicator {{ element.category }}"></div>
                                 <div class="card-content">
                                     <div class="card-text">{{ item.content }}</div>
                                     <div class="card-footer">
                                         <span class="total-votes">{{ element.totalVotes }} {{ element.totalVotes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% if retrospective.facilitator == app.user or retrospective.team.owner == app.user %}
+                                        <div class="card-actions">
+                                            <button class="btn-mark-discussed" data-id="{{ item.id }}" data-type="item" title="Mark as Discussed">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-add-action" data-id="{{ item.id }}" data-type="item" title="Add Action">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
                         {% else %}
                             {% set group = element.entity %}
-                            <div class="discussion-card {{ element.category }} combined-group">
+                            <div class="discussion-card {{ element.category }} combined-group" data-group-id="{{ group.id }}" data-type="group">
                                 <div class="category-indicator {{ element.category }}"></div>
                                 <div class="card-content">
                                     <div class="card-text">
@@ -419,6 +434,21 @@
                                     </div>
                                     <div class="card-footer">
                                         <span class="total-votes">{{ element.totalVotes }} {{ element.totalVotes == 1 ? 'vote' : 'votes' }}</span>
+                                        {% if retrospective.facilitator == app.user or retrospective.team.owner == app.user %}
+                                        <div class="card-actions">
+                                            <button class="btn-mark-discussed" data-id="{{ group.id }}" data-type="group" title="Mark as Discussed">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-add-action" data-id="{{ group.id }}" data-type="group" title="Add Action">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                                                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                                                </svg>
+                                            </button>
+                                        </div>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -430,10 +460,69 @@
             </div>
 
             {% if retrospective.facilitator == app.user or retrospective.team.owner == app.user %}
-            <div class="add-action-section" style="margin-top: 2rem;">
-                <a href="{{ path('app_retrospectives_add_action', {'id': retrospective.id}) }}" class="btn btn-primary">
-                    Add Action Item
-                </a>
+            <div class="add-action-section" style="margin-top: 3rem; padding: 0 1rem;">
+                <h3 style="margin-bottom: 1.5rem; color: #333;">Action Items</h3>
+                
+                <!-- Existing Actions -->
+                <div class="actions-list" id="actionsList">
+                    {% if actions|length > 0 %}
+                        {% for action in actions %}
+                            <div class="action-item" data-action-id="{{ action.id }}">
+                                <div class="action-content">
+                                    <div class="action-description">{{ action.description }}</div>
+                                    <div class="action-meta">
+                                        <span class="action-assignee">Assigned to: {{ action.assignedTo.firstName }} {{ action.assignedTo.lastName }}</span>
+                                        {% if action.dueDate %}
+                                            <span class="action-due-date">Due: {{ action.dueDate|date('M d, Y') }}</span>
+                                        {% endif %}
+                                        <span class="action-status status-{{ action.status }}">{{ action.status|replace({'_': ' '})|title }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <p class="no-actions" style="color: #6c757d; text-align: center; padding: 2rem;">No action items yet.</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Add New Action Form -->
+                <div class="add-action-form" style="margin-top: 2rem;">
+                    <button type="button" id="showActionFormBtn" class="floating-action-btn">
+                        + Add Action Item
+                    </button>
+                    
+                    <div id="actionFormContainer" style="display: none; margin-top: 1.5rem; background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+                        <h4 style="margin-bottom: 1rem; color: #333;">New Action Item</h4>
+                        <form id="addActionForm" novalidate>
+                            <div class="form-group" style="margin-bottom: 1rem;">
+                                <label for="actionDescription" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Description</label>
+                                <textarea id="actionDescription" class="form-control" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem;"></textarea>
+                            </div>
+                            
+                            <div class="form-row" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="actionAssignee" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Assign to (optional)</label>
+                                    <select id="actionAssignee" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px;">
+                                        <option value="">Unassigned</option>
+                                        {% for member in retrospective.team.teamMembers %}
+                                            <option value="{{ member.user.id }}">{{ member.user.firstName }} {{ member.user.lastName }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group" style="flex: 1;">
+                                    <label for="actionDueDate" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Due Date</label>
+                                    <input type="date" id="actionDueDate" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px;">
+                                </div>
+                            </div>
+                            
+                            <div class="form-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                                <button type="button" id="cancelActionBtn" class="btn btn-secondary">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Add Action</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
             </div>
             {% endif %}
 

@@ -314,25 +314,95 @@ class RetrospectiveController extends AbstractController
         ]);
     }
 
-    #[Route('/retrospectives/{id}/add-action', name: 'app_retrospectives_add_action')]
+    #[Route('/retrospectives/{id}/add-action', name: 'app_retrospectives_add_action', methods: ['POST', 'GET'])]
     public function addAction(Request $request, int $id): Response
     {
         $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
         
         if (!$retrospective) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+            }
             throw $this->createNotFoundException('Retrospective not found');
         }
 
         // Check if user has access to this retrospective
         if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+            }
             throw $this->createAccessDeniedException('You do not have access to this retrospective');
         }
 
         // Only facilitator or team owner can add actions
         if ($retrospective->getFacilitator() !== $this->getUser() && $retrospective->getTeam()->getOwner() !== $this->getUser()) {
+            if ($request->isXmlHttpRequest()) {
+                return $this->json(['success' => false, 'message' => 'Only the facilitator or team owner can add actions'], 403);
+            }
             throw $this->createAccessDeniedException('Only the facilitator or team owner can add actions');
         }
 
+        // Handle AJAX request
+        if ($request->isXmlHttpRequest() && $request->getMethod() === 'POST') {
+            $data = json_decode($request->getContent(), true);
+            $description = $data['description'] ?? null;
+            $assignedToId = $data['assignedToId'] ?? null;
+            $dueDate = $data['dueDate'] ?? null;
+            $contextType = $data['contextType'] ?? null;
+            $contextId = $data['contextId'] ?? null;
+
+            if (!$description) {
+                return $this->json(['success' => false, 'message' => 'Description is required'], 400);
+            }
+
+            $action = new RetrospectiveAction();
+            $action->setRetrospective($retrospective);
+            $action->setCreatedBy($this->getUser());
+            $action->setDescription($description);
+            
+            // Set team and sprint ID
+            $action->setTeam($retrospective->getTeam());
+            $action->setSprintId($retrospective->getId()); // Using retrospective ID as sprint ID
+            
+            // Set context (reference to card or group)
+            if ($contextType && $contextId) {
+                $action->setContextType($contextType); // 'item' or 'group'
+                $action->setContextId($contextId);
+            }
+            
+            // Assignee is optional
+            if ($assignedToId) {
+                $assignedTo = $this->entityManager->getRepository(User::class)->find($assignedToId);
+                if (!$assignedTo) {
+                    return $this->json(['success' => false, 'message' => 'Assigned user not found'], 404);
+                }
+                $action->setAssignedTo($assignedTo);
+            } else {
+                // If no assignee, assign to the creator by default
+                $action->setAssignedTo($this->getUser());
+            }
+            
+            if ($dueDate) {
+                $action->setDueDate(new \DateTime($dueDate));
+            }
+
+            $this->entityManager->persist($action);
+            $this->entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Action item added successfully',
+                'action' => [
+                    'id' => $action->getId(),
+                    'description' => $action->getDescription(),
+                    'assignedTo' => $action->getAssignedTo()->getFirstName() . ' ' . $action->getAssignedTo()->getLastName(),
+                    'dueDate' => $action->getDueDate() ? $action->getDueDate()->format('M d, Y') : null,
+                    'status' => $action->getStatus()
+                ]
+            ]);
+        }
+
+        // Handle traditional form submission
         $action = new RetrospectiveAction();
         $action->setRetrospective($retrospective);
         $action->setCreatedBy($this->getUser());

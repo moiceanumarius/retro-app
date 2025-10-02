@@ -29,6 +29,19 @@ class RetrospectiveAction
     #[ORM\JoinColumn(nullable: false)]
     private ?User $createdBy = null;
 
+    #[ORM\ManyToOne(targetEntity: Team::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Team $team = null;
+
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $sprintId = null;
+
+    #[ORM\Column(length: 20, nullable: true)]
+    private ?string $contextType = null;
+
+    #[ORM\Column(type: Types::INTEGER, nullable: true)]
+    private ?int $contextId = null;
+
     #[ORM\Column(length: 50)]
     private ?string $status = null;
 
@@ -178,5 +191,49 @@ class RetrospectiveAction
     public function isOverdue(): bool
     {
         return $this->dueDate && $this->dueDate < new \DateTime() && !$this->isCompleted();
+    }
+
+    public function getTeam(): ?Team
+    {
+        return $this->team;
+    }
+
+    public function setTeam(?Team $team): static
+    {
+        $this->team = $team;
+        return $this;
+    }
+
+    public function getSprintId(): ?int
+    {
+        return $this->sprintId;
+    }
+
+    public function setSprintId(?int $sprintId): static
+    {
+        $this->sprintId = $sprintId;
+        return $this;
+    }
+
+    public function getContextType(): ?string
+    {
+        return $this->contextType;
+    }
+
+    public function setContextType(?string $contextType): static
+    {
+        $this->contextType = $contextType;
+        return $this;
+    }
+
+    public function getContextId(): ?int
+    {
+        return $this->contextId;
+    }
+
+    public function setContextId(?int $contextId): static
+    {
+        $this->contextId = $contextId;
+        return $this;
     }
 }
