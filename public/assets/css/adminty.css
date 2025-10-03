@@ -294,7 +294,7 @@ body {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
     padding: 0.75rem 1rem;
     border-radius: 12px;
     border: 1px solid #e2e8f0;
@@ -346,14 +346,16 @@ body {
 .user-details {
     display: flex;
     flex-direction: column;
+    justify-content: center;
     gap: 0.25rem;
     min-width: 0;
+    flex: 1;
 }
 
 .user-name {
     font-size: 0.875rem;
     font-weight: 600;
-    color: var(--text-color);
+    color: #1f2937;
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
@@ -364,7 +366,7 @@ body {
     display: flex;
     align-items: center;
     font-size: 0.75rem;
-    color: var(--text-muted);
+    color: #6b7280;
     font-weight: 500;
     line-height: 1.2;
     white-space: nowrap;
@@ -374,7 +376,17 @@ body {
 
 .user-organization svg {
     flex-shrink: 0;
-    opacity: 0.7;
+    opacity: 0.8;
+    color: #6b7280;
+}
+
+/* Special styling for no organization */
+.user-organization:has(svg[viewBox="0 0 20 20"]:last-child) {
+    color: #9ca3af;
+}
+
+.user-organization:has(svg[viewBox="0 0 20 20"]:last-child) svg {
+    color: #9ca3af;
 }
 
 /* Responsive adjustments */
