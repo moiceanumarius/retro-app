@@ -387,8 +387,8 @@ function initUserSearchDropdown() {
                 </div>
                 <span class="badge badge-${user.role ? user.role.toLowerCase() : 'default'}" 
                       style="font-size: 0.65rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.025em; white-space: nowrap;
-                             background: ${user.role === 'ADMIN' ? '#fee2e2' : user.role === 'TEAM_LEAD' ? '#fef3c7' : user.role === 'FACILITATOR' ? '#dbeafe' : '#f3f4f6'};
-                             color: ${user.role === 'ADMIN' ? '#991b1b' : user.role === 'TEAM_LEAD' ? '#92400e' : user.role === 'FACILITATOR' ? '#1e40af' : '#6b7280'};">
+                             background: ${user.role === 'ADMIN' ? '#fee2e2' : user.role === 'SUPERVISOR' ? '#fef3c7' : user.role === 'FACILITATOR' ? '#dbeafe' : '#f3f4f6'};
+                             color: ${user.role === 'ADMIN' ? '#991b1b' : user.role === 'SUPERVISOR' ? '#92400e' : user.role === 'FACILITATOR' ? '#1e40af' : '#6b7280'};">
                     ${user.role || 'N/A'}
                 </span>
             </div>`
@@ -417,8 +417,8 @@ function initUserSearchDropdown() {
                 </div>
                 <span class="badge badge-${user.role ? user.role.toLowerCase() : 'default'}" 
                       style="font-size: 0.65rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.025em; white-space: nowrap;
-                             background: ${user.role === 'ADMIN' ? '#fee2e2' : user.role === 'TEAM_LEAD' ? '#fef3c7' : user.role === 'FACILITATOR' ? '#dbeafe' : '#f3f4f6'};
-                             color: ${user.role === 'ADMIN' ? '#991b1b' : user.role === 'TEAM_LEAD' ? '#92400e' : user.role === 'FACILITATOR' ? '#1e40af' : '#6b7280'};">
+                             background: ${user.role === 'ADMIN' ? '#fee2e2' : user.role === 'SUPERVISOR' ? '#fef3c7' : user.role === 'FACILITATOR' ? '#dbeafe' : '#f3f4f6'};
+                             color: ${user.role === 'ADMIN' ? '#991b1b' : user.role === 'SUPERVISOR' ? '#92400e' : user.role === 'FACILITATOR' ? '#1e40af' : '#6b7280'};">
                     ${user.role || 'N/A'}
                 </span>
             </div>`
@@ -457,7 +457,7 @@ function loadAllUsers() {
             // Fallback to dummy data if backend fails
             allUsers = [
                 {id: 1, firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'ADMIN'},
-                {id: 2, firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'TEAM_LEAD'},
+                {id: 2, firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'SUPERVISOR'},
                 {id: 3, firstName: 'Bob', lastName: 'Johnson', email: 'bob@example.com', role: 'FACILITATOR'}
             ];
             console.log('Using fallback dummy data');
