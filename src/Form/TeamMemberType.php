@@ -51,9 +51,11 @@ class TeamMemberType extends AbstractType
                 'label' => 'Role',
                 'required' => false,
                 'choices' => [
+                    'Current Role' => 'CURRENT_ROLE',
                     'Member' => 'Member',
                     'Facilitator' => 'Facilitator',
                 ],
+                'data' => 'CURRENT_ROLE', // Set as default
                 'attr' => [
                     'class' => 'form-control'
                 ]

@@ -8,6 +8,7 @@ use App\Entity\TeamInvitation;
 use App\Entity\User;
 use App\Entity\Organization;
 use App\Entity\OrganizationMember;
+use App\Entity\UserRole;
 use App\Form\TeamType;
 use App\Form\TeamMemberType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -198,6 +199,24 @@ final class TeamController extends AbstractController
             }
             
             $userToInvite = $teamMember->getUser();
+            $selectedRole = $teamMember->getRole();
+            
+            // Handle "Current Role" option - don't modify user's role
+            if ($selectedRole === 'CURRENT_ROLE') {
+                // Get user's current role from their global roles
+                $userRoleRepository = $this->entityManager->getRepository(UserRole::class);
+                $userRole = $userRoleRepository->findOneBy([
+                    'user' => $userToInvite,
+                    'isActive' => true
+                ]);
+                
+                if ($userRole) {
+                    $teamMember->setRole($userRole->getRole()->getName());
+                } else {
+                    // Fallback to Member if no role found
+                    $teamMember->setRole('Member');
+                }
+            }
             
             // Automatically add user to organization when added to team
             $teamOrganization = $team->getOrganization();
