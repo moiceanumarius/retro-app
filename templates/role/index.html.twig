@@ -90,9 +90,25 @@
             }
         });
         
+        // Reposition dropdown on window resize
+        window.addEventListener('resize', function() {
+            if (dropdownMenu.style.display === 'block') {
+                const buttonRect = dropdownButton.getBoundingClientRect();
+                dropdownMenu.style.top = (buttonRect.bottom + window.scrollY + 4) + 'px';
+                dropdownMenu.style.left = buttonRect.left + 'px';
+                dropdownMenu.style.width = buttonRect.width + 'px';
+            }
+        });
+        
         // Focus search input when dropdown opens
         function toggleDropdown() {
             if (dropdownMenu.style.display === 'none' || dropdownMenu.style.display === '') {
+                // Calculate position for fixed dropdown
+                const buttonRect = dropdownButton.getBoundingClientRect();
+                dropdownMenu.style.top = (buttonRect.bottom + window.scrollY + 4) + 'px';
+                dropdownMenu.style.left = buttonRect.left + 'px';
+                dropdownMenu.style.width = buttonRect.width + 'px';
+                
                 dropdownMenu.style.display = 'block';
                 populateUsers(); // Show all users initially
                 setTimeout(() => searchInput.focus(), 100);
@@ -110,9 +126,7 @@
         function populateUsers() {
             userDropdownList.innerHTML = allUsers.map(user => 
                 `<div class="user-option" data-value="${user.id}" data-name="${user.firstName} ${user.lastName}" data-email="${user.email}" data-role="${user.role || 'N/A'}" 
-                     style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
-                     onmouseover="this.style.backgroundColor='#f8fafc'" 
-                     onmouseout="this.style.backgroundColor='white'">
+                     style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.15s ease; border-bottom: 1px solid #f1f5f9; background-color: white;">
                     <div class="user-option-content" style="flex: 1;">
                         <div class="user-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${user.firstName} ${user.lastName}</div>
                         <div class="user-option-email" style="color: #64748b; font-size: 0.75rem;">${user.email}</div>
@@ -120,6 +134,16 @@
                     </div>
                 </div>`
             ).join('');
+            
+            // Add smooth hover effects
+            userDropdownList.querySelectorAll('.user-option').forEach(option => {
+                option.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8fafc';
+                });
+                option.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
+                });
+            });
         }
         
         // Filter users based on search query
@@ -136,9 +160,7 @@
             
             userDropdownList.innerHTML = filteredUsers.map(user => 
                 `<div class="user-option" data-value="${user.id}" data-name="${user.firstName} ${user.lastName}" data-email="${user.email}" data-role="${user.role || 'N/A'}" 
-                     style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
-                     onmouseover="this.style.backgroundColor='#f8fafc'" 
-                     onmouseout="this.style.backgroundColor='white'">
+                     style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.15s ease; border-bottom: 1px solid #f1f5f9; background-color: white;">
                     <div class="user-option-content" style="flex: 1;">
                         <div class="user-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${user.firstName} ${user.lastName}</div>
                         <div class="user-option-email" style="color: #64748b; font-size: 0.75rem;">${user.email}</div>
@@ -146,6 +168,16 @@
                     </div>
                 </div>`
             ).join('');
+            
+            // Add smooth hover effects
+            userDropdownList.querySelectorAll('.user-option').forEach(option => {
+                option.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8fafc';
+                });
+                option.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = 'white';
+                });
+            });
         }
         
         // Select user
@@ -300,16 +332,16 @@
                                     </svg>
                                     Select User
                                 </label>
-                                <div class="modern-dropdown" style="position: relative; width: 100%;">
+                                <div class="modern-dropdown" style="position: relative; width: 100%; z-index: 10000;">
                                     <button type="button" id="userDropdownButton" class="modern-dropdown-button" 
-                                            style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
+                                            style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between; position: relative; z-index: 10001;">
                                         <span id="selectedUserText" style="flex: 1; text-align: left; color: #6b7280;">Select a user...</span>
                                         <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
                                             <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                                         </svg>
                                     </button>
                                     <div id="userDropdown" class="modern-dropdown-menu" 
-                                         style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 9999; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
+                                         style="display: none; position: fixed; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 10002; margin-top: 0.25rem; max-height: 300px; overflow: hidden; min-width: 300px;">
                                         <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
                                             <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
                                                  style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
