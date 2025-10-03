@@ -33,6 +33,49 @@
         .dataTables_scrollBody {
             overflow: visible !important;
         }
+        
+        /* Fix Quick Actions card overflow issues */
+        .team-card {
+            overflow: visible !important;
+        }
+        
+        /* Prevent hover transform when dropdown is open */
+        .team-card:has(.modern-dropdown-menu[style*="display: block"]) {
+            transform: none !important;
+        }
+        
+        .team-card:has(.modern-dropdown-menu[style*="display: block"]):hover {
+            transform: none !important;
+        }
+        
+        .quick-actions-content {
+            overflow: visible !important;
+            position: relative;
+            z-index: 10000;
+        }
+        
+        /* Ensure form doesn't clip dropdown */
+        .role-assignment-form {
+            overflow: visible !important;
+        }
+        
+        .form-row {
+            overflow: visible !important;
+        }
+        
+        .form-group {
+            overflow: visible !important;
+        }
+        
+        /* Alternative approach for browsers that don't support :has() */
+        .team-card.dropdown-open {
+            transform: none !important;
+            overflow: visible !important;
+        }
+        
+        .team-card.dropdown-open:hover {
+            transform: none !important;
+        }
     </style>
 {% endblock %}
 
@@ -118,6 +161,12 @@
                 dropdownMenu.style.display = 'block';
                 populateUsers(); // Show all users initially
                 setTimeout(() => searchInput.focus(), 100);
+                
+                // Add class to prevent card hover effects
+                const teamCard = dropdownButton.closest('.team-card');
+                if (teamCard) {
+                    teamCard.classList.add('dropdown-open');
+                }
             } else {
                 closeDropdown();
             }
@@ -126,6 +175,12 @@
         function closeDropdown() {
             dropdownMenu.style.display = 'none';
             searchInput.value = ''; // Clear search
+            
+            // Remove class to restore card hover effects
+            const teamCard = dropdownButton.closest('.team-card');
+            if (teamCard) {
+                teamCard.classList.remove('dropdown-open');
+            }
         }
         
         // Populate users in dropdown
