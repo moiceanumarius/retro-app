@@ -22,7 +22,149 @@
     <script src="https://cdn.datatables.net/1.13.7/js/dataTables.bootstrap5.min.js"></script>
     
     <script>
+    let allUsers = [];
+
+    /**
+     * Load users from backend data
+     */
+    function loadAllUsers() {
+        // Get users from Twig template data
+        allUsers = [
+            {% for user in users %}
+            {
+                id: {{ user.id }},
+                firstName: "{{ user.firstName|escape('js') }}",
+                lastName: "{{ user.lastName|escape('js') }}",
+                email: "{{ user.email|escape('js') }}",
+                role: "{{ user.getCurrentRole() ? user.getCurrentRole().getName() : 'N/A' }}"
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        ];
+    }
+
+    /**
+     * Initialize modern dropdown functionality
+     */
+    function initUserSearchDropdown() {
+        const dropdownButton = document.getElementById('userDropdownButton');
+        const dropdownMenu = document.getElementById('userDropdown');
+        const searchInput = document.getElementById('userSearchInput');
+        const userDropdownList = document.getElementById('userDropdownList');
+        const selectedUserText = document.getElementById('selectedUserText');
+        const hiddenInput = document.getElementById('user_id');
+        
+        if (!dropdownButton || !dropdownMenu) return;
+        
+        // Load all users on page load
+        loadAllUsers();
+        
+        // Show/hide dropdown
+        dropdownButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown();
+        });
+        
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            filterUsers(query);
+        });
+        
+        // Handle user selection
+        userDropdownList.addEventListener('click', function(e) {
+            const userOption = e.target.closest('.user-option');
+            if (userOption) {
+                const userId = userOption.dataset.value;
+                const userName = userOption.dataset.name;
+                const userEmail = userOption.dataset.email;
+                
+                selectUser(userId, userName, userEmail);
+                closeDropdown();
+            }
+        });
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.modern-dropdown')) {
+                closeDropdown();
+            }
+        });
+        
+        // Focus search input when dropdown opens
+        function toggleDropdown() {
+            if (dropdownMenu.style.display === 'none' || dropdownMenu.style.display === '') {
+                dropdownMenu.style.display = 'block';
+                populateUsers(); // Show all users initially
+                setTimeout(() => searchInput.focus(), 100);
+            } else {
+                closeDropdown();
+            }
+        }
+        
+        function closeDropdown() {
+            dropdownMenu.style.display = 'none';
+            searchInput.value = ''; // Clear search
+        }
+        
+        // Populate users in dropdown
+        function populateUsers() {
+            userDropdownList.innerHTML = allUsers.map(user => 
+                `<div class="user-option" data-value="${user.id}" data-name="${user.firstName} ${user.lastName}" data-email="${user.email}" data-role="${user.role || 'N/A'}" 
+                     style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
+                     onmouseover="this.style.backgroundColor='#f8fafc'" 
+                     onmouseout="this.style.backgroundColor='white'">
+                    <div class="user-option-content" style="flex: 1;">
+                        <div class="user-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${user.firstName} ${user.lastName}</div>
+                        <div class="user-option-email" style="color: #64748b; font-size: 0.75rem;">${user.email}</div>
+                        <div class="user-option-role" style="color: #9ca3af; font-size: 0.7rem; font-style: italic;">Current: ${user.role}</div>
+                    </div>
+                </div>`
+            ).join('');
+        }
+        
+        // Filter users based on search query
+        function filterUsers(query) {
+            const filteredUsers = allUsers.filter(user => {
+                if (!query) return true;
+                
+                const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+                const email = user.email.toLowerCase();
+                const role = user.role ? user.role.toLowerCase() : '';
+                
+                return fullName.includes(query) || email.includes(query) || role.includes(query);
+            });
+            
+            userDropdownList.innerHTML = filteredUsers.map(user => 
+                `<div class="user-option" data-value="${user.id}" data-name="${user.firstName} ${user.lastName}" data-email="${user.email}" data-role="${user.role || 'N/A'}" 
+                     style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
+                     onmouseover="this.style.backgroundColor='#f8fafc'" 
+                     onmouseout="this.style.backgroundColor='white'">
+                    <div class="user-option-content" style="flex: 1;">
+                        <div class="user-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${user.firstName} ${user.lastName}</div>
+                        <div class="user-option-email" style="color: #64748b; font-size: 0.75rem;">${user.email}</div>
+                        <div class="user-option-role" style="color: #9ca3af; font-size: 0.7rem; font-style: italic;">Current: ${user.role}</div>
+                    </div>
+                </div>`
+            ).join('');
+        }
+        
+        // Select user
+        function selectUser(userId, userName, userEmail) {
+            selectedUserText.textContent = userName;
+            selectedUserText.style.color = '#1e293b';
+            
+            // Set form value
+            if (hiddenInput) {
+                hiddenInput.value = userId;
+            }
+        }
+    }
+
     $(document).ready(function() {
+        // Initialize user search dropdown
+        initUserSearchDropdown();
+        
+        // Initialize DataTable
         $('#userRolesTable').DataTable({
             processing: true,
             serverSide: true,
@@ -152,13 +294,37 @@
                         <input type="hidden" name="_token" value="{{ csrf_token('assign_role') }}">
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="user_id">Select User</label>
-                                <select name="user_id" id="user_id" class="form-select" required>
-                                    <option value="">Choose a user...</option>
-                                    {% for user in users %}
-                                        <option value="{{ user.id }}">{{ user.getFullName() }} ({{ user.email }})</option>
-                                    {% endfor %}
-                                </select>
+                                <label for="userDropdownButton" class="form-label">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                        <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM15.472 13.472a4 4 0 010 5.656 4 4 0 01-5.656 0l-3.179-3.179c4.686-4.686 4.686-12.284 0-16.97l3.179 3.179a4 4 0 010 5.656z"></path>
+                                    </svg>
+                                    Select User
+                                </label>
+                                <div class="modern-dropdown" style="position: relative; width: 100%;">
+                                    <button type="button" id="userDropdownButton" class="modern-dropdown-button" 
+                                            style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
+                                        <span id="selectedUserText" style="flex: 1; text-align: left; color: #6b7280;">Select a user...</span>
+                                        <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
+                                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </button>
+                                    <div id="userDropdown" class="modern-dropdown-menu" 
+                                         style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 1000; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
+                                        <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
+                                                 style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
+                                                <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                            </svg>
+                                            <input type="text" id="userSearchInput" class="dropdown-search-input" 
+                                                   style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; background: white; outline: none; transition: border-color 0.2s ease;" 
+                                                   placeholder="Search users..." autocomplete="off">
+                                        </div>
+                                        <div id="userDropdownList" class="dropdown-list" style="max-height: 250px; overflow-y: auto;">
+                                            <!-- Users will be populated here -->
+                                        </div>
+                                    </div>
+                                    <input type="hidden" id="user_id" name="user_id" required>
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="role_id">Select Role</label>
