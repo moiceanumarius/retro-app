@@ -406,7 +406,7 @@ final class TeamController extends AbstractController
                 // Return existing invitation link
                 return $this->json([
                     'success' => true,
-                    'invitationUrl' => $existingInvitation->getInvitationUrl(),
+                    'invitationUrl' => $request->getSchemeAndHttpHost() . $existingInvitation->getInvitationUrl(),
                     'expiresAt' => $existingInvitation->getExpiresAt()->format('Y-m-d H:i:s')
                 ]);
             }
