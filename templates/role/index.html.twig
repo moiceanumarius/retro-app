@@ -36,7 +36,7 @@
                 firstName: "{{ user.firstName|escape('js') }}",
                 lastName: "{{ user.lastName|escape('js') }}",
                 email: "{{ user.email|escape('js') }}",
-                role: "{{ user.getCurrentRole() ? user.getCurrentRole().getName() : 'N/A' }}"
+                role: "{{ user.getActiveRoles()|length > 0 ? user.getActiveRoles()[0]|replace({'ROLE_': ''}) : 'N/A' }}"
             }{% if not loop.last %},{% endif %}
             {% endfor %}
         ];
