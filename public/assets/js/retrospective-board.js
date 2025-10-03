@@ -1010,6 +1010,7 @@ class RetrospectiveBoard {
             url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/review`);
             url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/connected-users`);
             url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/step`);
+            url.searchParams.append('topic', `retrospectives/${this.retrospectiveId}/discussion`);
             url.searchParams.append('Authorization', mercureToken);
             
             this.eventSource = new EventSource(url.toString());
@@ -1118,6 +1119,9 @@ class RetrospectiveBoard {
             case 'step_changed':
                 this.handleStepChanged(data);
                 break;
+            case 'item_discussed':
+                this.handleItemDiscussed(data);
+                break;
             default:
                 console.log('Unknown WebSocket message type:', data.type);
         }
@@ -1133,16 +1137,34 @@ class RetrospectiveBoard {
         console.log('Step changed via WebSocket:', data);
         this.showMessage(data.message || 'Moving to next step...', 'info');
         
-        // If moving to completed step, redirect to complete page
-        if (data.nextStep === 'completed') {
-            setTimeout(() => {
-                window.location.href = `/retrospectives/${this.retrospectiveId}/complete`;
-            }, 1500);
-        } else {
-            // Reload page after a short delay to show the new step
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
+        // Reload page after a short delay to show the new step (including completed)
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    }
+    
+    handleItemDiscussed(data) {
+        console.log('Item discussed via WebSocket:', data);
+        
+        const { itemId, itemType } = data;
+        
+        // Find the card element based on item type and ID
+        let cardElement = null;
+        
+        if (itemType === 'item') {
+            cardElement = document.querySelector(`[data-item-id="${itemId}"]`);
+        } else if (itemType === 'group') {
+            cardElement = document.querySelector(`[data-group-id="${itemId}"]`);
+        }
+        
+        if (cardElement) {
+            // Apply the same visual changes as if the current user marked it as discussed
+            // Skip saving to backend since this update came via WebSocket
+            this.markAsDiscussed(cardElement, itemId, itemType, true);
+            
+            // Show a subtle notification that another user marked this as discussed
+            const memberName = data.memberName || 'Another user';
+            this.showMessage(`${memberName} marked an item as discussed`, 'info', 2000);
         }
     }
     
@@ -1398,17 +1420,10 @@ class RetrospectiveBoard {
     handleStepChanged(data) {
         this.showMessage(data.message, 'success');
         
-        // If moving to completed step, redirect to complete page
-        if (data.nextStep === 'completed') {
-            setTimeout(() => {
-                window.location.href = `/retrospectives/${this.retrospectiveId}/complete`;
-            }, 1500);
-        } else {
-            // Reload page to show new step
-            setTimeout(() => {
-                window.location.reload();
-            }, 1500);
-        }
+        // Reload page to show new step (including completed)
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
     }
     
     showConnectionStatus(status) {
@@ -3002,7 +3017,7 @@ RetrospectiveBoard.prototype.closeZoom = function() {
     document.body.style.overflow = '';
 };
 
-RetrospectiveBoard.prototype.markAsDiscussed = function(cardElement, itemId, itemType) {
+RetrospectiveBoard.prototype.markAsDiscussed = function(cardElement, itemId, itemType, skipSave = false) {
     // Add discussed class for gray out effect
     cardElement.classList.add('discussed');
     
@@ -3061,17 +3076,24 @@ RetrospectiveBoard.prototype.markAsDiscussed = function(cardElement, itemId, ite
         }, 600);
     }
     
-    // Send to backend to persist discussed state
-    this.saveDiscussedState(itemId, itemType);
+    // Send to backend to persist discussed state (unless we received this update via WebSocket)
+    if (!skipSave) {
+        this.saveDiscussedState(itemId, itemType);
+    }
 };
 
 RetrospectiveBoard.prototype.saveDiscussedState = async function(itemId, itemType) {
     try {
+        // Get CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+        
         const response = await fetch(`/retrospectives/${this.retrospectiveId}/mark-discussed`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-Token': csrfToken || '',
+                'Accept': 'application/json'
             },
             credentials: 'include',
             body: JSON.stringify({
@@ -3080,10 +3102,9 @@ RetrospectiveBoard.prototype.saveDiscussedState = async function(itemId, itemTyp
             })
         });
 
-        if (response.ok) {
-            console.log(`Successfully marked ${itemType} ${itemId} as discussed`);
-        } else {
-            console.error('Failed to save discussed state');
+        if (!response.ok) {
+            const responseText = await response.text();
+            console.error(`Failed to save discussed state: ${response.status} - ${responseText}`);
         }
     } catch (error) {
         console.error('Error saving discussed state:', error);

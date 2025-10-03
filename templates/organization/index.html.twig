@@ -98,10 +98,11 @@
                                 Organization *
                             </label>
                             <select id="organization" name="organization" class="form-select" required>
-                                <option value="">Select an organization...</option>
-                                {% for org in organizations %}
-                                    <option value="{{ org.id }}">{{ org.name }}</option>
-                                {% endfor %}
+                                {% if userOrganization %}
+                                    <option value="{{ userOrganization.id }}">{{ userOrganization.name }}</option>
+                                {% else %}
+                                    <option value="">No organization available</option>
+                                {% endif %}
                             </select>
                         </div>
                         
@@ -202,13 +203,13 @@
                         <a href="{{ path('app_organizations_edit', {'id': org.id}) }}" class="btn btn-sm btn-secondary">
                             Edit
                         </a>
-                        {% if org.isActive %}
+                        {% if org.isActive and org.owner.id != app.user.id %}
                             <a href="{{ path('app_organizations_delete', {'id': org.id}) }}" 
                                class="btn btn-sm btn-danger"
                                onclick="return confirm('Are you sure you want to delete this organization? This action cannot be undone.')">
                                 Delete
                             </a>
-                        {% else %}
+                        {% elseif not org.isActive %}
                             <a href="{{ path('app_organizations_reactivate', {'id': org.id}) }}" class="btn btn-sm btn-success">
                                 Reactivate
                             </a>
@@ -505,6 +506,28 @@ function clearSelectedUser() {
 function initFormValidation() {
     const organizationSelect = document.getElementById('organization');
     const form = document.getElementById('addUserToOrgForm');
+    
+    // Check if user has an organization
+    if (organizationSelect && !organizationSelect.value) {
+        // Disable the entire form if no organization is available
+        const submitBtn = document.getElementById('addUserBtn');
+        const userDropdown = document.getElementById('userDropdownButton');
+        
+        if (submitBtn) submitBtn.disabled = true;
+        if (userDropdown) userDropdown.disabled = true;
+        
+        // Show a message
+        const organizationGroup = organizationSelect.closest('.form-group');
+        if (organizationGroup && !organizationGroup.querySelector('.no-org-message')) {
+            const message = document.createElement('small');
+            message.className = 'form-text no-org-message';
+            message.style.color = '#dc2626';
+            message.textContent = 'You must be part of an organization to add users.';
+            organizationGroup.appendChild(message);
+        }
+        
+        return;
+    }
     
     if (organizationSelect) {
         organizationSelect.addEventListener('change', validateForm);

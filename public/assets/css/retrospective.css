@@ -884,7 +884,7 @@
     gap: 0.5rem;
 }
 
-.group-card,
+/* Removed old group-card styling that was interfering with new discussion-card structure */
 .single-item-card {
     background: #f9fafb;
     border-radius: 8px;
@@ -961,6 +961,8 @@
 
 .discussion-card.group-card {
     background: #f9fafb;
+    /* Remove any extra padding to match individual cards */
+    padding: 0;
 }
 
 .category-indicator {

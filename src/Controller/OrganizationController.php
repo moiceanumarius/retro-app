@@ -65,7 +65,19 @@ final class OrganizationController extends AbstractController
         // Statistici generale pentru admin dashboard
         $statistics = $this->organizationRepository->getStatistics();
         
-        // Obținerea tuturor organizațiilor (active și inactive)
+        // Obținerea organizației utilizatorului curent pentru dropdown-ul "Add User to Organization"
+        $currentUser = $this->getUser();
+        $userOrganization = null;
+        
+        // Găsește organizația activă a utilizatorului curent
+        foreach ($currentUser->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $userOrganization = $membership->getOrganization();
+                break;
+            }
+        }
+        
+        // Obținerea tuturor organizațiilor (active și inactive) pentru afișare
         $organizations = $this->organizationRepository->findAllOrganizations();
         
         // Organizațiile recent create pentru sidebar
@@ -76,6 +88,7 @@ final class OrganizationController extends AbstractController
 
         return $this->render('organization/index.html.twig', [
             'organizations' => $organizations,
+            'userOrganization' => $userOrganization,
             'statistics' => $statistics,
             'recent_organizations' => $recentOrganizations,
             'popular_organizations' => $popularOrganizations,
@@ -215,6 +228,13 @@ final class OrganizationController extends AbstractController
             throw $this->createNotFoundException('Organization not found');
         }
         
+        // Verificarea dacă utilizatorul este owner al organizației
+        $currentUser = $this->getUser();
+        if ($organization->getOwner()->getId() === $currentUser->getId()) {
+            $this->addFlash('error', '❌ You cannot delete your own organization. You can only edit it.');
+            return $this->redirectToRoute('app_organizations_show', ['id' => $organization->getId()]);
+        }
+        
         // Verificarea token-ului CSRF pentru securitate
         if ($this->isCsrfTokenValid('delete_organization', $request->request->get('_token'))) {
             // Logical delete - marchează ca inactivă
@@ -306,6 +326,17 @@ final class OrganizationController extends AbstractController
                     ], 404);
                 }
                 
+                // Check if user is an admin and already has an organization
+                if ($user->hasRole('ROLE_ADMIN')) {
+                    $userOrganizations = $this->organizationMemberRepository->findByUser($user);
+                    if (count($userOrganizations) > 0) {
+                        return $this->json([
+                            'success' => false,
+                            'message' => 'Admin users can only belong to one organization'
+                        ], 400);
+                    }
+                }
+                
                 // Check if user is already a member or was a member before
                 $existingMember = $this->organizationMemberRepository->findOneBy([
                     'user' => $user,
@@ -377,8 +408,22 @@ final class OrganizationController extends AbstractController
         $form->handleRequest($request);
         
         if ($form->isSubmitted() && $form->isValid()) {
+            $userToAdd = $organizationMember->getUser();
+            
+            // Check if user is an admin and already has an organization
+            if ($userToAdd->hasRole('ROLE_ADMIN')) {
+                $userOrganizations = $this->organizationMemberRepository->findByUser($userToAdd);
+                if (count($userOrganizations) > 0) {
+                    $this->addFlash('error', '❌ Admin users can only belong to one organization');
+                    return $this->render('organization/add_member.html.twig', [
+                        'organization' => $organization,
+                        'form' => $form,
+                    ]);
+                }
+            }
+            
             // Verificarea dacă userul este deja membru
-            if ($this->organizationMemberRepository->isUserMemberOfOrganization($organizationMember->getUser(), $organization)) {
+            if ($this->organizationMemberRepository->isUserMemberOfOrganization($userToAdd, $organization)) {
                 $this->addFlash('error', 'User is already a member of this organization');
                 return $this->render('organization/add_member.html.twig', [
                     'organization' => $organization,
@@ -421,6 +466,13 @@ final class OrganizationController extends AbstractController
         }
         
         $organization = $member->getOrganization();
+        $currentUser = $this->getUser();
+        
+        // Verificarea dacă utilizatorul încearcă să se elimine pe sine
+        if ($member->getUser()->getId() === $currentUser->getId()) {
+            $this->addFlash('error', '❌ You cannot remove yourself from your organization.');
+            return $this->redirectToRoute('app_organizations_show_members', ['id' => $orgId]);
+        }
         
         // Verificarea token-ului CSRF pentru securitate
         if ($this->isCsrfTokenValid('remove_member', $request->request->get('_token'))) {

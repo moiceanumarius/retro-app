@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\TeamInvitationRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -50,12 +52,17 @@ class TeamInvitation
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $message = null;
 
+    #[ORM\ManyToMany(targetEntity: User::class)]
+    #[ORM\JoinTable(name: 'team_invitation_used_by')]
+    private Collection $usedBy;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->status = 'pending';
         $this->expiresAt = (new \DateTimeImmutable())->modify('+24 hours');
         $this->token = bin2hex(random_bytes(32));
+        $this->usedBy = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -235,5 +242,41 @@ class TeamInvitation
             'expired' => 'badge-secondary-modern',
             default => 'badge-warning-modern'
         };
+    }
+
+    /**
+     * Get users who have used this invitation
+     */
+    public function getUsedBy(): Collection
+    {
+        return $this->usedBy;
+    }
+
+    /**
+     * Add a user to the list of users who have used this invitation
+     */
+    public function addUsedBy(User $user): static
+    {
+        if (!$this->usedBy->contains($user)) {
+            $this->usedBy->add($user);
+        }
+        return $this;
+    }
+
+    /**
+     * Remove a user from the list of users who have used this invitation
+     */
+    public function removeUsedBy(User $user): static
+    {
+        $this->usedBy->removeElement($user);
+        return $this;
+    }
+
+    /**
+     * Check if a specific user has already used this invitation
+     */
+    public function hasBeenUsedBy(User $user): bool
+    {
+        return $this->usedBy->contains($user);
     }
 }

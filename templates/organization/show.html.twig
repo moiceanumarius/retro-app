@@ -293,7 +293,7 @@
                         </div>
                     </div>
                     
-                    {% if app.user.hasRole('ROLE_ADMIN') %}
+                    {% if app.user.hasRole('ROLE_ADMIN') and member.user.id != app.user.id %}
                     <div class="member-actions">
                         <button type="button" class="btn btn-sm btn-danger remove-member-btn" 
                                 title="Remove member"

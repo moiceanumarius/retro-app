@@ -266,10 +266,22 @@ class RetrospectiveController extends AbstractController
         }
 
         $retrospective->setStatus('completed');
+        $retrospective->setCurrentStep('completed');
         $retrospective->setCompletedAt(new \DateTime());
         $retrospective->setUpdatedAt(new \DateTime());
         
         $this->entityManager->flush();
+        
+        // Broadcast step change to all connected clients
+        $update = new Update(
+            "retrospective/{$id}/step",
+            json_encode([
+                'type' => 'step_changed',
+                'nextStep' => 'completed',
+                'message' => 'Retrospective completed successfully!'
+            ])
+        );
+        $this->hub->publish($update);
         
         // Check if this is an AJAX request
         if ($request->isXmlHttpRequest()) {
@@ -1897,6 +1909,114 @@ class RetrospectiveController extends AbstractController
         } catch (\Exception $e) {
             // Log error but don't break the main flow
             error_log('Error publishing connected users update: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mark an item or group as discussed
+     * 
+     * @param Request $request
+     * @param int $id Retrospective ID
+     * @return Response JSON response
+     */
+    #[Route('/retrospectives/{id}/mark-discussed', name: 'app_retrospectives_mark_discussed', methods: ['POST'])]
+    public function markDiscussed(Request $request, int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+        }
+        
+        // Check if user has access to this retrospective (facilitator or team member)
+        $user = $this->getUser();
+        $hasAccess = false;
+        
+        // Check if user is facilitator
+        if ($retrospective->getFacilitator() === $user) {
+            $hasAccess = true;
+        } else {
+            // Check if user is team member
+            $team = $retrospective->getTeam();
+            foreach ($team->getTeamMembers() as $member) {
+                if ($member->getUser() === $user && $member->isActive()) {
+                    $hasAccess = true;
+                    break;
+                }
+            }
+        }
+        
+        if (!$hasAccess) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+        
+        $data = json_decode($request->getContent(), true);
+        $itemId = $data['itemId'] ?? null;
+        $itemType = $data['itemType'] ?? null;
+        
+        if (!$itemId || !$itemType) {
+            return $this->json(['success' => false, 'message' => 'Invalid request data'], 400);
+        }
+        
+        try {
+            if ($itemType === 'item') {
+                $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($itemId);
+                
+                if (!$item) {
+                    return $this->json(['success' => false, 'message' => 'Item not found'], 404);
+                }
+                
+                // Check if item belongs to this retrospective
+                $itemRetrospective = null;
+                if ($item->getGroup()) {
+                    // Item belongs to a group, check retrospective through group
+                    $itemRetrospective = $item->getGroup()->getRetrospective();
+                } else {
+                    // Item is individual, check retrospective directly
+                    $itemRetrospective = $item->getRetrospective();
+                }
+                
+                if (!$itemRetrospective || $itemRetrospective->getId() !== $id) {
+                    return $this->json(['success' => false, 'message' => 'Item not in retrospective'], 404);
+                }
+                
+                $item->setIsDiscussed(true);
+                $this->entityManager->persist($item);
+                
+            } elseif ($itemType === 'group') {
+                $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($itemId);
+                
+                if (!$group || $group->getRetrospective()->getId() !== $id) {
+                    return $this->json(['success' => false, 'message' => 'Group not found'], 404);
+                }
+                
+                $group->setIsDiscussed(true);
+                $this->entityManager->persist($group);
+                
+            } else {
+                return $this->json(['success' => false, 'message' => 'Invalid item type'], 400);
+            }
+            
+            $this->entityManager->flush();
+            
+            // Send real-time update via Mercure
+            $update = new Update(
+                "retrospectives/{$id}/discussion",
+                json_encode([
+                    'type' => 'item_discussed',
+                    'itemId' => $itemId,
+                    'itemType' => $itemType,
+                    'memberName' => $user->getFullName(),
+                    'timestamp' => time()
+                ])
+            );
+            $this->hub->publish($update);
+            
+            return $this->json(['success' => true, 'message' => 'Item marked as discussed']);
+            
+        } catch (\Exception $e) {
+            $this->logger->error('Error marking item as discussed: ' . $e->getMessage());
+            return $this->json(['success' => false, 'message' => 'Internal server error'], 500);
         }
     }
 

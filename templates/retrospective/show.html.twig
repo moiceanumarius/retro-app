@@ -538,12 +538,15 @@
                             {% if elementData.type == 'item' and entity.isDiscussed %}
                                 {% set discussedElements = discussedElements|merge([elementData]) %}
                             {% elseif elementData.type == 'group' %}
-                                {% set groupHasDiscussed = false %}
-                                {% for groupItem in entity.getItems() %}
-                                    {% if groupItem.isDiscussed %}
-                                        {% set groupHasDiscussed = true %}
-                                    {% endif %}
-                                {% endfor %}
+                                {# Check if group itself is marked as discussed OR if any items in group are discussed #}
+                                {% set groupHasDiscussed = entity.isDiscussed() %}
+                                {% if not groupHasDiscussed %}
+                                    {% for groupItem in entity.getItems() %}
+                                        {% if groupItem.isDiscussed %}
+                                            {% set groupHasDiscussed = true %}
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endif %}
                                 {% if groupHasDiscussed %}
                                     {% set discussedElements = discussedElements|merge([elementData]) %}
                                 {% else %}
@@ -612,10 +615,10 @@
                                         <div class="card-text">{{ item.content }}</div>
                                         <div class="card-footer">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                                <span class="total-votes">{{ elementData.totalVotes }} {{ elementData.totalVotes == 1 ? 'vote' : 'votes' }}</span>
                                                 {% if item.isDiscussed %}
                                                     <span class="discussed-badge">Discussed</span>
                                                 {% endif %}
-                                                <span class="total-votes">{{ elementData.totalVotes }} {{ elementData.totalVotes == 1 ? 'vote' : 'votes' }}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -635,16 +638,19 @@
                                         </div>
                                         <div class="card-footer">
                                             <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                {% set groupHasDiscussed = false %}
-                                                {% for groupItem in group.getItems() %}
-                                                    {% if groupItem.isDiscussed %}
-                                                        {% set groupHasDiscussed = true %}
-                                                    {% endif %}
-                                                {% endfor %}
-                                                {% if groupHasDiscussed %}
-                                                    <span class="discussed-badge">Discussed</span>
+                                                {# Check if group itself is marked as discussed OR if any items in group are discussed #}
+                                                {% set groupHasDiscussed = group.isDiscussed() %}
+                                                {% if not groupHasDiscussed %}
+                                                    {% for groupItem in group.getItems() %}
+                                                        {% if groupItem.isDiscussed %}
+                                                            {% set groupHasDiscussed = true %}
+                                                        {% endif %}
+                                                    {% endfor %}
                                                 {% endif %}
                                                 <span class="total-votes">{{ elementData.totalVotes }} {{ elementData.totalVotes == 1 ? 'vote' : 'votes' }}</span>
+                                                {% if groupHasDiscussed %}
+                                                    <span class="discussed-badge">✓ Discussed</span>
+                                                {% endif %}
                                             </div>
                                         </div>
                                     </div>

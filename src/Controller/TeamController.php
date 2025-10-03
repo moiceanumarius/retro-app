@@ -486,6 +486,12 @@ final class TeamController extends AbstractController
         // Skip email validation for generic team invitations
         // Generic invitations (team@invitation.com) can be used by anyone
         
+        // Check if user has already used this invitation
+        if ($invitation->hasBeenUsedBy($user)) {
+            $this->addFlash('error', 'You have already used this invitation. Each invitation can only be used once per user.');
+            return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
+        }
+        
         // Check if user is already a member
         if ($invitation->getTeam()->hasMember($user)) {
             $this->addFlash('info', 'You are already a member of this team');
@@ -507,6 +513,9 @@ final class TeamController extends AbstractController
         $invitation->setStatus('accepted');
         $invitation->setAcceptedAt(new \DateTimeImmutable());
         $invitation->setAcceptedBy($user);
+        
+        // Mark that this user has used this invitation
+        $invitation->addUsedBy($user);
         
         $this->entityManager->persist($teamMember);
         $this->entityManager->persist($invitation);
