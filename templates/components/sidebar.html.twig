@@ -71,7 +71,9 @@
                         Role Management
                     </a>
                 </div>
-                
+            {% endif %}
+            
+            {% if app.user and app.user.hasRole('ROLE_ADMIN') %}
                 <div class="nav-item">
                     <a href="{{ path('app_organizations') }}" class="nav-link">
                         <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
