@@ -23,9 +23,23 @@ class TeamMemberType extends AbstractType
                 'choice_label' => function(User $user) {
                     return $user->getFullName() . ' (' . $user->getEmail() . ')';
                 },
-                'query_builder' => function(EntityRepository $er) {
-                    return $er->createQueryBuilder('u')
+                'query_builder' => function(EntityRepository $er) use ($options) {
+                    $team = $options['team'] ?? null;
+                    $qb = $er->createQueryBuilder('u')
+                        ->leftJoin('u.organizationMemberships', 'om')
+                        ->leftJoin('om.organization', 'o')
                         ->orderBy('u.firstName', 'ASC');
+                    
+                    if ($team && $team->getOrganization()) {
+                        // Show users from the same organization as the team AND users without any organization
+                        $qb->where('o.id = :teamOrgId OR o.id IS NULL')
+                           ->setParameter('teamOrgId', $team->getOrganization()->getId());
+                    } else {
+                        // If team has no organization, show only users without organization
+                        $qb->where('o.id IS NULL');
+                    }
+                    
+                    return $qb;
                 },
                 'label' => 'Select User',
                 'required' => true,
@@ -61,5 +75,7 @@ class TeamMemberType extends AbstractType
         $resolver->setDefaults([
             'data_class' => TeamMember::class,
         ]);
+        
+        $resolver->setDefined(['team']);
     }
 }

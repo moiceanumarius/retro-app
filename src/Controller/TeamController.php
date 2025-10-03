@@ -183,7 +183,7 @@ final class TeamController extends AbstractController
         $teamMember->setTeam($team);
         $teamMember->setInvitedBy($this->getUser());
         
-        $form = $this->createForm(TeamMemberType::class, $teamMember);
+        $form = $this->createForm(TeamMemberType::class, $teamMember, ['team' => $team]);
         $form->handleRequest($request);
         
         if ($form->isSubmitted() && $form->isValid()) {
