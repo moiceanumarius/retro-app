@@ -38,7 +38,7 @@
                             </div>
                         </div>
                     </div>
-                    <input type="hidden" id="selected-user-id" name="team_member[user]" value="">
+                    {{ form_widget(form.user, {'attr': {'style': 'display: none;'}}) }}
                     <div class="selected-user-display" id="selected-user-display" style="display: none;">
                         <div class="selected-user-info">
                             <span class="user-name"></span>
@@ -92,7 +92,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         const searchInput = document.getElementById('user-search');
         const dropdown = document.getElementById('user-dropdown');
-        const selectedUserId = document.getElementById('selected-user-id');
+        const selectedUserId = document.querySelector('select[name="team_member[user]"]');
         const selectedUserDisplay = document.getElementById('selected-user-display');
         const dropdownContent = dropdown.querySelector('.dropdown-content');
         
@@ -103,10 +103,14 @@
         // Load users from backend
         async function loadUsers() {
             try {
+                console.log('Loading users for team {{ team.id }}');
                 const response = await fetch(`/teams/{{ team.id }}/api/users`);
+                console.log('Response status:', response.status);
                 const data = await response.json();
+                console.log('Users data:', data);
                 allUsers = data.users || [];
                 filteredUsers = [...allUsers];
+                console.log('Loaded users:', allUsers.length);
             } catch (error) {
                 console.error('Error loading users:', error);
                 allUsers = [];
@@ -116,6 +120,7 @@
         
         // Filter users based on search term
         function filterUsers(searchTerm) {
+            console.log('Filtering users with term:', searchTerm);
             if (!searchTerm.trim()) {
                 filteredUsers = [...allUsers];
             } else {
@@ -127,11 +132,13 @@
                     (user.organization && user.organization.toLowerCase().includes(term))
                 );
             }
+            console.log('Filtered users:', filteredUsers.length);
             renderUsers();
         }
         
         // Render filtered users in dropdown
         function renderUsers() {
+            console.log('Rendering users:', filteredUsers.length);
             dropdownContent.innerHTML = '';
             
             if (filteredUsers.length === 0) {
@@ -157,8 +164,10 @@
         
         // Select a user
         function selectUser(user) {
+            console.log('Selecting user:', user);
             selectedUser = user;
             selectedUserId.value = user.id;
+            console.log('Set selectedUserId value to:', user.id);
             
             // Update display
             selectedUserDisplay.querySelector('.user-name').textContent = `${user.firstName} ${user.lastName}`;
