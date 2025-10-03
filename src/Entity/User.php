@@ -74,10 +74,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\OneToMany(targetEntity: UserRole::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
     private Collection $userRoles;
 
+    /**
+     * Organizațiile deținute de acest user
+     * Relația One-to-Many: un user poate să dețină multiple organizații
+     */
+    #[ORM\OneToMany(targetEntity: Organization::class, mappedBy: 'owner', cascade: ['persist'])]
+    private Collection $ownedOrganizations;
+
+    /**
+     * Membrii organizațiilor pentru acest user
+     * Relația One-to-Many: un user poate fi membru în multiple organizații
+     */
+    #[ORM\OneToMany(targetEntity: OrganizationMember::class, mappedBy: 'user', cascade: ['persist', 'remove'])]
+    private Collection $organizationMemberships;
+
     public function __construct()
     {
         $this->roles = [];
         $this->userRoles = new ArrayCollection();
+        $this->ownedOrganizations = new ArrayCollection();
+        $this->organizationMemberships = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -407,5 +423,106 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function hasDirectRole(string $roleCode): bool
     {
         return in_array($roleCode, $this->getActiveRoles());
+    }
+
+    /**
+     * @return Collection<int, Organization>
+     */
+    public function getOwnedOrganizations(): Collection
+    {
+        return $this->ownedOrganizations;
+    }
+
+    /**
+     * Adaugă o organizație deținută de user
+     */
+    public function addOwnedOrganization(Organization $ownedOrganization): static
+    {
+        if (!$this->ownedOrganizations->contains($ownedOrganization)) {
+            $this->ownedOrganizations->add($ownedOrganization);
+            $ownedOrganization->setOwner($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Elimină o organizație din cele deținute
+     */
+    public function removeOwnedOrganization(Organization $ownedOrganization): static
+    {
+        if ($this->ownedOrganizations->removeElement($ownedOrganization)) {
+            // set the owning side to null (unless already changed)
+            if ($ownedOrganization->getOwner() === $this) {
+                $ownedOrganization->setOwner(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, OrganizationMember>
+     */
+    public function getOrganizationMemberships(): Collection
+    {
+        return $this->organizationMemberships;
+    }
+
+    /**
+     * Adaugă o membră organizațională pentru user
+     */
+    public function addOrganizationMembership(OrganizationMember $organizationMembership): static
+    {
+        if (!$this->organizationMemberships->contains($organizationMembership)) {
+            $this->organizationMemberships->add($organizationMembership);
+            $organizationMembership->setUser($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * Elimină o membră organizațională pentru user
+     */
+    public function removeOrganizationMembership(OrganizationMember $organizationMembership): static
+    {
+        if ($this->organizationMemberships->removeElement($organizationMembership)) {
+            // set the owning side to null (unless already changed)
+            if ($organizationMembership->getUser() === $this) {
+                $organizationMembership->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * Returnează organizațiile active din care face parte userul
+     * @return Collection<int, OrganizationMember>
+     */
+    public function getActiveOrganizationMemberships(): Collection
+    {
+        return $this->organizationMemberships->filter(function(OrganizationMember $membership) {
+            return $membership->isValid();
+        });
+    }
+
+    /**
+     * Verifică dacă userul este membru al unei organizații specifice
+     */
+    public function isMemberOfOrganization(Organization $organization): bool
+    {
+        return $organization->hasMember($this);
+    }
+
+    /**
+     * Returnează organizația din care face parte userul (dacă este doar una)
+     * Pentru cazuri unde ne putem bază că userul face parte doar dintr-o organizație
+     */
+    public function getOrganizationMembership(): ?OrganizationMember
+    {
+        $activeMemberships = $this->getActiveOrganizationMemberships();
+        return $activeMemberships->isEmpty() ? null : $activeMemberships->first();
     }
 }

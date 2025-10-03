@@ -6,6 +6,8 @@ use App\Entity\Team;
 use App\Entity\TeamMember;
 use App\Entity\TeamInvitation;
 use App\Entity\User;
+use App\Entity\Organization;
+use App\Entity\OrganizationMember;
 use App\Form\TeamType;
 use App\Form\TeamMemberType;
 use Doctrine\ORM\EntityManagerInterface;
@@ -72,6 +74,25 @@ final class TeamController extends AbstractController
             $ownerMember->setRole('Owner');
             $ownerMember->setInvitedBy($this->getUser());
             
+            // Set organization for team (if owner is member of an organization)
+            $ownerOrganizationMemberships = $this->entityManager
+                ->getRepository(OrganizationMember::class)
+                ->createQueryBuilder('om')
+                ->where('om.user = :user')
+                ->andWhere('om.isActive = :active')
+                ->andWhere('om.leftAt IS NULL')
+                ->setParameter('user', $this->getUser())
+                ->setParameter('active', true)
+                ->getQuery()
+                ->getResult();
+            
+            if (!empty($ownerOrganizationMemberships)) {
+                $ownerOrganizationMembership = $ownerOrganizationMemberships[0]; // Take first active membership
+                if ($ownerOrganizationMembership->getOrganization()) {
+                    $team->setOrganization($ownerOrganizationMembership->getOrganization());
+                }
+            }
+            
             $this->entityManager->persist($team);
             $this->entityManager->persist($ownerMember);
             $this->entityManager->flush();
@@ -103,7 +124,7 @@ final class TeamController extends AbstractController
         }
         
         $members = $team->getActiveMembers();
-        $isOwner = $team->getOwner() === $user;
+        $isOwner = $team->getOwner()->getId() === $user->getId();
         
         return $this->render('team/show.html.twig', [
             'team' => $team,
@@ -173,6 +194,45 @@ final class TeamController extends AbstractController
                     'team' => $team,
                     'form' => $form,
                 ]);
+            }
+            
+            $userToInvite = $teamMember->getUser();
+            
+            // Automatically add user to organization when added to team
+            $teamOrganization = $team->getOrganization();
+            
+            if ($teamOrganization) {
+                // Check if user is already a member of the organization
+                $organizationMemberRepository = $this->entityManager->getRepository(OrganizationMember::class);
+                $existingOrgMember = $organizationMemberRepository->findOneBy([
+                    'user' => $userToInvite,
+                    'organization' => $teamOrganization
+                ]);
+                
+                if ($existingOrgMember) {
+                    // If user was a member before
+                    if (!$existingOrgMember->isActive() || $existingOrgMember->getLeftAt() !== null) {
+                        // Reactivateformer member
+                        $existingOrgMember->setIsActive(true);
+                        $existingOrgMember->setLeftAt(null);
+                        $existingOrgMember->setJoinedAt(new \DateTimeImmutable());
+                        $existingOrgMember->setInvitedBy($this->getUser());
+                        $this->entityManager->persist($existingOrgMember);
+                        $this->addFlash('info', 'User automatically readded to organization: ' . $teamOrganization->getName());
+                    }
+                    // If already active member, do nothing
+                } else {
+                    // Add new user to organization
+                    $orgMember = new OrganizationMember();
+                    $orgMember->setUser($userToInvite);
+                    $orgMember->setOrganization($teamOrganization);
+                    $orgMember->setRole('Member');
+                    $orgMember->setInvitedBy($this->getUser());
+                    $orgMember->setJoinedAt(new \DateTimeImmutable());
+                    $orgMember->setIsActive(true);
+                    $this->entityManager->persist($orgMember);
+                    $this->addFlash('info', 'User automatically added to organization: ' . $teamOrganization->getName());
+                }
             }
             
             $this->entityManager->persist($teamMember);
@@ -430,6 +490,46 @@ final class TeamController extends AbstractController
         
         $this->entityManager->persist($teamMember);
         $this->entityManager->persist($invitation);
+        
+        // Automatically add user to organization when accepting team invitation
+        $teamOrganization = $invitation->getTeam()->getOrganization();
+        
+        if ($teamOrganization) {
+            // Check if user is already a member of the organization
+            $organizationMemberRepository = $this->entityManager->getRepository(OrganizationMember::class);
+            $existingOrgMember = $organizationMemberRepository->findOneBy([
+                'user' => $user,
+                'organization' => $teamOrganization
+            ]);
+            
+            if ($existingOrgMember) {
+                // If user was a member before (active or inactive)
+                if ($existingOrgMember->isActive() && $existingOrgMember->getLeftAt() === null) {
+                    // User is already an active member, do nothing
+                } else {
+                    // Reactivate former member
+                    $existingOrgMember->setIsActive(true);
+                    $existingOrgMember->setLeftAt(null);
+                    $existingOrgMember->setRole('MEMBER');
+                    $existingOrgMember->setJoinedAt(new \DateTimeImmutable()); // Update join date
+                    $existingOrgMember->setInvitedBy($invitation->getInvitedBy());
+                    
+                    $this->entityManager->persist($existingOrgMember);
+                }
+            } else {
+                // Create new organization member (first time)
+                $organizationMember = new OrganizationMember();
+                $organizationMember->setOrganization($teamOrganization);
+                $organizationMember->setUser($user);
+                $organizationMember->setRole('MEMBER');
+                $organizationMember->setInvitedBy($invitation->getInvitedBy());
+                $organizationMember->setJoinedAt(new \DateTimeImmutable());
+                $organizationMember->setIsActive(true);
+                
+                $this->entityManager->persist($organizationMember);
+            }
+        }
+        
         $this->entityManager->flush();
         
         $this->addFlash('success', '✅ You have successfully joined the team!');
@@ -472,7 +572,7 @@ final class TeamController extends AbstractController
     private function hasTeamAccess(Team $team, User $user): bool
     {
         // Owner has access
-        if ($team->getOwner() === $user) {
+        if ($team->getOwner()->getId() === $user->getId()) {
             return true;
         }
         

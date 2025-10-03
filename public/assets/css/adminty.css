@@ -213,11 +213,46 @@ body {
     }
 }
 
-/* Footer */
+/* Footer - Enhanced styling */
 .content-footer {
     margin-top: auto;
     background-color: white;
     border-top: 1px solid var(--border-color);
+    padding: 1.5rem 2rem;
+    text-align: center;
+}
+
+.content-footer .footer-content {
+    max-width: 100%;
+    margin: 0 auto;
+}
+
+.content-footer p {
+    margin: 0.4rem 0;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: center;
+}
+
+.content-footer p:first-child {
+    color: #374151;
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+}
+
+.content-footer p:last-child {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.content-footer p em {
+    color: #ef4444;
+    font-style: normal;
+    font-weight: 500;
 }
 
 /* Utilities */

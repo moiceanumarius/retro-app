@@ -1496,7 +1496,7 @@ class RetrospectiveController extends AbstractController
         $user = $this->getUser();
         
         // Team owner has access
-        if ($team->getOwner() === $user) {
+        if ($team->getOwner()->getId() === $user->getId()) {
             return true;
         }
         

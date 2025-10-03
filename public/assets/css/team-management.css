@@ -3,6 +3,18 @@
     padding: 0;
     max-width: 1400px;
     margin: 0 auto;
+    position: relative;
+    top: 0;
+}
+
+/* Ensure no top spacing for main content on Teams pages */
+.main-content {
+    margin-top: 0 !important;
+}
+
+/* Reset any inherited spacing for content-body */
+.content-body {
+    margin-top: 0 !important;
 }
 
 /* Team Header */
@@ -1127,6 +1139,46 @@
     }
 }
 
+/* Bootstrap Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1050;
+}
+
+.modal.show {
+    display: flex !important;
+}
+
+.modal-dialog {
+    position: relative;
+    width: auto;
+    margin: 0.5rem;
+    pointer-events: auto;
+}
+
+.modal-dialog-centered {
+    display: flex;
+    align-items: center;
+    min-height: calc(100% - 1rem);
+}
+
+.modal-content {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 0;
+    max-width: 500px;
+    width: 100%;
+    margin: auto;
+    overflow-y: auto;
+}
+
 /* Modal styles */
 .modal-overlay {
     position: fixed;
@@ -1297,6 +1349,156 @@
     margin: 0.5rem 0;
     font-size: 0.875rem;
     color: #495057;
+}
+
+/* Form Styles for Organizations */
+.form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #2d3748;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    font-size: 0.875rem;
+}
+
+.form-control {
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background-color: white;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-control.is-invalid {
+    border-color: #ff6b6b;
+}
+
+.form-control.is-valid {
+    border-color: #48bb78;
+}
+
+.form-error {
+    color: #ff6b6b;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    font-weight: 500;
+}
+
+.form-text {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+.form-actions .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.form-actions .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.form-actions .btn-primary:hover {
+    background: #5a6fd8;
+    transform: translateY(-1px);
+}
+
+.form-actions .btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.form-actions .btn-secondary:hover {
+    background: #4b5563;
+    transform: translateY(-1px);
+}
+
+/* Info Section Styles */
+.info-section {
+    margin-top: 2rem;
+}
+
+.info-card {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border-left: 4px solid #667eea;
+}
+
+.info-card h3 {
+    color: #2d3748;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.info-card ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+.info-card li {
+    color: #64748b;
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+/* Footer Styling for Teams-like Design */
+.team-management + .content-footer {
+    padding: 1rem 0;
+    text-align: center;
+}
+
+.team-management + .content-footer p {
+    margin: 0.25rem 0;
+    color: #64748b;
+    font-size: 0.875rem;
+    font-weight: 400;
+}
+
+.team-management + .content-footer p:first-child {
+    color: #2d3748;
+    font-weight: 500;
 }
 
 /* Modal responsive adjustments */

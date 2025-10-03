@@ -1,0 +1,1619 @@
+/**
+ * Organizations Management Styles
+ * 
+ * Stilurile pentru interfața de management a organizațiilor în sistemul RetroApp.
+ * Include stiluri pentru tabelul cu organizații, statistici, membri și formularele
+ * asociate implementării funcționalității Organization.
+ */
+
+/* ===================================
+   Statistics Cards
+   =================================== */
+
+/* Statistici generale - stylele pentru cardurile cu numere */
+.small-box {
+    position: relative;
+    border-radius: 0.25rem;
+    display: block;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.small-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+.small-box.bg-info {
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+}
+
+.small-box.bg-success {
+    background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
+}
+
+.small-box.bg-warning {
+    background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+}
+
+.small-box.bg-secondary {
+    background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+}
+
+.small-box .inner {
+    padding: 1rem 1.5rem;
+    position: relative;
+}
+
+.small-box .inner h3 {
+    font-size: 2.25rem;
+    font-weight: bold;
+    margin: 0 0 0.25rem 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.small-box .inner p {
+    font-size: 0.875rem;
+    margin: 0;
+    opacity: 0.9;
+}
+
+.small-box .icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    z-index: 0;
+    font-size: 2.5rem;
+    opacity: 0.3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ===================================
+   Organization Table Styles
+   =================================== */
+
+/* Tabelul cu organizații - stiluri responsive și moderne */
+#organizationsTable {
+    border-collapse: collapse;
+    margin-bottom: 0;
+    width: 100%;
+    background: white;
+    border-radius: 0.5rem;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+}
+
+#organizationsTable thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+#organizationsTable thead th {
+    border: none;
+    padding: 1rem 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.5px;
+    text-align: left;
+}
+
+#organizationsTable tbody tr {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+#organizationsTable tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#organizationsTable tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    border: none;
+}
+
+/* Badge styles pentru status și membri */
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-success {
+    background-color: #28a745;
+    color: white;
+}
+
+.badge-secondary {
+    background-color: #6c757d;
+    color: white;
+}
+
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+}
+
+.badge-warning {
+    background-color: #ffc107;
+    color: #333;
+}
+
+.badge-danger {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* ===================================
+   Owner Display Styles
+   =================================== */
+
+/* Afișarea owner-ului organizației cu avatar */
+.d-flex.align-items-center .rounded-circle {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.875rem;
+}
+
+/* ===================================
+   Action Buttons
+   =================================== */
+
+/* Grup de butoane pentru acțiuni */
+.btn-group-sm .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+    border-radius: 0.25rem;
+    margin: 0 0.125rem;
+    transition: all 0.2s ease;
+}
+
+.btn-group-sm .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-outline-info:hover {
+    background-color: #17a2b8;
+    border-color: #17a2b8;
+    color: white;
+}
+
+.btn-outline-primary:hover {
+    background-color: #007bff;
+    border-color: #007bff;
+    color: white;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+}
+
+.btn-outline-danger:hover {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+}
+
+.btn-outline-success:hover {
+    background-color: #28a745;
+    border-color: #28a745;
+    color: white;
+}
+
+/* ===================================
+   Sidebar Cards
+   =================================== */
+
+/* Cardurile din sidebar cu organizații recente */
+.card .card-header {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 2px solid #dee2e6;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.card .card-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.card .card-body .rounded-circle {
+    min-width: 40px;
+    min-height: 40px;
+    background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+    color: white;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.card .card-body .flex-grow-1 strong {
+    color: #495057;
+    font-weight: 600;
+}
+
+.card .card-body .text-muted {
+    font-size: 0.875rem;
+}
+
+/* ===================================
+   Form Styles
+   =================================== */
+
+/* Stiluri pentru formularele de organizații */
+.form-control {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    padding: 0.75rem 1rem;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-text {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* ===================================
+   Modal Styles
+   =================================== */
+
+/* Modal pentru confirmarea ștergerii */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1050;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    align-items: center;
+    justify-content: center;
+}
+
+.modal.show {
+    display: flex;
+}
+
+.modal-dialog {
+    max-width: 500px;
+    width: 90%;
+    margin: auto;
+}
+
+.modal-content {
+    background-color: white;
+    border-radius: 0.5rem;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    width: 100%;
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    color: white;
+    border-radius: 0.5rem 0.5rem 0 0;
+    padding: 1rem 1.5rem;
+    border-bottom: none;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+.modal-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #dee2e6;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+}
+
+.modal-body .alert {
+    border-radius: 0.375rem;
+    border-left: 4px solid #ffc107;
+}
+
+.modal-footer .btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+}
+
+/* ===================================
+   Alert Styles
+   =================================== */
+
+/* Alerte pentru informații importante */
+.alert-info {
+    background-color: #e7f3ff;
+    border-color: #b1d7ff;
+    color: #004085;
+    border-radius: 0.5rem;
+    border-left: 4px solid #007bff;
+    padding: 1rem 1.25rem;
+}
+
+.alert-info .fas {
+    color: #007bff;
+    margin-right: 0.5rem;
+}
+
+.alert-warning {
+    background-color: #fff8e1;
+    border-color: #ffecb3;
+    color: #664400;
+    border-radius: 0.5rem;
+    border-left: 4px solid #ffc107;
+}
+
+.alert-warning .fas {
+    color: #ff8f00;
+    margin-right: 0.5rem;
+}
+
+/* ===================================
+   Tips & Examples Styles
+   =================================== */
+
+/* Sectiunea cu sfaturi și exemple */
+.list-unstyled {
+    margin-bottom: 0;
+}
+
+.list-unstyled li {
+    padding: 0.25rem 0;
+    display: flex;
+    align-items: center;
+}
+
+.list-unstyled .fas.check {
+    margin-right: 0.5rem;
+    font-weight: bold;
+}
+
+/* ===================================
+   Responsive Design
+   =================================== */
+
+/* Design responsive pentru mobile */
+@media (max-width: 768px) {
+    .card .card-body {
+        padding: 1rem;
+    }
+    
+    #organizationsTable {
+        font-size: 0.875rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.75rem;
+        margin: 0.05rem;
+    }
+    
+    .small-box .inner h3 {
+        font-size: 1.75rem;
+    }
+    
+    .small-box .icon {
+        font-size: 2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .table-responsive {
+        font-size: 0.8rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.2rem 0.4rem;
+        font-size: 0.7rem;
+    }
+}
+
+/* ===================================
+   Loading States
+   =================================== */
+
+/* Stiluri pentru loading și animații */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+}
+
+.spinner-border-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+/* Transitions pentru elemente interactive */
+.table-hover tbody tr:hover {
+    transition: all 0.2s ease;
+}
+
+.btn {
+    transition: all 0.2s ease;
+}
+
+.card {
+    transition: all 0.2s ease;
+}
+
+/* ===================================
+   Footer Styling for Organizations
+   =================================== */
+
+/* Footer styling consistent cu designul din teams - acum folosim stilurile din adminty.css */
+
+/* ===================================
+   Section Header Centering
+   =================================== */
+
+html body .team-management .teams-section .section-header {
+    text-align: center !important;
+    margin-bottom: 2rem;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+}
+
+html body .team-management .teams-section .section-header h2 {
+    color: #1f2937 !important;
+    font-size: 1.5rem !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+    text-align: center !important;
+    width: 100% !important;
+}
+
+html body .team-management .teams-section .section-header p {
+    color: #6b7280 !important;
+    font-size: 1rem !important;
+    margin: 0 !important;
+    text-align: center !important;
+    width: 100% !important;
+}
+
+/* ===================================
+   Organization Show Page
+   =================================== */
+
+.stats-section {
+    margin-bottom: 2rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1;
+}
+
+.stat-content p {
+    color: #6b7280;
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.members-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.member-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.member-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.member-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.member-avatar .avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #667eea;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.member-details h4 {
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.member-details p {
+    color: #6b7280;
+    font-size: 0.875rem;
+    margin: 0.25rem 0;
+}
+
+.member-role {
+    background: #e2e8f0;
+    color: #374151;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.member-status {
+    flex-shrink: 0;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-active {
+    background: #d1fae5;
+    color: #065f46;
+}
+
+.status-inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #6b7280;
+}
+
+.empty-state h3 {
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.teams-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+}
+
+.team-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.team-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.team-info h3 {
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+}
+
+.team-info p {
+    color: #6b7280;
+    margin: 0 0 1rem 0;
+    font-size: 0.875rem;
+}
+
+.team-meta {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #f3f4f6;
+}
+
+.team-meta span {
+    color: #6b7280;
+    font-size: 0.75rem;
+}
+
+.team-actions {
+    margin-top: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* ===================================
+   Organization Index (Teams-like)
+   =================================== */
+
+.teams-overview .stats-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 25px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+html body .team-management .teams-grid .team-card {
+    background: white !important;
+    border-radius: 12px !important;
+    padding: 1.5rem !important;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08) !important;
+    transition: all 0.3s ease !important;
+    border: 1px solid #f1f5f9 !important;
+}
+
+html body .team-management .teams-grid .team-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 25px rgba(0,0,0,0.15) !important;
+}
+
+html body .team-management .teams-grid .team-card .team-header {
+    display: flex !important;
+    align-items: flex-start !important;
+    justify-content: space-between !important;
+    margin-bottom: 1rem !important;
+}
+
+.teams-grid .team-card .team-info h3 {
+    color: #1e293b;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+}
+
+.teams-grid .team-card .team-info p {
+    color: #64748b;
+    font-size: 0.875rem;
+    margin: 0;
+    line-height: 1.5;
+}
+
+.teams-grid .team-card .team-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.25rem;
+}
+
+html body .team-management .teams-grid .team-card .team-stats {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-bottom: 1.5rem !important;
+    padding-top: 1rem !important;
+    border-top: 1px solid #f1f5f9 !important;
+}
+
+.teams-grid .team-card .stat {
+    text-align: center;
+}
+
+.teams-grid .team-card .stat-number {
+    display: block;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+
+.teams-grid .team-card .stat-label {
+    font-size: 0.75rem;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.teams-grid .team-card .team-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.teams-grid .team-card .btn {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.teams-grid .team-card .btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.teams-grid .team-card .btn-primary:hover {
+    background: #5a67d8;
+}
+
+.teams-grid .team-card .btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.teams-grid .team-card .btn-secondary:hover {
+    background: #4b5563;
+}
+
+.teams-grid .team-card .btn-danger {
+    background: #ef4444;
+    color: white;
+}
+
+.teams-grid .team-card .btn-danger:hover {
+    background: #dc2626;
+}
+
+.teams-grid .team-card .btn-success {
+    background: #10b981;
+    color: white;
+}
+
+.teams-grid .team-card .btn-success:hover {
+    background: #059669;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+}
+
+.empty-icon {
+    margin-bottom: 1.5rem;
+    color: #94a3b8;
+}
+
+.empty-state h3 {
+    color: #1e293b;
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 0.5rem 0;
+}
+
+.empty-state p {
+    color: #64748b;
+    margin: 0 0 2rem 0;
+    font-size: 1rem;
+}
+
+/* ===================================
+   Add User to Organization Form
+   =================================== */
+
+.form-card {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    border: 1px solid #f1f5f9;
+    margin-bottom: 2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.form-group {
+    flex: 1;
+}
+
+.form-label {
+    display: flex;
+    align-items: center;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.form-label svg {
+    margin-right: 0.5rem;
+    color: #667eea;
+}
+
+.form-select, .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    background: white;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.form-select:focus, .form-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-select:disabled, .form-input:disabled {
+    background-color: #f8fafc;
+    color: #6b7280;
+    cursor: not-allowed;
+}
+
+/* Search Dropdown */
+.search-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f1f5f9;
+    transition: background-color 0.2s ease;
+}
+
+.dropdown-item:hover {
+    background-color: #f8fafc;
+}
+
+.dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.user-option {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.user-option-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.user-option-email {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+/* Role badges */
+.user-option-role {
+    font-size: 0.65rem;
+    font-weight: 500;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+}
+
+.badge-admin {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.badge-team_lead {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.badge-facilitator {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.badge-management {
+    background: #ecfdf5;
+    color: #065f46;
+}
+
+.badge-default {
+    background: #f3f4f6;
+    color: #6b7280;
+}
+
+.selected-user-display {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f0f4ff;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+}
+
+.selected-user-display span {
+    font-weight: 500;
+    color: #1e293b;
+    font-size: 0.875rem;
+}
+
+.remove-user-btn {
+    background: none;
+    border: none;
+    color: #667eea;
+    font-size: 1.25rem;
+    cursor: pointer;
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.2s ease;
+}
+
+.remove-user-btn:hover {
+    background-color: #667eea;
+    color: white;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-start;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #f1f5f9;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: #667eea;
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #5a67d8;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #4b5563;
+}
+
+/* ===================================
+   Modern Dropdown Styles - High Specificity
+   =================================== */
+
+.modern-dropdown {
+    position: relative;
+    width: 100%;
+}
+
+.modern-dropdown-button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    color: #374151;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.modern-dropdown-button:hover {
+    border-color: #cbd5e1;
+}
+
+.modern-dropdown-button:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.modern-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    margin-top: 0.25rem;
+    max-height: 300px;
+    overflow: hidden;
+    display: none;
+}
+
+.dropdown-search {
+    position: relative;
+    padding: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+    pointer-events: none;
+}
+
+.dropdown-search-input {
+    width: 100%;
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    background: white;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.dropdown-search-input:focus {
+    border-color: #667eea;
+}
+
+.dropdown-list {
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.user-option {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.user-option:hover {
+    background-color: #f8fafc;
+}
+
+.user-option:last-child {
+    border-bottom: none;
+}
+
+.user-option-content {
+    flex: 1;
+}
+
+.user-option-name {
+    font-weight: 600;
+    color: #1e293b;
+    font-size: 0.875rem;
+    margin-bottom: 0.125rem;
+}
+
+.user-option-email {
+    color: #64748b;
+    font-size: 0.75rem;
+}
+
+.dropdown-arrow {
+    transition: transform 0.2s ease;
+    color: #6b7280;
+}
+
+.modern-dropdown.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.no-results {
+    padding: 1rem;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+    font-style: italic;
+}
+
+/* Scrollbar styling for dropdown list */
+.dropdown-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.dropdown-list::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+.dropdown-list::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* ===================================
+   Organization Member Cards - White Background
+   =================================== */
+
+/* Force white background on member cards - Ultra High Priority */
+/* Override team-management.css specifically */
+.team-management .member-card,
+.team-management div.member-card,
+.team-management .members-grid .member-card,
+body .team-management .member-card,
+html body div.team-management .member-card,
+.member-card {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+    overflow: hidden !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Override owner gradient background */
+.member-card.owner,
+.team-management .member-card.owner,
+body .team-management .member-card.owner {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    background-image: none !important;
+    color: #374151 !important;
+}
+
+.member-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Member card content */
+.member-card .member-info {
+    background: white !important;
+    padding: 1rem !important;
+}
+
+.member-card .member-info h4 {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.member-card .member-info .member-email {
+    color: #64748b !important;
+    font-size: 0.875rem !important;
+    margin-bottom: 0.75rem !important;
+}
+
+.member-card .member-info .member-meta {
+    display: flex !important;
+    gap: 0.5rem !important;
+    margin-bottom: 0.5rem !important;
+}
+
+.member-card .member-info .member-role {
+    background: #f1f5f9 !important;
+    color: #374151 !important;
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 6px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+.member-card .member-info .member-status {
+    padding: 0.25rem 0.75rem !important;
+    border-radius: 6px !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+}
+
+.member-card .member-info .member-status.active {
+    background: #dcfce7 !important;
+    color: #166534 !important;
+}
+
+.member-card .member-info .member-status.inactive {
+    background: #fef3c7 !important;
+    color: #92400e !important;
+}
+
+.member-card .member-info .member-joined {
+    color: #9ca3af !important;
+    font-size: 0.75rem !important;
+}
+
+/* Member avatar styling */
+.member-card .member-avatar {
+    padding: 1rem !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+}
+
+.member-card .avatar-image {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+}
+
+.member-card .avatar-placeholder {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 50% !important;
+    background: #667eea !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+    font-weight: 600 !important;
+}
+
+/* Member actions */
+.member-card .member-actions {
+    background: #f8fafc !important;
+    padding: 1rem !important;
+    border-top: 1px solid #f1f5f9 !important;
+}
+
+.member-card .member-actions .btn {
+    font-size: 0.875rem !important;
+    padding: 0.5rem 1rem !important;
+}
+
+/* ===================================
+   Guidelines Section - Modern Design
+   =================================== */
+
+/* Clean, professional design */
+.info-section {
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+
+.info-card {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.info-card h3 {
+    background: #f8fafc;
+    color: #1f2937;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    align-items: center;
+}
+
+.info-card h3 svg {
+    margin-right: 0.75rem;
+    color: #667eea;
+    width: 20px;
+    height: 20px;
+}
+
+.info-card ul {
+    margin: 0;
+    padding: 1rem 1.5rem;
+    list-style: none;
+}
+
+.info-card li {
+    color: #6b7280;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+    padding: 0;
+    font-size: 0.875rem;
+    position: relative;
+}
+
+
+.info-card li:before {
+    content: '•';
+    position: absolute;
+    left: -1rem;
+    color: #667eea;
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+
+.info-card li:last-child {
+    margin-bottom: 0;
+}
+
+.info-card li strong {
+    color: #1f2937;
+    font-weight: 600;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .info-section {
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-card h3 {
+        font-size: 1rem;
+        padding: 0.875rem 1.25rem;
+    }
+    
+    .info-card ul {
+        padding: 0.875rem 1.25rem;
+    }
+    
+    .info-card li {
+        font-size: 0.8125rem;
+        margin-bottom: 0.625rem;
+    }
+    
+    .info-card h3 svg {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+/* ===================================
+   Accessibility Improvements
+   .=================================== */
+
+/* Focus styles pentru accesibilitate */
+.btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-control:focus {
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+/* High contrast pentru screen readers */
+@media (prefers-contrast: high) {
+    .badge {
+        border: 1px solid;
+    }
+    
+    .btn-outline-info {
+        border-width: 2px;
+    }
+    
+    .btn-outline-primary {
+        border-width: 2px;
+    }
+    
+    .btn-outline-secondary {
+        border-width: 2px;
+    }
+    
+    .btn-outline-danger {
+        border-width: 2px;
+    }
+}
+
+/* Reduce motion pentru usuarii sensibili la animații */
+@media (prefers-reduced-motion: reduce) {
+    .small-box,
+    .btn,
+    .card,
+    .table-hover tbody tr,
+    #organizationsTable tbody tr {
+        transition: none;
+        transform: none;
+    }
+}
+
+/* ===================================
+   Utility Classes
+   =================================== */
+
+/* Clase utilitare pentru spacing și layout */
+.fw-bold {
+    font-weight: bold !important;
+}
+
+.text-decoration-none {
+    text-decoration: none !important;
+}
+
+.shadow-sm {
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075) !important;
+}
+
+.shadow {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+.border-0 {
+    border: 0 !important;
+}
+
+.rounded-pill {
+    border-radius: 50rem !important;
+}
+
+/* Animatie pentru toast/success messages */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in-up {
+    animation: fadeInUp 0.3s ease;
+}

@@ -3,6 +3,7 @@ class RetrospectiveBoard {
     constructor() {
         this.retrospectiveId = window.retrospectiveId;
         this.isFacilitator = window.isFacilitator;
+        this.user = window.user;
         this.timerInterval = null;
         this.timerEndTime = null;
         this.eventSource = null;
@@ -1132,10 +1133,17 @@ class RetrospectiveBoard {
         console.log('Step changed via WebSocket:', data);
         this.showMessage(data.message || 'Moving to next step...', 'info');
         
-        // Reload page after a short delay to show the new step
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
+        // If moving to completed step, redirect to complete page
+        if (data.nextStep === 'completed') {
+            setTimeout(() => {
+                window.location.href = `/retrospectives/${this.retrospectiveId}/complete`;
+            }, 1500);
+        } else {
+            // Reload page after a short delay to show the new step
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        }
     }
     
     
@@ -1300,7 +1308,7 @@ class RetrospectiveBoard {
         const existingItem = document.querySelector(`.post-it[data-item-id="${data.item?.id}"]`);
         if (!existingItem && data.item) {
             // Only show item to its author in feedback phase
-            if (this.isInStep('feedback')) {
+            if (this.isInFeedbackStep()) {
                 const currentUsername = this.user?.firstName || 'Unknown';
                 const itemAuthorFirstName = data.item.author?.firstName || '';
                 
@@ -1390,10 +1398,17 @@ class RetrospectiveBoard {
     handleStepChanged(data) {
         this.showMessage(data.message, 'success');
         
-        // Reload page to show new step
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
+        // If moving to completed step, redirect to complete page
+        if (data.nextStep === 'completed') {
+            setTimeout(() => {
+                window.location.href = `/retrospectives/${this.retrospectiveId}/complete`;
+            }, 1500);
+        } else {
+            // Reload page to show new step
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        }
     }
     
     showConnectionStatus(status) {
@@ -1502,6 +1517,11 @@ RetrospectiveBoard.prototype.isInDiscussionStep = function() {
 RetrospectiveBoard.prototype.isInActionStep = function() {
     const isAction = document.querySelector('.actions-phase') !== null;
     return isAction;
+};
+
+RetrospectiveBoard.prototype.isInFeedbackStep = function() {
+    const isFeedback = document.querySelector('.feedback-columns') !== null;
+    return isFeedback;
 };
 
 RetrospectiveBoard.prototype.shouldShowTimer = function() {

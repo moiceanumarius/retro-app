@@ -1,0 +1,474 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ organization.name }} - Organization Details{% endblock %}
+
+{% block page_title %}{{ organization.name }}{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/organizations.css') }}">
+    <style>
+        /* Force member cards to be white - inline to guarantee override */
+        .member-card {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+        .team-management .member-card {
+            background: #ffffff !important;
+            background-color: #ffffff !important;
+        }
+        .member-card.owner {
+            background: #ffffff !important;
+            background-image: none !important;
+        }
+        
+        /* Remove button styling */
+        .member-actions .btn-danger {
+            background: #dc2626 !important;
+            border-color: #dc2626 !important;
+            color: white !important;
+            transition: all 0.2s ease !important;
+        }
+        
+        .member-actions .btn-danger:hover {
+            background: #b91c1c !important;
+            border-color: #b91c1c !important;
+            transform: translateY(-1px) !important;
+        }
+        
+        .member-actions form {
+            margin: 0 !important;
+        }
+        
+        /* Confirmation Modal Styles */
+        .confirm-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+            animation: fadeIn 0.2s ease-out;
+        }
+        
+        .confirm-modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .confirm-modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .confirm-modal-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .confirm-modal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #fee;
+            color: #dc3545;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .confirm-modal-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin: 0;
+        }
+        
+        .confirm-modal-body {
+            color: #64748b;
+            font-size: 1rem;
+            line-height: 1.5;
+            margin-bottom: 1.5rem;
+        }
+        
+        .confirm-modal-footer {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+        
+        .confirm-modal-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .confirm-modal-btn-cancel {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+        
+        .confirm-modal-btn-cancel:hover {
+            background: #e2e8f0;
+        }
+        
+        .confirm-modal-btn-confirm {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .confirm-modal-btn-confirm:hover {
+            background: #c82333;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block body %}
+<div class="team-management">
+    <!-- Organization Header -->
+    <div class="team-header">
+        <div class="header-content">
+            <h1>{{ organization.name }}</h1>
+            {% if organization.description %}
+                <p class="team-description">{{ organization.description }}</p>
+            {% endif %}
+            
+            <div class="team-meta">
+                <span class="meta-item">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
+                    </svg>
+                    Created {{ organization.createdAt|date('M d, Y') }}
+                </span>
+                <span class="meta-item">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 714 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                    </svg>
+                    {{ member_stats.total_members }} members
+                </span>
+                <span class="meta-item">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"></path>
+                    </svg>
+                    {{ teams|length }} teams
+                </span>
+            </div>
+        </div>
+        
+        <div class="header-actions">
+            <a href="{{ path('app_organizations') }}" class="btn btn-secondary">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                Back to Organizations
+            </a>
+            
+            {% if app.user.hasRole('ROLE_ADMIN') %}
+                <a href="{{ path('app_organizations_edit', {'id': organization.id}) }}" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" clip-rule="evenodd"></path>
+                    </svg>
+                    Edit Organization
+                </a>
+                
+                <a href="{{ path('app_organizations_add_member', {'id': organization.id}) }}" class="btn btn-success">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v9a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path>
+                    </svg>
+                    Add Member
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Organization Statistics -->
+    <div class="teams-overview">
+        <div class="stats-card">
+            <div class="stats-icon">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </div>
+            <div class="stats-content">
+                <h3>{{ member_stats.total_members }}</h3>
+                <p>Total Members</p>
+            </div>
+        </div>
+        
+        <div class="stats-card">
+            <div class="stats-icon">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="stats-content">
+                <h3>{{ member_stats.active_members }}</h3>
+                <p>Active Members</p>
+            </div>
+        </div>
+        
+        <div class="stats-card">
+            <div class="stats-icon">
+                <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1v-2z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="stats-content">
+                <h3>{{ teams|length }}</h3>
+                <p>Total Teams</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Organization Members Section -->
+    <div class="teams-section">
+        <div class="section-header">
+            <h2>Organization Members</h2>
+            <p>Manage members of this organization</p>
+        </div>
+        
+        {% if members|length > 0 %}
+            <div class="members-grid">
+                {% for member in members %}
+                <div class="member-card {{ member.role == 'ADMIN' ? 'admin' : (member.role == 'OWNER' ? 'owner' : '') }}">
+                    <div class="member-avatar">
+                        {% if member.user.avatar %}
+                            <img src="{{ asset('uploads/avatars/' ~ member.user.avatar) }}" alt="Avatar" class="avatar-image">
+                        {% else %}
+                            <div class="avatar-placeholder">
+                                <svg width="40" height="40" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                </svg>
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="member-info">
+                        <h4>{{ member.user.firstName }} {{ member.user.lastName }}</h4>
+                        <p class="member-email">{{ member.user.email }}</p>
+                        <div class="member-meta">
+                            {% if member.role %}
+                                <span class="member-role">{{ member.role }}</span>
+                            {% endif %}
+                            {% if member.isActive %}
+                                <span class="member-status active">Active</span>
+                            {% else %}
+                                <span class="member-status inactive">Inactive</span>
+                            {% endif %}
+                        </div>
+                        <div class="member-joined">
+                            Joined {{ member.joinedAt|date('M d, Y') }}
+                        </div>
+                    </div>
+                    
+                    {% if app.user.hasRole('ROLE_ADMIN') %}
+                    <div class="member-actions">
+                        <button type="button" class="btn btn-sm btn-danger remove-member-btn" 
+                                title="Remove member"
+                                data-member-name="{{ member.user.firstName }} {{ member.user.lastName }}"
+                                data-member-id="{{ member.id }}">
+                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                </svg>
+                <h3>No members yet</h3>
+                <p>This organization doesn't have any members yet. Add some members to get started!</p>
+                {% if app.user.hasRole('ROLE_ADMIN') %}
+                    <a href="{{ path('app_organizations_add_member', {'id': organization.id}) }}" class="btn btn-primary">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v9a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"></path>
+                        </svg>
+                        Add First Member
+                    </a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Organization Teams Section -->
+    <div class="teams-section">
+        <div class="section-header">
+            <h2>Organization Teams</h2>
+            <p>Teams belonging to this organization</p>
+        </div>
+
+        {% if teams|length > 0 %}
+            <div class="teams-grid">
+                {% for team in teams %}
+                <div class="team-card">
+                    <div class="team-header">
+                        <div class="team-info">
+                            <h3>{{ team.name }}</h3>
+                            {% if team.description %}
+                                <p>{{ team.description }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="team-color" style="background-color: {{ team.color ?: '#667eea' }}"></div>
+                    </div>
+                    
+                    <div class="team-stats">
+                        <div class="stat">
+                            <span class="stat-number">{{ team.getMemberCount() }}</span>
+                            <span class="stat-label">Members</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">{{ team.createdAt|date('M d') }}</span>
+                            <span class="stat-label">Created</span>
+                        </div>
+                    </div>
+                    
+                    <div class="team-actions">
+                        <a href="{{ path('app_teams_show', {'id': team.id}) }}" class="btn btn-sm btn-primary">
+                            View Team
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="empty-state">
+                <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                </svg>
+                <h3>No teams yet</h3>
+                <p>This organization doesn't have any teams yet. Teams will appear here when members create them!</p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="confirm-modal">
+    <div class="confirm-modal-content">
+        <div class="confirm-modal-header">
+            <div class="confirm-modal-icon">!</div>
+            <h3 class="confirm-modal-title" id="confirmModalTitle">Remove Member</h3>
+        </div>
+        <div class="confirm-modal-body" id="confirmModalBody">
+            Are you sure you want to remove this member from the organization?
+        </div>
+        <div class="confirm-modal-footer">
+            <button class="confirm-modal-btn confirm-modal-btn-cancel" id="confirmModalCancel">Cancel</button>
+            <button class="confirm-modal-btn confirm-modal-btn-confirm" id="confirmModalConfirm">Remove</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/**
+ * Enhanced confirmation modal system
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = document.getElementById('confirmModal');
+    const titleEl = document.getElementById('confirmModalTitle');
+    const bodyEl = document.getElementById('confirmModalBody');
+    const cancelBtn = document.getElementById('confirmModalCancel');
+    const confirmBtn = document.getElementById('confirmModalConfirm');
+    
+    let pendingRemoval = null;
+    
+    // Handle remove member buttons
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('remove-member-btn') || e.target.closest('.remove-member-btn')) {
+            const btn = e.target.classList.contains('remove-member-btn') ? e.target : e.target.closest('.remove-member-btn');
+            const memberName = btn.dataset.memberName;
+            const memberId = btn.dataset.memberId;
+
+            // Set modal content
+            titleEl.textContent = 'Remove Member';
+            bodyEl.innerHTML = `Are you sure you want to remove <strong>${memberName}</strong> from this organization?<br><br><em>This action cannot be undone.</em>`;
+            
+            // Store pending removal data
+            pendingRemoval = {
+                memberId: memberId,
+                memberName: memberName,
+                btn: btn
+            };
+            
+            // Show modal
+            modal.classList.add('active');
+        }
+    });
+    
+    // Handle modal cancel
+    cancelBtn.addEventListener('click', function() {
+        modal.classList.remove('active');
+        pendingRemoval = null;
+    });
+    
+    // Handle modal confirm
+    confirmBtn.addEventListener('click', function() {
+        if (!pendingRemoval) return;
+        
+        const { memberId, memberName, btn } = pendingRemoval;
+        
+        // Create hidden form
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/organizations/{{ organization.id }}/remove-member/${memberId}`;
+        form.style.display = 'none';
+        
+        // Add CSRF token
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = '_token';
+        csrfInput.value = '{{ csrf_token("remove_member") }}';
+        form.appendChild(csrfInput);
+        
+        // Add to DOM and submit
+        document.body.appendChild(form);
+        form.submit();
+    });
+    
+    // Close modal on background click
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+            modal.classList.remove('active');
+            pendingRemoval = null;
+        }
+    });
+});
+</script>
+{% endblock %}

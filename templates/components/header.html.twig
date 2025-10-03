@@ -1,7 +1,117 @@
+{% set routeName = app.request.get('_route_name') %}
+
+{# Check if page_title variable is passed from template #}
+{% set customTitle = page_title is defined ? page_title : null %}
+
+{# Mapping of route names to display titles #}
+{% set titleMapping = {
+    'app_dashboard': 'Dashboard',
+    'app_home': 'Dashboard', 
+    'app_login': 'Login',
+    'app_logout': 'Logout',
+    'app_register': 'Register',
+    'app_verify_email': 'Email Verification',
+    'app_user_profile_edit': 'Edit Profile',
+    'app_user_profile': 'User Profile',
+    'app_user_change_password': 'Change Password',
+    'app_teams_create': 'Create Team',
+    'app_teams_edit': 'Edit Team',
+    'app_teams_show': 'Team Details',
+    'app_teams': 'Teams',
+    'app_teams_add_member': 'Add Team Member',
+    'app_teams_remove_member': 'Remove Team Member',
+    'app_teams_leave': 'Leave Team',
+    'app_teams_delete': 'Delete Team',
+    'app_teams_create_invitation': 'Create Team Invitation',
+    'app_team_invitation_show': 'Team Invitation',
+    'app_team_invitation_accept': 'Accept Invitation',
+    'app_team_invitation_decline': 'Decline Invitation',
+    'app_team_retrospectives': 'Team Retrospectives',
+    'app_retrospectives_create': 'Create Retrospective',
+    'app_retrospectives_edit': 'Edit Retrospective',
+    'app_retrospectives_show': 'Retrospective',
+    'app_retrospectives': 'Retrospectives',
+    'app_retrospectives_start': 'Start Retrospective',
+    'app_retrospectives_complete': 'Complete Retrospective',
+    'app_retrospectives_add_item': 'Add Item',
+    'app_retrospectives_add_action': 'Add Action',
+    'app_retrospectives_start_timer': 'Start Timer',
+    'app_retrospectives_update_item_ajax': 'Update Item',
+    'app_retrospectives_vote': 'Voting',
+    'app_actions_team_selection': 'Actions Management',
+    'app_actions_index': 'Actions',
+    'app_actions_by_team': 'Team Actions',
+    'app_actions_details': 'Action Details',
+    'app_actions_edit_description': 'Edit Action',
+    'app_actions_update_status': 'Update Status',
+    'app_actions_update_due_date': 'Update Due Date',
+    'app_actions_update_assignee': 'Update Assignee',
+    'app_organizations': 'Organizations',
+    'app_organizations_create': 'Create Organization',
+    'app_organizations_edit': 'Edit Organization',
+    'app_organizations_show': 'Organization Details',
+    'app_organizations_delete': 'Delete Organization',
+    'app_organizations_reactivate': 'Reactivate Organization',
+    'app_organizations_add_member': 'Add Member',
+    'app_organizations_remove_member': 'Remove Member',
+    'app_organizations_show_members': 'Organization Members',
+    'app_organizations_search': 'Search Organizations',
+    'app_roles': 'Roles Management',
+    'app_roles_assign': 'Assign Roles',
+    'app_roles_remove': 'Remove Role',
+    'app_roles_data': 'Role Data'
+} %}
+
+{# Determine the title based on custom title, route mapping, or fallback #}
+{% set pageTitle = customTitle ?? titleMapping[routeName] ?? 'Dashboard' %}
+
+{# For route names not in mapping, try to extract meaningful name #}
+{% if pageTitle == 'Dashboard' and routeName %}
+    {% set routeParts = routeName|split('_') %}
+    {% if routeParts|length >= 2 %}
+        {% set controllerName = routeParts[1] %}
+        {% set actionName = routeParts|length >= 3 ? routeParts[2] : 'index' %}
+        
+        {% if controllerName == 'roles' %}
+            {% set pageTitle = actionName == 'assign' ? 'Assign Roles' : 'Roles Management' %}
+        {% elseif controllerName == 'teams' %}
+            {% if actionName == 'create' %}{% set pageTitle = 'Create Team' %}
+            {% elseif actionName == 'edit' %}{% set pageTitle = 'Edit Team' %}
+            {% elseif actionName == 'show' %}{% set pageTitle = 'Team Details' %}
+            {% elseif actionName == 'members' %}{% set pageTitle = 'Team Members' %}
+            {% else %}{% set pageTitle = 'Teams' %}
+            {% endif %}
+        {% elseif controllerName == 'retrospectives' %}
+            {% if actionName == 'create' %}{% set pageTitle = 'Create Retrospective' %}
+            {% elseif actionName == 'edit' %}{% set pageTitle = 'Edit Retrospective' %}
+            {% elseif actionName == 'show' %}{% set pageTitle = 'Retrospective' %}
+            {% else %}{% set pageTitle = 'Retrospectives' %}
+            {% endif %}
+        {% elseif controllerName == 'actions' %}
+            {% if actionName == 'create' %}{% set pageTitle = 'Create Action' %}
+            {% elseif actionName == 'edit' %}{% set pageTitle = 'Edit Action' %}
+            {% elseif actionName == 'team_selection' %}{% set pageTitle = 'Actions Management' %}
+            {% else %}{% set pageTitle = 'Actions' %}
+            {% endif %}
+        {% elseif controllerName == 'organizations' %}
+            {% if actionName == 'create' %}{% set pageTitle = 'Create Organization' %}
+            {% elseif actionName == 'edit' %}{% set pageTitle = 'Edit Organization' %}
+            {% elseif actionName == 'show' %}{% set pageTitle = 'Organization Details' %}
+            {% elseif actionName == 'add_member' %}{% set pageTitle = 'Add Member' %}
+            {% elseif actionName == 'show_members' %}{% set pageTitle = 'Organization Members' %}
+            {% else %}{% set pageTitle = 'Organizations' %}
+            {% endif %}
+        {% else %}
+            {# Generic fallback - capitalize the controller name #}
+            {% set pageTitle = controllerName|title %}
+        {% endif %}
+    {% endif %}
+{% endif %}
+
 <!-- Content Header -->
 <header class="content-header">
     <div style="display: flex; justify-content: space-between; align-items: center;">
-        <h1 class="content-title">{{ page_title|default('Dashboard') }}</h1>
+        <h1 class="content-title">{{ pageTitle }}</h1>
         
         <div style="display: flex; align-items: center; gap: 1rem;">
             {% if app.user %}

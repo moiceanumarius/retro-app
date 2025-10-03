@@ -1,0 +1,183 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Create Organization{% endblock %}
+
+{% block page_title %}Create Organization{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/organizations.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="team-management">
+    <!-- Header Section -->
+    <div class="team-header">
+        <div class="header-content">
+            <h1>Create New Organization</h1>
+            <p>Set up a new organization to manage high-level users</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ path('app_organizations') }}" class="btn btn-secondary">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                Back to Organizations
+            </a>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="teams-section">
+        <div class="section-header" style="text-align: center; display: flex; flex-direction: column; align-items: center;">
+            <h2 style="text-align: center;">Organization Details</h2>
+            <p style="text-align: center;">Fill in the information for the new organization</p>
+        </div>
+        
+        <div class="form-card">
+            {{ form_start(form, {
+                'attr': {
+                    'novalidate': 'novalidate'
+                }
+            }) }}
+            
+            <!-- Organization Name -->
+            <div class="form-group">
+                <label for="{{ form.name.vars.id }}" class="form-label">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                        <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path>
+                    </svg>
+                    Organization Name *
+                </label>
+                {{ form_widget(form.name, {
+                    'attr': {
+                        'class': 'form-control',
+                        'placeholder': 'Enter organization name',
+                        'maxlength': '255'
+                    }
+                }) }}
+                {% if form.name.vars.errors|length > 0 %}
+                    <div class="form-error">
+                        {{ form_errors(form.name) }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Organization Description -->
+            <div class="form-group">
+                <label for="{{ form.description.vars.id }}" class="form-label">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    Description
+                </label>
+                {{ form_widget(form.description, {
+                    'attr': {
+                        'class': 'form-control',
+                        'placeholder': 'Enter organization description (optional)',
+                        'rows': '4'
+                    }
+                }) }}
+                {% if form.description.vars.errors|length > 0 %}
+                    <div class="form-error">
+                        {{ form_errors(form.description) }}
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Provide a brief description of what this organization represents.
+                </small>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Create Organization
+                </button>
+                <a href="{{ path('app_organizations') }}" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    Cancel
+                </a>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+/**
+ * Form validation and organization creation logic
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const orgNameInput = document.querySelector('#{{ form.name.vars.id }}');
+    const submitBtn = document.querySelector('button[type="submit"]');
+
+    // Real-time validation pentru numele organizației
+    if (orgNameInput) {
+        orgNameInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            
+            // Validare minim 3 caractere
+            if (value.length > 0 && value.length < 3) {
+                showFieldError(this, 'Organization name must be at least 3 characters long');
+            } else {
+                clearFieldError(this);
+            }
+        });
+    }
+
+    // Prevenirea submitului dacă formularul nu este valid
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const orgName = orgNameInput.value.trim();
+            
+            if (orgName.length < 3) {
+                e.preventDefault();
+                showFieldError(orgNameInput, 'Please enter a valid organization name');
+                orgNameInput.focus();
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Funcție pentru afișarea erorilor de validare
+     */
+    function showFieldError(field, message) {
+        clearFieldError(field);
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'form-error';
+        errorDiv.textContent = message;
+        
+        field.parentNode.appendChild(errorDiv);
+        field.classList.add('is-invalid');
+    }
+
+    /**
+     * Funcție pentru eliminarea erorilor de validare
+     */
+    function clearFieldError(field) {
+        // Elimină erorile existente
+        const existingError = field.parentNode.querySelector('.form-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Elimină clasa de eroare
+        field.classList.remove('is-invalid');
+        field.classList.add('is-valid');
+    }
+});
+</script>
+{% endblock %}

@@ -44,6 +44,15 @@ class Team
     #[ORM\Column]
     private bool $isActive = true;
 
+    /**
+     * Organizația din care face parte echipa
+     * Relația Many-to-One: multe echipe → o organizație
+     * Echipa aparține organizației owner-ului (cel care a creat echipa)
+     */
+    #[ORM\ManyToOne(targetEntity: Organization::class, inversedBy: 'teams')]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?Organization $organization = null;
+
     public function __construct()
     {
         $this->teamMembers = new ArrayCollection();
@@ -238,5 +247,33 @@ class Team
             }
         }
         return $this;
+    }
+
+    public function getOrganization(): ?Organization
+    {
+        return $this->organization;
+    }
+
+    public function setOrganization(?Organization $organization): static
+    {
+        $this->organization = $organization;
+        $this->updatedAt = new \DateTimeImmutable();
+        return $this;
+    }
+
+    /**
+     * Verifică dacă echipa aparține unei organizații
+     */
+    public function belongsToOrganization(): bool
+    {
+        return $this->organization !== null;
+    }
+
+    /**
+     * Returnează numele organizației pentru afișare
+     */
+    public function getOrganizationName(): string
+    {
+        return $this->organization ? $this->organization->getName() : 'No Organization';
     }
 }

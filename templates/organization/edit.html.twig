@@ -1,0 +1,208 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Edit Organization{% endblock %}
+
+{% block page_title %}Edit Organization{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/organizations.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="team-management">
+    <!-- Header Section -->
+    <div class="team-header">
+        <div class="header-content">
+            <h1>Edit Organization</h1>
+            <p>Update organization information and settings</p>
+        </div>
+        <div class="header-actions">
+            <a href="{{ path('app_organizations') }}" class="btn btn-secondary">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                </svg>
+                Back to Organizations
+            </a>
+            <a href="{{ path('app_organizations_show', {'id': organization.id}) }}" class="btn btn-outline-secondary">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"></path>
+                    <path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"></path>
+                </svg>
+                View Organization
+            </a>
+        </div>
+    </div>
+
+
+    <!-- Form Section -->
+    <div class="teams-section">
+        <div class="section-header">
+            <h2>Organization Details</h2>
+            <p>Update the information for {{ organization.name }}</p>
+        </div>
+        
+        <div class="form-card">
+            {{ form_start(form, {
+                'attr': {
+                    'novalidate': 'novalidate'
+                }
+            }) }}
+            
+            <!-- Organization Name -->
+            <div class="form-group">
+                <label for="{{ form.name.vars.id }}" class="form-label">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                        <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path>
+                    </svg>
+                    Organization Name *
+                </label>
+                {{ form_widget(form.name, {
+                    'attr': {
+                        'class': 'form-control',
+                        'placeholder': 'Enter organization name',
+                        'maxlength': '255'
+                    }
+                }) }}
+                {% if form.name.vars.errors|length > 0 %}
+                    <div class="form-error">
+                        {{ form_errors(form.name) }}
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    Current: {{ organization.name }}
+                </small>
+            </div>
+
+            <!-- Organization Description -->
+            <div class="form-group">
+                <label for="{{ form.description.vars.id }}" class="form-label">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    Description
+                </label>
+                {{ form_widget(form.description, {
+                    'attr': {
+                        'class': 'form-control',
+                        'placeholder': 'Enter organization description (optional)',
+                        'rows': '4'
+                    }
+                }) }}
+                {% if form.description.vars.errors|length > 0 %}
+                    <div class="form-error">
+                        {{ form_errors(form.description) }}
+                    </div>
+                {% endif %}
+                <small class="form-text text-muted">
+                    {% if organization.description %}
+                        Current: {{ organization.description[:100] }}{% if organization.description|length > 100 %}...{% endif %}
+                    {% else %}
+                        No description currently set.
+                    {% endif %}
+                </small>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    Update Organization
+                </button>
+                <a href="{{ path('app_organizations_show', {'id': organization.id}) }}" class="btn btn-secondary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+                    </svg>
+                    Cancel
+                </a>
+            </div>
+
+            {{ form_end(form) }}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block javascripts %}
+<script>
+/**
+ * Form validation and organization update logic
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const orgNameInput = document.querySelector('#{{ form.name.vars.id }}');
+    const submitBtn = document.querySelector('button[type="submit"]');
+
+    // Real-time validation pentru numele organizației
+    if (orgNameInput) {
+        orgNameInput.addEventListener('input', function() {
+            const value = this.value.trim();
+            
+            // Validare minim 3 caractere
+            if (value.length > 0 && value.length < 3) {
+                showFieldError(this, 'Organization name must be at least 3 characters long');
+            } else {
+                clearFieldError(this);
+            }
+        });
+    }
+
+    // Prevenirea submitului dacă formularul nu este valid
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const orgName = orgNameInput.value.trim();
+            
+            // Mark button as loading
+            if (submitBtn) {
+                submitBtn.innerHTML = `
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="animate-spin mr-2">
+                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                    </svg>
+                    Updating...
+                `;
+                submitBtn.disabled = true;
+            }
+            
+            if (orgName.length < 3) {
+                e.preventDefault();
+                showFieldError(orgNameInput, 'Please enter a valid organization name');
+                orgNameInput.focus();
+                return false;
+            }
+        });
+    }
+
+    /**
+     * Funcție pentru afișarea erorilor de validare
+     */
+    function showFieldError(field, message) {
+        clearFieldError(field);
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'form-error';
+        errorDiv.textContent = message;
+        
+        field.parentNode.appendChild(errorDiv);
+        field.classList.add('is-invalid');
+    }
+
+    /**
+     * Funcție pentru eliminarea erorilor de validare
+     */
+    function clearFieldError(field) {
+        // Elimină erorile existente
+        const existingError = field.parentNode.querySelector('.form-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        // Elimină clasa de eroare
+        field.classList.remove('is-invalid');
+        field.classList.add('is-valid');
+    }
+});
+
+</script>
+{% endblock %}

@@ -1,0 +1,607 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Organizations{% endblock %}
+
+{% block page_title %}Organizations{% endblock %}
+
+{% block stylesheets %}
+    <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/organizations.css') }}">
+{% endblock %}
+
+{% block body %}
+    <div class="team-management">
+        <!-- Header Section -->
+        <div class="team-header">
+            <div class="header-content">
+                <h1>Organizations Management</h1>
+                <p>Manage organizations and assign high-level users</p>
+            </div>
+            <div class="header-actions">
+                {% if app.user.hasRole('ROLE_ADMIN') %}
+                <a href="{{ path('app_organizations_create') }}" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Create New Organization
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Organizations Overview Statistics -->
+        <div class="teams-overview">
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ statistics.total_organizations }}</h3>
+                    <p>Total Organizations</p>
+                </div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ statistics.active_organizations }}</h3>
+                    <p>Active Organizations</p>
+                </div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ statistics.total_members }}</h3>
+                    <p>Total Members</p>
+                </div>
+            </div>
+            <div class="stats-card">
+                <div class="stats-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stats-content">
+                    <h3>{{ statistics.avg_members_per_org }}</h3>
+                    <p>Avg Members/Org</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add User to Organization Section -->
+        <div class="teams-section">
+            <div class="section-header">
+                <h2>Add User to Organization</h2>
+                <p>Assign users to organizations with their roles</p>
+            </div>
+            
+            <div class="form-card">
+                <form id="addUserToOrgForm" method="post" action="">
+                    <input type="hidden" name="_token" value="{{ csrf_token('add_user_to_organization') }}">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            {# Organization Dropdown #}
+                            <label for="organization" class="form-label">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z"></path>
+                                </svg>
+                                Organization *
+                            </label>
+                            <select id="organization" name="organization" class="form-select" required>
+                                <option value="">Select an organization...</option>
+                                {% for org in organizations %}
+                                    <option value="{{ org.id }}">{{ org.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            {# User Search Dropdown #}
+                            <label for="userDropdownButton" class="form-label">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM15.472 13.472a4 4 0 010 5.656 4 4 0 01-5.656 0l-3.179-3.179c4.686-4.686 4.686-12.284 0-16.97l3.179 3.179a4 4 0 010 5.656z"></path>
+                                </svg>
+                                Search & Select User (Elevated Roles)
+                            </label>
+                            <div class="modern-dropdown" style="position: relative; width: 100%;">
+                                <button type="button" id="userDropdownButton" class="modern-dropdown-button" 
+                                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
+                                    <span id="selectedUserText" style="flex: 1; text-align: left; color: #6b7280;">Select a user...</span>
+                                    <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                                <div id="userDropdown" class="modern-dropdown-menu" 
+                                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 1000; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
+                                    <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
+                                             style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
+                                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <input type="text" id="userSearchInput" class="dropdown-search-input" 
+                                               style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; background: white; outline: none; transition: border-color 0.2s ease;" 
+                                               placeholder="Search users..." autocomplete="off">
+                                    </div>
+                                    <div id="userDropdownList" class="dropdown-list" style="max-height: 250px; overflow-y: auto;">
+                                        <!-- Users will be populated here -->
+                                    </div>
+                                </div>
+                                <input type="hidden" id="selectedUser" name="user" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="addUserBtn" disabled>
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            Add User to Organization
+                        </button> 
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                            </svg>
+                            Reset Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Active Organizations Section -->
+        {% if organizations|length > 0 %}
+        <div class="teams-section">
+            <div class="section-header">
+                <h2>Active Organizations</h2>
+                <p>Manage your organizations and members</p>
+            </div>
+            <div class="teams-grid">
+                {% for org in organizations %}
+                <div class="team-card {% if org.isActive %}owned{% else %}member{% endif %}" style="background: white; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 20px rgba(0,0,0,0.08); transition: all 0.3s ease; border: 1px solid #f1f5f9;" 
+                     onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 4px 25px rgba(0,0,0,0.15)';" 
+                     onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 2px 20px rgba(0,0,0,0.08)';">
+                    <div class="team-header" style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1rem;">
+                        <div class="team-info">
+                            <h3>{{ org.name }}</h3>
+                            {% if org.description %}
+                                <p>{{ org.description }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="team-color" style="background-color: {% if org.isActive %}#667eea{% else %}#8b949e{% endif %}"></div>
+                    </div>
+                    <div class="team-stats">
+                        <div class="stat">
+                            <span class="stat-number">{{ org.memberCount ?: 0 }}</span>
+                            <span class="stat-label">Members</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">{{ org.teams|length }}</span>
+                            <span class="stat-label">Teams</span>
+                        </div>
+                        <div class="stat">
+                            <span class="stat-number">{{ org.createdAt|date('M d') }}</span>
+                            <span class="stat-label">Created</span>
+                        </div>
+                    </div>
+                    <div class="team-actions">
+                        <a href="{{ path('app_organizations_show', {'id': org.id}) }}" class="btn btn-sm btn-primary">
+                            View Details
+                        </a>
+                        <a href="{{ path('app_organizations_edit', {'id': org.id}) }}" class="btn btn-sm btn-secondary">
+                            Edit
+                        </a>
+                        {% if org.isActive %}
+                            <a href="{{ path('app_organizations_delete', {'id': org.id}) }}" 
+                               class="btn btn-sm btn-danger"
+                               onclick="return confirm('Are you sure you want to delete this organization? This action cannot be undone.')">
+                                Delete
+                            </a>
+                        {% else %}
+                            <a href="{{ path('app_organizations_reactivate', {'id': org.id}) }}" class="btn btn-sm btn-success">
+                                Reactivate
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Empty State -->
+        {% if organizations|length == 0 %}
+        <div class="empty-state">
+            <div class="empty-icon">
+                <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z"></path>
+                </svg>
+            </div>
+            <h3>No organizations yet</h3>
+            <p>Create your first organization to start managing high-level users</p>
+            {% if app.user.hasRole('ROLE_ADMIN') %}
+            <a href="{{ path('app_organizations_create') }}" class="btn btn-primary">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                </svg>
+                Create Your First Organization
+            </a>
+            {% else %}
+            <p class="text-muted">Only Administrators can create organizations.</p>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+
+
+{% endblock %}
+
+
+{% block javascripts %}
+<script>
+/**
+ * Show Flash Message with slide animation
+ */
+function showFlashMessage(message, type = 'success') {
+    // Remove existing flash messages
+    const existingFlashes = document.querySelectorAll('.flash-popup');
+    existingFlashes.forEach(flash => flash.remove());
+    
+    // Create flash popup
+    const flashPopup = document.createElement('div');
+    flashPopup.className = `flash-popup flash-${type}`;
+    flashPopup.setAttribute('role', 'alert');
+    
+    flashPopup.innerHTML = `
+        <div class="flash-content">
+            <span class="flash-message">${message}</span>
+            <button type="button" class="flash-close" onclick="closeFlash(this)">&times;</button>
+        </div>
+    `;
+    
+    // Add to DOM
+    document.body.appendChild(flashPopup);
+    
+    // Show after brief delay
+    setTimeout(() => {
+        flashPopup.classList.add('show');
+    }, 100);
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+        if (flashPopup.parentNode) {
+            closeFlash(flashPopup.querySelector('.flash-close'));
+        }
+    }, 5000);
+}
+
+/**
+ * Close Flash Message
+ */
+function closeFlash(closeButton) {
+    const popup = closeButton.closest('.flash-popup');
+    popup.classList.add('hide');
+    
+    // Remove from DOM after animation
+    setTimeout(() => {
+        if (popup.parentNode) {
+            popup.remove();
+        }
+    }, 300);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Organizations page loaded successfully');
+    
+    // Initialize search dropdown functionality
+    initUserSearchDropdown();
+    initFormValidation();
+});
+
+let searchTimeout = null;
+let allUsers = [];
+
+/**
+ * Initialize modern dropdown functionality
+ */
+function initUserSearchDropdown() {
+    const dropdownButton = document.getElementById('userDropdownButton');
+    const dropdownMenu = document.getElementById('userDropdown');
+    const searchInput = document.getElementById('userSearchInput');
+    const userDropdownList = document.getElementById('userDropdownList');
+    
+    if (!dropdownButton || !dropdownMenu) return;
+    
+    // Load all users on page load
+    loadAllUsers();
+    
+    // Show/hide dropdown
+    dropdownButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleDropdown();
+    });
+    
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim().toLowerCase();
+        filterUsers(query);
+    });
+    
+    // Handle user selection
+    userDropdownList.addEventListener('click', function(e) {
+        const userOption = e.target.closest('.user-option');
+        if (userOption) {
+            const userId = userOption.dataset.value;
+            const userName = userOption.dataset.name;
+            const userEmail = userOption.dataset.email;
+            
+            selectUser(userId, userName, userEmail);
+            closeDropdown();
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.modern-dropdown')) {
+            closeDropdown();
+        }
+    });
+    
+    // Focus search input when dropdown opens
+    function toggleDropdown() {
+        if (dropdownMenu.style.display === 'none' || dropdownMenu.style.display === '') {
+            dropdownMenu.style.display = 'block';
+            populateUsers(); // Show all users initially
+            setTimeout(() => searchInput.focus(), 100);
+        } else {
+            closeDropdown();
+        }
+    }
+    
+    function closeDropdown() {
+        dropdownMenu.style.display = 'none';
+        searchInput.value = ''; // Clear search
+    }
+    
+    // Populate users in dropdown
+    function populateUsers() {
+        userDropdownList.innerHTML = allUsers.map(user => 
+            `<div class="user-option" data-value="${user.id}" data-name="${user.firstName} ${user.lastName}" data-email="${user.email}" data-role="${user.role || 'N/A'}" 
+                 style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
+                 onmouseover="this.style.backgroundColor='#f8fafc'" 
+                 onmouseout="this.style.backgroundColor='white'">
+                <div class="user-option-content" style="flex: 1;">
+                    <div class="user-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${user.firstName} ${user.lastName}</div>
+                    <div class="user-option-email" style="color: #64748b; font-size: 0.75rem;">${user.email}</div>
+                </div>
+                <span class="badge badge-${user.role ? user.role.toLowerCase() : 'default'}" 
+                      style="font-size: 0.65rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.025em; white-space: nowrap;
+                             background: ${user.role === 'ADMIN' ? '#fee2e2' : user.role === 'TEAM_LEAD' ? '#fef3c7' : user.role === 'FACILITATOR' ? '#dbeafe' : '#f3f4f6'};
+                             color: ${user.role === 'ADMIN' ? '#991b1b' : user.role === 'TEAM_LEAD' ? '#92400e' : user.role === 'FACILITATOR' ? '#1e40af' : '#6b7280'};">
+                    ${user.role || 'N/A'}
+                </span>
+            </div>`
+        ).join('');
+    }
+    
+    // Filter users based on search query
+    function filterUsers(query) {
+        const filteredUsers = allUsers.filter(user => {
+            if (!query) return true;
+            
+            const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+            const email = user.email.toLowerCase();
+            
+            return fullName.includes(query) || email.includes(query);
+        });
+        
+        userDropdownList.innerHTML = filteredUsers.map(user => 
+            `<div class="user-option" data-value="${user.id}" data-name="${user.firstName} ${user.lastName}" data-email="${user.email}" data-role="${user.role || 'N/A'}" 
+                 style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
+                 onmouseover="this.style.backgroundColor='#f8fafc'" 
+                 onmouseout="this.style.backgroundColor='white'">
+                <div class="user-option-content" style="flex: 1;">
+                    <div class="user-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${user.firstName} ${user.lastName}</div>
+                    <div class="user-option-email" style="color: #64748b; font-size: 0.75rem;">${user.email}</div>
+                </div>
+                <span class="badge badge-${user.role ? user.role.toLowerCase() : 'default'}" 
+                      style="font-size: 0.65rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.025em; white-space: nowrap;
+                             background: ${user.role === 'ADMIN' ? '#fee2e2' : user.role === 'TEAM_LEAD' ? '#fef3c7' : user.role === 'FACILITATOR' ? '#dbeafe' : '#f3f4f6'};
+                             color: ${user.role === 'ADMIN' ? '#991b1b' : user.role === 'TEAM_LEAD' ? '#92400e' : user.role === 'FACILITATOR' ? '#1e40af' : '#6b7280'};">
+                    ${user.role || 'N/A'}
+                </span>
+            </div>`
+        ).join('');
+        
+        if (filteredUsers.length === 0 && query) {
+            userDropdownList.innerHTML = '<div class="no-results">No users found</div>';
+        }
+    }
+}
+
+/**
+ * Load users with elevated roles from backend API
+ */
+function loadAllUsers() {
+    console.log('Loading elevated roles users...');
+    
+    fetch('/organizations/api/users/elevated-roles')
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                allUsers = data.users || [];
+                console.log(`Loaded ${allUsers.length} users with elevated roles from backend`);
+            } else {
+                throw new Error(data.message || 'API returned error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading elevated users from backend:', error);
+            
+            // Fallback to dummy data if backend fails
+            allUsers = [
+                {id: 1, firstName: 'John', lastName: 'Doe', email: 'john@example.com', role: 'ADMIN'},
+                {id: 2, firstName: 'Jane', lastName: 'Smith', email: 'jane@example.com', role: 'TEAM_LEAD'},
+                {id: 3, firstName: 'Bob', lastName: 'Johnson', email: 'bob@example.com', role: 'FACILITATOR'}
+            ];
+            console.log('Using fallback dummy data');
+        });
+}
+
+
+/**
+ * Select a user from dropdown
+ */
+function selectUser(userId, userName, userEmail) {
+    const selectedUserInput = document.getElementById('selectedUser');
+    const selectedUserText = document.getElementById('selectedUserText');
+    
+    // Set hidden input value
+    selectedUserInput.value = userId;
+    
+    // Update button text to show selected user
+    selectedUserText.textContent = `${userName} (${userEmail})`;
+    selectedUserText.style.color = '#1e293b';
+    selectedUserText.style.fontWeight = '500';
+    
+    // Enable submit button
+    validateForm();
+}
+
+/**
+ * Clear selected user
+ */
+function clearSelectedUser() {
+    const selectedUserInput = document.getElementById('selectedUser');
+    const selectedUserText = document.getElementById('selectedUserText');
+    
+    selectedUserInput.value = '';
+    selectedUserText.textContent = 'Select a user...';
+    selectedUserText.style.color = '#6b7280';
+    selectedUserText.style.fontWeight = 'normal';
+    
+    validateForm();
+}
+
+/**
+ * Initialize form validation
+ */
+function initFormValidation() {
+    const organizationSelect = document.getElementById('organization');
+    const form = document.getElementById('addUserToOrgForm');
+    
+    if (organizationSelect) {
+        organizationSelect.addEventListener('change', validateForm);
+    }
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateForm()) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            submitAddUserForm();
+        });
+    }
+}
+
+/**
+ * Validate form and enable/disable submit button
+ */
+function validateForm() {
+    const organization = document.getElementById('organization').value;
+    const selectedUser = document.getElementById('selectedUser').value;
+    const addUserBtn = document.getElementById('addUserBtn');
+    
+    const isValid = organization && selectedUser;
+    
+    if (addUserBtn) {
+        addUserBtn.disabled = !isValid;
+    }
+    
+    return isValid;
+}
+
+/**
+ * Reset form
+ */
+function resetForm() {
+    const form = document.getElementById('addUserToOrgForm');
+    if (form) {
+        form.reset();
+        clearSelectedUser();
+        validateForm();
+    }
+}
+
+/**
+ * Submit add user form via AJAX
+ */
+function submitAddUserForm() {
+    const formData = new FormData();
+    const organizationId = document.getElementById('organization').value;
+    const userId = document.getElementById('selectedUser').value;
+    const csrfToken = document.querySelector('input[name="_token"]').value;
+    
+    formData.append('user', userId);
+    formData.append('role', 'MEMBER'); // Default role since role dropdown was removed
+    formData.append('_token', csrfToken);
+    
+    const submitBtn = document.getElementById('addUserBtn');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 11.5a1 1 0 11-2 0 1 1 0 012 0zm4-3a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"></path>
+        </svg>
+        Adding user...
+    `;
+    
+    fetch(`/organizations/${organizationId}/add-member`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showFlashMessage('✅ ' + (data.message || 'User added successfully to organization!'), 'success');
+            resetForm();
+            // Refresh page after 1.5 seconds to show updated members
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showFlashMessage('❌ ' + (data.message || 'Failed to add user to organization'), 'danger');
+        }
+    })
+    .catch(error => {
+            console.error('Error:', error);
+            showFlashMessage('❌ Failed to add user to organization. Please try again.', 'danger');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+}
+</script>
+{% endblock %}

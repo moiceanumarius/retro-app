@@ -82,8 +82,8 @@ class ActionController extends AbstractController
         if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_TEAM_LEAD') || $this->isGranted('ROLE_FACILITATOR')) {
             $hasAccess = true;
         } else {
-            $hasAccess = $team->getOwner() === $user || 
-                        $team->getTeamMembers()->exists(fn($tm) => $tm->getUser() === $user);
+            $hasAccess = $team->getOwner()->getId() === $user->getId() || 
+                        $team->getTeamMembers()->exists(fn($tm) => $tm->getUser()->getId() === $user->getId());
         }
 
         if (!$hasAccess) {
@@ -332,7 +332,7 @@ class ActionController extends AbstractController
 
         // Check if user has access to this action
         $hasAccess = $action->getAssignedTo() === $user || 
-                    $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                    $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
                     $this->isGranted('ROLE_ADMIN');
 
         if (!$hasAccess) {
@@ -367,7 +367,7 @@ class ActionController extends AbstractController
 
         // Check if user has permission to edit this action
         $hasPermission = $action->getAssignedTo() === $user || 
-                        $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                        $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
                         $this->isGranted('ROLE_ADMIN');
 
         if (!$hasPermission) {
@@ -413,7 +413,7 @@ class ActionController extends AbstractController
 
         // Check if user has permission to edit this action
         $hasPermission = $action->getAssignedTo() === $user ||
-                        $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                        $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
                         $this->isGranted('ROLE_ADMIN');
 
         if (!$hasPermission) {
@@ -472,7 +472,7 @@ class ActionController extends AbstractController
 
         // Check if user has permission to edit this action
         $hasPermission = $action->getAssignedTo() === $user ||
-                        $action->getRetrospective()->getTeam()->getOwner() === $user ||
+                        $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
                         $this->isGranted('ROLE_ADMIN');
 
         if (!$hasPermission) {
@@ -519,7 +519,7 @@ class ActionController extends AbstractController
         }
 
         // Check if user has permission to edit this action
-        $hasPermission = $action->getRetrospective()->getTeam()->getOwner() === $user ||
+        $hasPermission = $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
                         $this->isGranted('ROLE_ADMIN') ||
                         $this->isGranted('ROLE_TEAM_LEAD') ||
                         $this->isGranted('ROLE_FACILITATOR');

@@ -50,7 +50,6 @@
             </div>
         </div>
 
-        <!-- DEBUG: isActive: {{ retrospective.isActive() ? 'true' : 'false' }}, currentStep: {{ retrospective.currentStep }}, isInStep('feedback'): {{ retrospective.isInStep('feedback') ? 'true' : 'false' }}, isInStep('review'): {{ retrospective.isInStep('review') ? 'true' : 'false' }} -->
         {% if retrospective.isActive() and retrospective.isInStep('feedback') %}
         <!-- Interactive Retrospective Board -->
         <div class="retrospective-board">
@@ -492,7 +491,7 @@
                                 <label for="actionAssignee" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Assign to (optional)</label>
                                 <select id="actionAssignee" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px;">
                                     <option value="">Unassigned</option>
-                                    {% for member in retrospective.team.teamMembers %}
+                                    {% for member in retrospective.team.activeMembers %}
                                         <option value="{{ member.user.id }}">{{ member.user.firstName }} {{ member.user.lastName }}</option>
                                     {% endfor %}
                                 </select>
@@ -723,9 +722,16 @@
     <script>
         window.retrospectiveId = {{ retrospective.id }};
         window.isFacilitator = {{ retrospective.facilitator == app.user ? 'true' : 'false' }};
+        window.user = {
+            id: {{ app.user.id }},
+            firstName: '{{ app.user.firstName }}',
+            lastName: '{{ app.user.lastName }}',
+            email: '{{ app.user.email }}'
+        };
         console.log('Template script executed');
         console.log('window.retrospectiveId:', window.retrospectiveId);
         console.log('window.isFacilitator:', window.isFacilitator);
+        console.log('window.user:', window.user);
     </script>
     
     <!-- Floating Timer -->
