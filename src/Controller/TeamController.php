@@ -14,6 +14,7 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\Routing\Attribute\Route;
 
 final class TeamController extends AbstractController
@@ -564,6 +565,89 @@ final class TeamController extends AbstractController
         $this->addFlash('info', 'You have declined the team invitation');
         
         return $this->redirectToRoute('app_team_invitation_show', ['token' => $token]);
+    }
+
+    /**
+     * API endpoint pentru obținerea utilizatorilor disponibili pentru o echipă
+     * 
+     * Returnează utilizatorii din aceeași organizație cu echipa și utilizatorii fără organizație
+     * Utilizat în dropdown-ul de adăugare membri la echipă
+     * 
+     * @return JsonResponse Lista utilizatorilor disponibili
+     */
+    #[Route('/teams/{id}/api/users', name: 'app_teams_api_users', requirements: ['id' => '\d+'], methods: ['GET'])]
+    public function getTeamUsers(int $id): JsonResponse
+    {
+        $team = $this->entityManager->getRepository(Team::class)->find($id);
+        
+        if (!$team || !$team->isActive()) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Team not found',
+                'users' => []
+            ], 404);
+        }
+        
+        // Verificarea permisirii - doar owner poate vedea utilizatorii
+        if ($team->getOwner()->getId() !== $this->getUser()->getId()) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Access denied',
+                'users' => []
+            ], 403);
+        }
+        
+        try {
+            $userRepository = $this->entityManager->getRepository(User::class);
+            $qb = $userRepository->createQueryBuilder('u')
+                ->leftJoin('u.organizationMemberships', 'om')
+                ->leftJoin('om.organization', 'o')
+                ->orderBy('u.firstName', 'ASC');
+            
+            if ($team->getOrganization()) {
+                // Show users from the same organization as the team AND users without any organization
+                $qb->where('o.id = :teamOrgId OR o.id IS NULL')
+                   ->setParameter('teamOrgId', $team->getOrganization()->getId());
+            } else {
+                // If team has no organization, show only users without organization
+                $qb->where('o.id IS NULL');
+            }
+            
+            $users = $qb->getQuery()->getResult();
+            
+            $results = [];
+            foreach ($users as $user) {
+                // Get user's organization
+                $userOrganization = null;
+                foreach ($user->getOrganizationMemberships() as $membership) {
+                    if ($membership->isActive() && $membership->getLeftAt() === null) {
+                        $userOrganization = $membership->getOrganization()->getName();
+                        break;
+                    }
+                }
+                
+                $results[] = [
+                    'id' => $user->getId(),
+                    'firstName' => $user->getFirstName(),
+                    'lastName' => $user->getLastName(),
+                    'email' => $user->getEmail(),
+                    'organization' => $userOrganization,
+                ];
+            }
+            
+            return $this->json([
+                'success' => true,
+                'users' => $results,
+                'count' => count($results)
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error loading users: ' . $e->getMessage(),
+                'users' => []
+            ], 500);
+        }
     }
 
     /**

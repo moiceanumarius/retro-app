@@ -1522,3 +1522,163 @@
         width: 100%;
     }
 }
+
+/* User Search Dropdown Styles */
+.user-search-container {
+    position: relative;
+    width: 100%;
+}
+
+.user-search-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.user-search-input-wrapper .form-control {
+    padding-right: 2.5rem;
+}
+
+.search-icon {
+    position: absolute;
+    right: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6b7280;
+    pointer-events: none;
+}
+
+.user-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+    margin-top: 0.25rem;
+}
+
+.dropdown-content {
+    padding: 0.5rem 0;
+}
+
+.user-item {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.user-item:last-child {
+    border-bottom: none;
+}
+
+.user-item:hover {
+    background-color: #f9fafb;
+}
+
+.user-item:active {
+    background-color: #f3f4f6;
+}
+
+.user-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.user-info .user-name {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.875rem;
+}
+
+.user-info .user-email {
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.user-info .user-organization {
+    color: #9ca3af;
+    font-size: 0.75rem;
+    font-style: italic;
+}
+
+.no-results {
+    padding: 1rem;
+    text-align: center;
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.selected-user-display {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.5rem;
+}
+
+.selected-user-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.selected-user-info .user-name {
+    font-weight: 600;
+    color: #111827;
+    font-size: 0.875rem;
+}
+
+.selected-user-info .user-email {
+    color: #6b7280;
+    font-size: 0.8rem;
+}
+
+.remove-selection {
+    background: none;
+    border: none;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.remove-selection:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.remove-selection:active {
+    background-color: #e5e7eb;
+}
+
+/* Responsive adjustments for user search */
+@media (max-width: 768px) {
+    .user-dropdown {
+        max-height: 250px;
+    }
+    
+    .user-item {
+        padding: 0.5rem 0.75rem;
+    }
+    
+    .selected-user-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .remove-selection {
+        align-self: flex-end;
+    }
+}
