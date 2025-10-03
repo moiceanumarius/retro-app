@@ -93,6 +93,9 @@
         const searchInput = document.getElementById('user-search');
         const dropdown = document.getElementById('user-dropdown');
         const selectedUserId = document.querySelector('select[name="team_member[user]"]');
+        console.log('Found select element:', selectedUserId);
+        console.log('All select elements:', document.querySelectorAll('select'));
+        console.log('All elements with name containing user:', document.querySelectorAll('[name*="user"]'));
         const selectedUserDisplay = document.getElementById('selected-user-display');
         const dropdownContent = dropdown.querySelector('.dropdown-content');
         
