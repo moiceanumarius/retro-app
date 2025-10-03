@@ -22,33 +22,36 @@
                 <h3>Member Information</h3>
                 
                 <div class="form-group">
-                    <label for="user-search" class="form-label">Select User</label>
-                    <div class="user-search-container">
-                        <div class="user-search-input-wrapper">
-                            <input type="text" id="user-search" class="form-control" placeholder="Search users..." autocomplete="off">
-                            <div class="search-icon">
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <label for="userDropdownButton" class="form-label">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM15.472 13.472a4 4 0 010 5.656 4 4 0 01-5.656 0l-3.179-3.179c4.686-4.686 4.686-12.284 0-16.97l3.179 3.179a4 4 0 010 5.656z"></path>
+                        </svg>
+                        Search & Select User
+                    </label>
+                    <div class="modern-dropdown" style="position: relative; width: 100%;">
+                        <button type="button" id="userDropdownButton" class="modern-dropdown-button" 
+                                style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
+                            <span id="selectedUserText" style="flex: 1; text-align: left; color: #6b7280;">Select a user...</span>
+                            <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                            </svg>
+                        </button>
+                        <div id="userDropdown" class="modern-dropdown-menu" 
+                             style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 1000; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
+                            <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
+                                     style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
                                     <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
                                 </svg>
+                                <input type="text" id="userSearchInput" class="dropdown-search-input" 
+                                       style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; background: white; outline: none; transition: border-color 0.2s ease;" 
+                                       placeholder="Search users..." autocomplete="off">
                             </div>
-                        </div>
-                        <div class="user-dropdown" id="user-dropdown" style="display: none;">
-                            <div class="dropdown-content">
+                            <div id="userDropdownList" class="dropdown-list" style="max-height: 250px; overflow-y: auto;">
                                 <!-- Users will be populated here -->
                             </div>
                         </div>
-                    </div>
-                    {{ form_widget(form.user, {'attr': {'style': 'display: none;'}}) }}
-                    <div class="selected-user-display" id="selected-user-display" style="display: none;">
-                        <div class="selected-user-info">
-                            <span class="user-name"></span>
-                            <span class="user-email"></span>
-                            <button type="button" class="remove-selection" onclick="clearUserSelection()">
-                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                </svg>
-                            </button>
-                        </div>
+                        {{ form_widget(form.user, {'attr': {'style': 'display: none;'}}) }}
                     </div>
                     {{ form_errors(form.user) }}
                     <small class="form-text">Search and select a user to add to your team</small>
@@ -89,130 +92,146 @@
     </div>
 
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('user-search');
-        const dropdown = document.getElementById('user-dropdown');
-        const selectedUserId = document.querySelector('select[name="team_member[user]"]');
-        console.log('Found select element:', selectedUserId);
-        console.log('All select elements:', document.querySelectorAll('select'));
-        console.log('All elements with name containing user:', document.querySelectorAll('[name*="user"]'));
-        const selectedUserDisplay = document.getElementById('selected-user-display');
-        const dropdownContent = dropdown.querySelector('.dropdown-content');
-        
-        let allUsers = [];
-        let filteredUsers = [];
-        let selectedUser = null;
-        
-        // Load users from backend
-        async function loadUsers() {
-            try {
-                const response = await fetch(`/teams/{{ team.id }}/api/users`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                const data = await response.json();
-                allUsers = data.users || [];
-                filteredUsers = [...allUsers];
-            } catch (error) {
-                console.error('Error loading users:', error);
-                allUsers = [];
-                filteredUsers = [];
-                // Show error message to user
-                dropdownContent.innerHTML = '<div class="no-results">Error loading users. Please try again.</div>';
+    let allUsers = [];
+
+    /**
+     * Load users from API
+     */
+    async function loadAllUsers() {
+        try {
+            const response = await fetch(`/teams/{{ team.id }}/api/users`);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
             }
+            const data = await response.json();
+            allUsers = data.users || [];
+        } catch (error) {
+            console.error('Error loading users:', error);
+            allUsers = [];
         }
+    }
+
+    /**
+     * Initialize modern dropdown functionality
+     */
+    function initUserSearchDropdown() {
+        const dropdownButton = document.getElementById('userDropdownButton');
+        const dropdownMenu = document.getElementById('userDropdown');
+        const searchInput = document.getElementById('userSearchInput');
+        const userDropdownList = document.getElementById('userDropdownList');
+        const selectedUserText = document.getElementById('selectedUserText');
+        const formSelect = document.querySelector('select[name="team_member[user]"]');
         
-        // Filter users based on search term
-        function filterUsers(searchTerm) {
-            if (!searchTerm.trim()) {
-                filteredUsers = [...allUsers];
-            } else {
-                const term = searchTerm.toLowerCase();
-                filteredUsers = allUsers.filter(user => 
-                    user.firstName.toLowerCase().includes(term) ||
-                    user.lastName.toLowerCase().includes(term) ||
-                    user.email.toLowerCase().includes(term) ||
-                    (user.organization && user.organization.toLowerCase().includes(term))
-                );
-            }
-            renderUsers();
-        }
+        if (!dropdownButton || !dropdownMenu) return;
         
-        // Render filtered users in dropdown
-        function renderUsers() {
-            dropdownContent.innerHTML = '';
-            
-            if (filteredUsers.length === 0) {
-                dropdownContent.innerHTML = '<div class="no-results">No users found</div>';
-                return;
-            }
-            
-            filteredUsers.forEach(user => {
-                const userItem = document.createElement('div');
-                userItem.className = 'user-item';
-                userItem.innerHTML = `
-                    <div class="user-info">
-                        <div class="user-name">${user.firstName} ${user.lastName}</div>
-                        <div class="user-email">${user.email}</div>
-                        ${user.organization ? `<div class="user-organization">${user.organization}</div>` : '<div class="user-organization">No Organization</div>'}
-                    </div>
-                `;
-                
-                userItem.addEventListener('click', () => selectUser(user));
-                dropdownContent.appendChild(userItem);
-            });
-        }
+        // Load all users on page load
+        loadAllUsers();
         
-        // Select a user
-        function selectUser(user) {
-            selectedUser = user;
-            selectedUserId.value = user.id;
-            
-            // Update display
-            selectedUserDisplay.querySelector('.user-name').textContent = `${user.firstName} ${user.lastName}`;
-            selectedUserDisplay.querySelector('.user-email').textContent = user.email;
-            
-            // Show selected user display and hide search
-            selectedUserDisplay.style.display = 'block';
-            searchInput.style.display = 'none';
-            dropdown.style.display = 'none';
-            
-            // Clear search
-            searchInput.value = '';
-        }
-        
-        // Clear user selection
-        window.clearUserSelection = function() {
-            selectedUser = null;
-            selectedUserId.value = '';
-            selectedUserDisplay.style.display = 'none';
-            searchInput.style.display = 'block';
-            searchInput.value = '';
-            dropdown.style.display = 'none';
-        };
-        
-        // Event listeners
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value;
-            filterUsers(searchTerm);
-            dropdown.style.display = searchTerm.length > 0 ? 'block' : 'none';
+        // Show/hide dropdown
+        dropdownButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            toggleDropdown();
         });
         
-        searchInput.addEventListener('focus', function() {
-            if (this.value.length > 0) {
-                dropdown.style.display = 'block';
+        // Search functionality
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            filterUsers(query);
+        });
+        
+        // Handle user selection
+        userDropdownList.addEventListener('click', function(e) {
+            const userOption = e.target.closest('.user-option');
+            if (userOption) {
+                const userId = userOption.dataset.value;
+                const userName = userOption.dataset.name;
+                const userEmail = userOption.dataset.email;
+                
+                selectUser(userId, userName, userEmail);
+                closeDropdown();
             }
         });
         
         // Close dropdown when clicking outside
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('.user-search-container')) {
-                dropdown.style.display = 'none';
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.modern-dropdown')) {
+                closeDropdown();
             }
         });
         
-        // Initialize
-        loadUsers();
+        // Focus search input when dropdown opens
+        function toggleDropdown() {
+            if (dropdownMenu.style.display === 'none' || dropdownMenu.style.display === '') {
+                dropdownMenu.style.display = 'block';
+                populateUsers(); // Show all users initially
+                setTimeout(() => searchInput.focus(), 100);
+            } else {
+                closeDropdown();
+            }
+        }
+        
+        function closeDropdown() {
+            dropdownMenu.style.display = 'none';
+            searchInput.value = ''; // Clear search
+        }
+        
+        // Populate users in dropdown
+        function populateUsers() {
+            userDropdownList.innerHTML = allUsers.map(user => 
+                `<div class="user-option" data-value="${user.id}" data-name="${user.firstName} ${user.lastName}" data-email="${user.email}" data-role="${user.role || 'N/A'}" 
+                     style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
+                     onmouseover="this.style.backgroundColor='#f8fafc'" 
+                     onmouseout="this.style.backgroundColor='white'">
+                    <div class="user-option-content" style="flex: 1;">
+                        <div class="user-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${user.firstName} ${user.lastName}</div>
+                        <div class="user-option-email" style="color: #64748b; font-size: 0.75rem;">${user.email}</div>
+                        ${user.organization ? `<div class="user-option-org" style="color: #9ca3af; font-size: 0.7rem; font-style: italic;">${user.organization}</div>` : '<div class="user-option-org" style="color: #9ca3af; font-size: 0.7rem; font-style: italic;">No Organization</div>'}
+                    </div>
+                </div>`
+            ).join('');
+        }
+        
+        // Filter users based on search query
+        function filterUsers(query) {
+            const filteredUsers = allUsers.filter(user => {
+                if (!query) return true;
+                
+                const fullName = `${user.firstName} ${user.lastName}`.toLowerCase();
+                const email = user.email.toLowerCase();
+                const organization = user.organization ? user.organization.toLowerCase() : '';
+                
+                return fullName.includes(query) || email.includes(query) || organization.includes(query);
+            });
+            
+            userDropdownList.innerHTML = filteredUsers.map(user => 
+                `<div class="user-option" data-value="${user.id}" data-name="${user.firstName} ${user.lastName}" data-email="${user.email}" data-role="${user.role || 'N/A'}" 
+                     style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
+                     onmouseover="this.style.backgroundColor='#f8fafc'" 
+                     onmouseout="this.style.backgroundColor='white'">
+                    <div class="user-option-content" style="flex: 1;">
+                        <div class="user-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${user.firstName} ${user.lastName}</div>
+                        <div class="user-option-email" style="color: #64748b; font-size: 0.75rem;">${user.email}</div>
+                        ${user.organization ? `<div class="user-option-org" style="color: #9ca3af; font-size: 0.7rem; font-style: italic;">${user.organization}</div>` : '<div class="user-option-org" style="color: #9ca3af; font-size: 0.7rem; font-style: italic;">No Organization</div>'}
+                    </div>
+                </div>`
+            ).join('');
+        }
+        
+        // Select user
+        function selectUser(userId, userName, userEmail) {
+            selectedUserText.textContent = userName;
+            selectedUserText.style.color = '#1e293b';
+            
+            // Set form value
+            if (formSelect) {
+                formSelect.value = userId;
+            }
+        }
+    }
+
+    // Initialize when DOM is loaded
+    document.addEventListener('DOMContentLoaded', function() {
+        initUserSearchDropdown();
     });
     </script>
 {% endblock %}
