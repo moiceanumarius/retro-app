@@ -221,7 +221,7 @@ class TeamInvitation
      */
     public function getInvitationUrl(): string
     {
-        return 'http://localhost:8080/team-invitation/' . $this->token;
+        return '/team-invitation/' . $this->token;
     }
 
     /**
