@@ -103,24 +103,24 @@
         // Load users from backend
         async function loadUsers() {
             try {
-                console.log('Loading users for team {{ team.id }}');
                 const response = await fetch(`/teams/{{ team.id }}/api/users`);
-                console.log('Response status:', response.status);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 const data = await response.json();
-                console.log('Users data:', data);
                 allUsers = data.users || [];
                 filteredUsers = [...allUsers];
-                console.log('Loaded users:', allUsers.length);
             } catch (error) {
                 console.error('Error loading users:', error);
                 allUsers = [];
                 filteredUsers = [];
+                // Show error message to user
+                dropdownContent.innerHTML = '<div class="no-results">Error loading users. Please try again.</div>';
             }
         }
         
         // Filter users based on search term
         function filterUsers(searchTerm) {
-            console.log('Filtering users with term:', searchTerm);
             if (!searchTerm.trim()) {
                 filteredUsers = [...allUsers];
             } else {
@@ -132,13 +132,11 @@
                     (user.organization && user.organization.toLowerCase().includes(term))
                 );
             }
-            console.log('Filtered users:', filteredUsers.length);
             renderUsers();
         }
         
         // Render filtered users in dropdown
         function renderUsers() {
-            console.log('Rendering users:', filteredUsers.length);
             dropdownContent.innerHTML = '';
             
             if (filteredUsers.length === 0) {
@@ -164,10 +162,8 @@
         
         // Select a user
         function selectUser(user) {
-            console.log('Selecting user:', user);
             selectedUser = user;
             selectedUserId.value = user.id;
-            console.log('Set selectedUserId value to:', user.id);
             
             // Update display
             selectedUserDisplay.querySelector('.user-name').textContent = `${user.firstName} ${user.lastName}`;
