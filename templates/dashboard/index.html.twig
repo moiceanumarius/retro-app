@@ -87,7 +87,7 @@
                 </div>
                 <div class="quick-actions">
                     <!-- Role-based action buttons -->
-                    {% if is_admin %}
+                    {% if is_admin or is_supervisor %}
                         <a href="{{ path('app_teams_create') }}" class="action-btn primary">
                             <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                                 <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z"></path>

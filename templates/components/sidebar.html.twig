@@ -62,7 +62,7 @@
                 </a>
             </div>
             
-            {% if app.user and app.user.hasRole('ROLE_ADMIN') %}
+            {% if app.user and (app.user.hasRole('ROLE_ADMIN') or app.user.hasRole('ROLE_SUPERVISOR')) %}
                 <div class="nav-item">
                     <a href="{{ path('app_roles') }}" class="nav-link">
                         <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">

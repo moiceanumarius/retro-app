@@ -22,7 +22,9 @@ final class RoleController extends AbstractController
     #[Route('/roles', name: 'app_roles')]
     public function index(): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_SUPERVISOR')) {
+            throw $this->createAccessDeniedException('Access denied. Admin or Supervisor role required.');
+        }
 
         $roles = $this->entityManager->getRepository(Role::class)->findAll();
         $users = $this->entityManager->getRepository(User::class)->findAll();
@@ -53,7 +55,9 @@ final class RoleController extends AbstractController
     #[Route('/roles/assign', name: 'app_roles_assign', methods: ['POST'])]
     public function assignRole(Request $request): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_SUPERVISOR')) {
+            throw $this->createAccessDeniedException('Access denied. Admin or Supervisor role required.');
+        }
         
 
         // CSRF protection
@@ -109,7 +113,9 @@ final class RoleController extends AbstractController
     #[Route('/roles/remove/{userRoleId}', name: 'app_roles_remove', methods: ['POST'])]
     public function removeRole(Request $request, int $userRoleId): Response
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_SUPERVISOR')) {
+            throw $this->createAccessDeniedException('Access denied. Admin or Supervisor role required.');
+        }
 
         // CSRF protection
         if (!$this->isCsrfTokenValid('remove_role', $request->request->get('_token'))) {
@@ -138,7 +144,9 @@ final class RoleController extends AbstractController
     #[Route('/roles/data', name: 'app_roles_data', methods: ['GET'])]
     public function getRolesData(Request $request): JsonResponse
     {
-        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        if (!$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_SUPERVISOR')) {
+            throw $this->createAccessDeniedException('Access denied. Admin or Supervisor role required.');
+        }
         
         // Debug logging
         error_log('DataTables request received: ' . json_encode($request->query->all()));
