@@ -55,9 +55,9 @@ final class TeamController extends AbstractController
     {
         $user = $this->getUser();
         
-        // Only Administrator, Team Lead, and Facilitator can create teams
-        if (!$user->hasRole('ROLE_ADMIN') && !$user->hasRole('ROLE_TEAM_LEAD') && !$user->hasRole('ROLE_FACILITATOR')) {
-            throw $this->createAccessDeniedException('Only Administrators, Team Leads, and Facilitators can create teams');
+        // Only Administrator, Supervisor, and Facilitator can create teams
+        if (!$user->hasRole('ROLE_ADMIN') && !$user->hasRole('ROLE_SUPERVISOR') && !$user->hasRole('ROLE_FACILITATOR')) {
+            throw $this->createAccessDeniedException('Only Administrators, Supervisors, and Facilitators can create teams');
         }
         
         $team = new Team();

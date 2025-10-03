@@ -375,7 +375,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     /**
      * Get all roles including inherited ones based on hierarchy
-     * Hierarchy: Administrator > Team Lead > Facilitator > Member
+     * Hierarchy: Administrator > Supervisor > Facilitator > Member
      * @return array
      */
     public function getAllRolesIncludingInherited(): array
@@ -385,8 +385,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
         // Define role hierarchy (higher roles include lower ones)
         $hierarchy = [
-            'ROLE_ADMIN' => ['ROLE_TEAM_LEAD', 'ROLE_FACILITATOR', 'ROLE_MEMBER'],
-            'ROLE_TEAM_LEAD' => ['ROLE_FACILITATOR', 'ROLE_MEMBER'],
+            'ROLE_ADMIN' => ['ROLE_SUPERVISOR', 'ROLE_FACILITATOR', 'ROLE_MEMBER'],
+            'ROLE_SUPERVISOR' => ['ROLE_FACILITATOR', 'ROLE_MEMBER'],
             'ROLE_FACILITATOR' => ['ROLE_MEMBER'],
             'ROLE_MEMBER' => []
         ];

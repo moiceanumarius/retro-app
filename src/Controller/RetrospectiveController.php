@@ -84,9 +84,9 @@ class RetrospectiveController extends AbstractController
     {
         $user = $this->getUser();
         
-        // Only Facilitator, Team Lead, and Administrator can create retrospectives
-        if (!$user->hasRole('ROLE_ADMIN') && !$user->hasRole('ROLE_TEAM_LEAD') && !$user->hasRole('ROLE_FACILITATOR')) {
-            throw $this->createAccessDeniedException('Only Administrators, Team Leads, and Facilitators can create retrospectives');
+        // Only Facilitator, Supervisor, and Administrator can create retrospectives
+        if (!$user->hasRole('ROLE_ADMIN') && !$user->hasRole('ROLE_SUPERVISOR') && !$user->hasRole('ROLE_FACILITATOR')) {
+            throw $this->createAccessDeniedException('Only Administrators, Supervisors, and Facilitators can create retrospectives');
         }
 
         $retrospective = new Retrospective();

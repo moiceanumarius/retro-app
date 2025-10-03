@@ -100,7 +100,7 @@
                 </a>
             </div>
             
-            {% if not (app.user.hasRole('ROLE_MEMBER') and not app.user.hasAnyRole(['ROLE_FACILITATOR', 'ROLE_TEAM_LEAD', 'ROLE_ADMIN'])) %}
+            {% if not (app.user.hasRole('ROLE_MEMBER') and not app.user.hasAnyRole(['ROLE_FACILITATOR', 'ROLE_SUPERVISOR', 'ROLE_ADMIN'])) %}
             <div class="nav-item">
                 <a href="{{ path('app_actions_team_selection') }}" class="nav-link">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">

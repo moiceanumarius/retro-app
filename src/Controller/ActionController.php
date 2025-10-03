@@ -33,8 +33,8 @@ class ActionController extends AbstractController
         // Get teams where user is owner or member
         $userTeams = [];
         
-        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_TEAM_LEAD') || $this->isGranted('ROLE_FACILITATOR')) {
-            // For admins, team leads and facilitators, show all teams
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERVISOR') || $this->isGranted('ROLE_FACILITATOR')) {
+            // For admins, supervisors and facilitators, show all teams
             $userTeams = $this->entityManager->createQueryBuilder()
                 ->select('t')
                 ->from(\App\Entity\Team::class, 't')
@@ -79,7 +79,7 @@ class ActionController extends AbstractController
 
         // Check if user has access to this team
         $hasAccess = false;
-        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_TEAM_LEAD') || $this->isGranted('ROLE_FACILITATOR')) {
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERVISOR') || $this->isGranted('ROLE_FACILITATOR')) {
             $hasAccess = true;
         } else {
             $hasAccess = $team->getOwner()->getId() === $user->getId() || 
@@ -202,9 +202,9 @@ class ActionController extends AbstractController
         if ($user->hasRole('ROLE_ADMIN')) {
             // Admin sees all actions
             $actions = $this->actionRepository->findAll();
-        } elseif ($user->hasAnyRole(['ROLE_TEAM_LEAD', 'ROLE_FACILITATOR'])) {
-            // Team leads and facilitators see actions from their teams
-            $actions = $this->actionRepository->findByTeamLeadOrFacilitator($user);
+        } elseif ($user->hasAnyRole(['ROLE_SUPERVISOR', 'ROLE_FACILITATOR'])) {
+            // Supervisors and facilitators see actions from their teams
+            $actions = $this->actionRepository->findBySupervisorOrFacilitator($user);
         } else {
             // Regular users see actions assigned to them
             $actions = $this->actionRepository->findBy(['assignedTo' => $user]);
@@ -237,8 +237,8 @@ class ActionController extends AbstractController
 
         $user = $this->getUser();
         
-        // Check permissions (admin, facilitator, or team lead)
-        if (!$user->hasAnyRole(['ROLE_ADMIN', 'ROLE_TEAM_LEAD', 'ROLE_FACILITATOR']) &&
+        // Check permissions (admin, facilitator, or supervisor)
+        if (!$user->hasAnyRole(['ROLE_ADMIN', 'ROLE_SUPERVISOR', 'ROLE_FACILITATOR']) &&
             !$action->getRetrospective()->getFacilitator()->equals($user)) {
             throw $this->createAccessDeniedException('You do not have permission to assign this action');
         }
@@ -292,8 +292,8 @@ class ActionController extends AbstractController
         $actions = [];
         if ($user->hasRole('ROLE_ADMIN')) {
             $actions = $this->actionRepository->findAll();
-        } elseif ($user->hasAnyRole(['ROLE_TEAM_LEAD', 'ROLE_FACILITATOR'])) {
-            $actions = $this->actionRepository->findByTeamLeadOrFacilitator($user);
+        } elseif ($user->hasAnyRole(['ROLE_SUPERVISOR', 'ROLE_FACILITATOR'])) {
+            $actions = $this->actionRepository->findBySupervisorOrFacilitator($user);
         } else {
             $actions = $this->actionRepository->findBy(['assignedTo' => $user]);
         }
@@ -521,7 +521,7 @@ class ActionController extends AbstractController
         // Check if user has permission to edit this action
         $hasPermission = $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
                         $this->isGranted('ROLE_ADMIN') ||
-                        $this->isGranted('ROLE_TEAM_LEAD') ||
+                        $this->isGranted('ROLE_SUPERVISOR') ||
                         $this->isGranted('ROLE_FACILITATOR');
 
         if (!$hasPermission) {

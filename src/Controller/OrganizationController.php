@@ -511,7 +511,7 @@ final class OrganizationController extends AbstractController
     /**
      * API endpoint pentru obținerea utilizatorilor cu roluri elevated pentru dropdown
      * 
-     * Returnează utilizatorii care nu au rolul MEMBER (ADMIN, TEAM_LEAD, FACILITATOR)
+     * Returnează utilizatorii care nu au rolul MEMBER (ADMIN, SUPERVISOR, FACILITATOR)
      * Utilizat în dropdown-ul de adăugare utilizatori la organizații
      * 
      * @return JsonResponse Lista utilizatorilor cu roluri elevated
@@ -530,7 +530,7 @@ final class OrganizationController extends AbstractController
                 ->where('ur.isActive = :active')
                 ->andWhere('r.code IN (:elevatedRoles)')
                 ->setParameter('active', true)
-                ->setParameter('elevatedRoles', ['ROLE_ADMIN', 'ROLE_TEAM_LEAD', 'ROLE_FACILITATOR'])
+                ->setParameter('elevatedRoles', ['ROLE_ADMIN', 'ROLE_SUPERVISOR', 'ROLE_FACILITATOR'])
                 ->orderBy('u.lastName', 'ASC')
                 ->addOrderBy('u.firstName', 'ASC')
                 ->getQuery()

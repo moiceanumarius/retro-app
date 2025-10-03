@@ -33,10 +33,10 @@ class RetrospectiveActionRepository extends ServiceEntityRepository
     //    }
 
     /**
-     * Find actions for team leads and facilitators
-     * Returns actions from retrospectives where user is facilitator or team lead
+     * Find actions for supervisors and facilitators
+     * Returns actions from retrospectives where user is facilitator or supervisor
      */
-    public function findByTeamLeadOrFacilitator(User $user): array
+    public function findBySupervisorOrFacilitator(User $user): array
     {
         return $this->createQueryBuilder('ra')
             ->leftJoin('ra.retrospective', 'r')

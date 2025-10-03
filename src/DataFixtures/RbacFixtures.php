@@ -88,8 +88,8 @@ class RbacFixtures extends Fixture
                 ]
             ],
             [
-                'name' => 'Team Lead',
-                'code' => 'ROLE_TEAM_LEAD',
+                'name' => 'Supervisor',
+                'code' => 'ROLE_SUPERVISOR',
                 'description' => 'Can manage team and facilitate retrospectives',
                 'permissions' => [
                     'team.create', 'team.edit', 'team.view', 'team.members',

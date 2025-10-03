@@ -73,7 +73,7 @@ class TestRbacCommand extends Command
 
         // Test role checks
         $io->section('Role Checks');
-        $testRoles = ['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_MEMBER', 'ROLE_TEAM_LEAD'];
+        $testRoles = ['ROLE_ADMIN', 'ROLE_FACILITATOR', 'ROLE_MEMBER', 'ROLE_SUPERVISOR'];
         $roleChecks = [];
         foreach ($testRoles as $role) {
             $hasRole = $user->hasRole($role);
@@ -85,7 +85,7 @@ class TestRbacCommand extends Command
         $io->section('Multiple Role Checks');
         $multipleChecks = [
             ['Admin or Facilitator', $user->hasAnyRole(['ROLE_ADMIN', 'ROLE_FACILITATOR']) ? '✓ Yes' : '✗ No'],
-            ['Member or Team Lead', $user->hasAnyRole(['ROLE_MEMBER', 'ROLE_TEAM_LEAD']) ? '✓ Yes' : '✗ No'],
+            ['Member or Supervisor', $user->hasAnyRole(['ROLE_MEMBER', 'ROLE_SUPERVISOR']) ? '✓ Yes' : '✗ No'],
             ['Admin and Member', $user->hasRole('ROLE_ADMIN') && $user->hasRole('ROLE_MEMBER') ? '✓ Yes' : '✗ No'],
         ];
         $io->table(['Check', 'Result'], $multipleChecks);

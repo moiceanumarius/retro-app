@@ -189,7 +189,7 @@ final class RoleController extends AbstractController
             // Role badge styling
             $roleClass = match($userRole->getRole()->getCode()) {
                 'ROLE_ADMIN' => 'badge-danger-modern',
-                'ROLE_TEAM_LEAD' => 'badge-warning-modern',
+                'ROLE_SUPERVISOR' => 'badge-warning-modern',
                 'ROLE_FACILITATOR' => 'badge-primary-modern',
                 'ROLE_MEMBER' => 'badge-success-modern',
                 default => 'badge-primary-modern'

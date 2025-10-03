@@ -158,7 +158,7 @@ class OrganizationMemberRepository extends ServiceEntityRepository
             ->setParameter('active', true)
             ->setParameter('userRoleActive', true)
             ->setParameter('now', new \DateTimeImmutable())
-            ->setParameter('roles', ['ROLE_FACILITATOR', 'ROLE_TEAM_LEAD', 'ROLE_ADMIN'])
+            ->setParameter('roles', ['ROLE_FACILITATOR', 'ROLE_SUPERVISOR', 'ROLE_ADMIN'])
             ->orderBy('om.joinedAt', 'DESC')
             ->getQuery()
             ->getResult();

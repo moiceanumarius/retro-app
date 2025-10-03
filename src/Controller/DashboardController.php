@@ -36,7 +36,7 @@ final class DashboardController extends AbstractController
             'user_roles' => $userRoles,
             'is_admin' => $user->hasRole('ROLE_ADMIN'),
             'is_facilitator' => $user->hasRole('ROLE_FACILITATOR'),
-            'is_team_lead' => $user->hasRole('ROLE_TEAM_LEAD'),
+            'is_supervisor' => $user->hasRole('ROLE_SUPERVISOR'),
             'is_member' => $user->hasRole('ROLE_MEMBER'),
             'user_teams' => $userTeams,
             'stats' => $stats,

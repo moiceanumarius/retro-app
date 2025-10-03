@@ -29,7 +29,7 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
  * - Notes (opțional pentru context suplimentar)
  * 
  * Validări:
- * - Doar useri cu roluri FACILITATOR/TEAM_LEAD/ADMIN pot fi adăugați
+ * - Doar useri cu roluri FACILITATOR/SUPERVISOR/ADMIN pot fi adăugați
  * - Prevenim dublă alegere în aceeași organizație
  * - Validare expiracție înainte de join date
  */
@@ -70,10 +70,10 @@ class OrganizationMemberType extends AbstractType
                         ->where('ur.isActive = :active')
                         ->andWhere('r.code IN (:roles)')
                         ->setParameter('active', true)
-                        ->setParameter('roles', ['ROLE_FACILITATOR', 'ROLE_TEAM_LEAD', 'ROLE_ADMIN'])
+                        ->setParameter('roles', ['ROLE_FACILITATOR', 'ROLE_SUPERVISOR', 'ROLE_ADMIN'])
                         ->orderBy('u.firstName', 'ASC');
                 },
-                'help' => 'Only users with Facilitator, Team Lead, or Admin roles can be added to organizations.',
+                'help' => 'Only users with Facilitator, Supervisor, or Admin roles can be added to organizations.',
                 'placeholder' => 'Choose a user...',
                 'required' => true,
             ])
