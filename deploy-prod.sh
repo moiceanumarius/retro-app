@@ -98,9 +98,15 @@ print_status "Production containers status:"
 docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
 
 print_status "🎉 Production deployment completed successfully!"
-print_status "Application is available at: http://localhost"
+print_status "Application is available at: http://localhost (or https://localhost with SSL)"
 print_status "Prometheus monitoring: http://localhost:9090"
 print_status "Mercure hub: http://localhost:3000"
+print_status ""
+print_status "🐳 Docker Production Environment:"
+print_status "   - All services running in Docker containers"
+print_status "   - MySQL, Redis, Nginx, PHP-FPM, Mercure, Prometheus"
+print_status "   - Production-optimized configurations"
+print_status "   - Automatic restarts and health monitoring"
 
 echo ""
 print_warning "Don't forget to:"

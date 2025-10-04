@@ -47,6 +47,24 @@ make migrate
 
 ## Production Environment
 
+### Docker Production Setup
+
+The production environment runs entirely in Docker containers, providing:
+- **Isolation**: Each service runs in its own container
+- **Scalability**: Easy to scale individual services
+- **Consistency**: Same environment across different servers
+- **Security**: Containerized services with minimal attack surface
+- **Monitoring**: Built-in Prometheus monitoring
+- **SSL/HTTPS**: Automatic SSL certificate support
+
+### Production Services
+- **Nginx**: Web server with SSL support and security headers
+- **PHP-FPM**: Application server with production optimizations
+- **MySQL**: Database with production configuration
+- **Redis**: Caching and session storage
+- **Mercure**: Real-time WebSocket updates
+- **Prometheus**: Monitoring and metrics collection
+
 ### Prerequisites for Production
 1. **Environment Configuration**
    ```bash

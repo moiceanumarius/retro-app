@@ -16,6 +16,7 @@ services:
       - MERCURE_URL=http://mercure/.well-known/mercure
       - MERCURE_PUBLIC_URL=https://your-domain.com/.well-known/mercure
       - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
+      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/retro_app?serverVersion=8.0&charset=utf8mb4
     depends_on:
       - mysql
       - redis
