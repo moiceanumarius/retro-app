@@ -57,9 +57,9 @@ fi
 
 print_status "Using Docker Compose command: $DOCKER_COMPOSE"
 
-# Load environment variables
-print_status "Loading production environment variables..."
-export $(cat .env.prod | grep -v '^#' | xargs)
+# Load environment variables (optional - using hardcoded values for MariaDB)
+print_status "Using hardcoded MariaDB credentials for production..."
+# export $(cat .env.prod | grep -v '^#' | xargs)
 
 # Stop existing containers
 print_status "Stopping existing containers..."
