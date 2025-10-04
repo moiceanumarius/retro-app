@@ -16,6 +16,7 @@ services:
       - MERCURE_URL=http://mercure/.well-known/mercure
       - MERCURE_PUBLIC_URL=http://localhost:3000/.well-known/mercure
       - MERCURE_JWT_SECRET=PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=
+      - DATABASE_URL=mysql://retro_user:retro_password@mysql:3306/retro_app?serverVersion=8.0&charset=utf8mb4
     depends_on:
       - mysql
     networks:
