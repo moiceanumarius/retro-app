@@ -16,7 +16,7 @@ services:
       - MERCURE_URL=http://mercure/.well-known/mercure
       - MERCURE_PUBLIC_URL=https://your-domain.com/.well-known/mercure
       - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
-      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/retro_app?serverVersion=8.0&charset=utf8mb4
+      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/retro_app?serverVersion=5.7&charset=utf8mb4
     depends_on:
       - mysql
       - redis
@@ -41,7 +41,7 @@ services:
     restart: unless-stopped
 
   mysql:
-    image: mysql:8.0
+    image: mysql:5.7
     container_name: retro_app_mysql_prod
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
