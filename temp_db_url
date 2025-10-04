@@ -1,0 +1,1 @@
+DATABASE_URL=mysql://my_prod_user:my_secure_password@mariadb:3306/retro_app?serverVersion=10.11&charset=utf8mb4
