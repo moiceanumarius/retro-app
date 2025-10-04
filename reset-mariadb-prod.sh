@@ -1,21 +1,21 @@
 #!/bin/bash
 
-# MySQL Production Reset Script for Retro App
-# This script stops, removes, and restarts the MySQL production container and its volume.
-# USE WITH CAUTION: This will DELETE ALL DATA in your MySQL production database.
+# MariaDB Production Reset Script for Retro App
+# This script stops, removes, and restarts the MariaDB production container and its volume.
+# USE WITH CAUTION: This will DELETE ALL DATA in your MariaDB production database.
 
 set -e
 
-echo "⚠️  Starting MySQL Production Reset..."
-echo "    This will DELETE ALL DATA in your MySQL production database."
+echo "⚠️  Starting MariaDB Production Reset..."
+echo "    This will DELETE ALL DATA in your MariaDB production database."
 read -p "    Are you sure you want to continue? (y/N): " -n 1 -r
 echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "MySQL reset cancelled."
+    echo "MariaDB reset cancelled."
     exit 0
 fi
 
-echo "🔄 Resetting MySQL Production Database..."
+echo "🔄 Resetting MariaDB Production Database..."
 
 # Colors for output
 RED='\033[0;31m'
@@ -66,9 +66,9 @@ fi
 
 print_status "✅ Production environment confirmed (APP_ENV: $APP_ENV)"
 
-# Verify MySQL credentials are set
+# Verify MariaDB credentials are set
 if [ -z "$MYSQL_ROOT_PASSWORD" ] || [ -z "$MYSQL_USER" ] || [ -z "$MYSQL_PASSWORD" ]; then
-    print_error "MySQL credentials not properly configured!"
+    print_error "MariaDB credentials not properly configured!"
     print_error "Please check your .env.prod file and ensure these variables are set:"
     print_error "  - MYSQL_ROOT_PASSWORD"
     print_error "  - MYSQL_USER" 
@@ -76,33 +76,32 @@ if [ -z "$MYSQL_ROOT_PASSWORD" ] || [ -z "$MYSQL_USER" ] || [ -z "$MYSQL_PASSWOR
     exit 1
 fi
 
-print_status "✅ MySQL credentials verified"
+print_status "✅ MariaDB credentials verified"
 
-# Stop MySQL container
-print_status "Stopping MySQL container..."
-$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml stop mysql || true
+# Stop MariaDB container
+print_status "Stopping MariaDB container..."
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml stop mariadb || true
 
-# Remove MySQL container
-print_status "Removing MySQL container..."
-$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml rm -f mysql || true
+# Remove MariaDB container
+print_status "Removing MariaDB container..."
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml rm -f mariadb || true
 
-# Remove MySQL volumes
-print_status "Removing MySQL volumes..."
-docker volume rm retro_app_mysql_data_prod || true
-docker volume rm retro_app_mysql_logs_prod || true
+# Remove MariaDB volumes
+print_status "Removing MariaDB volumes..."
+docker volume rm retro-app_mariadb_data_prod || true
 
-# Recreate MySQL container
-print_status "Recreating MySQL container..."
-$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml up -d mysql
+# Recreate MariaDB container
+print_status "Recreating MariaDB container..."
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml up -d mariadb
 
-# Wait for MySQL to be ready
-print_status "Waiting for MySQL to be ready..."
+# Wait for MariaDB to be ready
+print_status "Waiting for MariaDB to be ready..."
 sleep 30
 
-# Check MySQL status
-print_status "Checking MySQL status..."
-$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml logs mysql
+# Check MariaDB status
+print_status "Checking MariaDB status..."
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml logs mariadb
 
-print_status "✅ MySQL reset completed!"
+print_status "✅ MariaDB reset completed!"
 print_warning "Remember to run database migrations after this to recreate your schema:"
 print_warning "  $DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec app php bin/console doctrine:migrations:migrate --no-interaction"

@@ -16,9 +16,9 @@ services:
       - MERCURE_URL=http://mercure/.well-known/mercure
       - MERCURE_PUBLIC_URL=https://your-domain.com/.well-known/mercure
       - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
-      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/retro_app?serverVersion=8.0&charset=utf8mb4
+      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mariadb:3306/retro_app?serverVersion=10.11&charset=utf8mb4
     depends_on:
-      - mysql
+      - mariadb
       - redis
     networks:
       - retro_network
@@ -40,18 +40,18 @@ services:
       - retro_network
     restart: unless-stopped
 
-  mysql:
-    image: mysql:8.0
-    container_name: retro_app_mysql_prod
+  mariadb:
+    image: mariadb:10.11
+    container_name: retro_app_mariadb_prod
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: retro_app
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - mysql_prod_data:/var/lib/mysql
+      - mariadb_prod_data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./docker/mysql/mysql-prod.cnf:/etc/mysql/conf.d/mysql-prod.cnf
+      - ./docker/mysql/mariadb-prod.cnf:/etc/mysql/conf.d/mariadb-prod.cnf
     networks:
       - retro_network
     restart: unless-stopped
@@ -103,7 +103,7 @@ services:
     restart: unless-stopped
 
 volumes:
-  mysql_prod_data:
+  mariadb_prod_data:
   redis_prod_data:
   app_prod_data:
   prometheus_data:
