@@ -86,14 +86,19 @@ retro-app/
    cd retro-app
    ```
 
-2. **Start development environment**:
+2. **Configure development environment** (optional):
+   ```bash
+   # Edit docker-compose.dev.yml to customize MySQL credentials if needed
+   ```
+
+3. **Start development environment**:
    ```bash
    ./setup-dev.sh
    # or
    make dev
    ```
 
-3. **Access the application**:
+4. **Access the application**:
    - **Application**: http://localhost:8080
    - **PHPMyAdmin**: http://localhost:8081
    - **MailHog**: http://localhost:8025
@@ -104,7 +109,7 @@ retro-app/
 1. **Configure environment**:
    ```bash
    cp .env.prod.example .env.prod
-   # Edit .env.prod with your production values
+   # Edit .env.prod with your production values including database credentials
    ```
 
 2. **Deploy to production**:
@@ -162,16 +167,13 @@ docker-compose down
 docker-compose logs -f
 ```
 
-## 🗄️ Database Credentials
+## 🗄️ Database Configuration
 
 ### Development
-- **User**: retro_user
-- **Password**: retro_password
-- **Database**: retro_app
-- **Root Password**: root
+Configure your MySQL credentials in the Docker Compose files or environment variables.
 
 ### Production
-Configure in `.env.prod` file with secure credentials.
+Configure database credentials in `.env.prod` file with your secure credentials.
 
 ## 🔐 Security Features
 
@@ -301,7 +303,7 @@ This project is licensed under the GPL-3.0 License - see the [LICENSE](LICENSE) 
 ### Troubleshooting
 - **Port Conflicts**: Check what's using the ports with `lsof -i :8080`
 - **Permission Issues**: Run `docker-compose exec app chown -R www-data:www-data /var/www/html/var`
-- **Database Issues**: Check MySQL logs with `docker-compose logs mysql`
+- **Database Issues**: Check MySQL logs with `docker-compose logs mysql` and verify your database credentials
 - **Cache Issues**: Clear caches with `make cache-clear`
 
 ## 🎯 Roadmap
