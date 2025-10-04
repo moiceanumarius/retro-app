@@ -11,10 +11,10 @@ cat > .env.dev << 'EOF'
 # You can customize these values if needed
 
 # Database Configuration (Development defaults)
-MYSQL_ROOT_PASSWORD=dev_root_password
-MYSQL_USER=dev_user
-MYSQL_PASSWORD=dev_password
-MYSQL_DATABASE=retro_app_dev
+MYSQL_ROOT_PASSWORD=root
+MYSQL_USER=retro_user
+MYSQL_PASSWORD=retro_password
+MYSQL_DATABASE=retro_app
 
 # Mercure JWT Secret (Development key - change for production!)
 MERCURE_JWT_SECRET=dev_mercure_jwt_secret_key_change_in_production
@@ -43,9 +43,9 @@ EOF
 echo "✅ .env.dev file generated successfully!"
 echo ""
 echo "🔧 Development Environment Configuration:"
-echo "- Database: retro_app_dev"
-echo "- User: dev_user / Password: dev_password"
-echo "- Root Password: dev_root_password"
+echo "- Database: retro_app"
+echo "- User: retro_user / Password: retro_password"
+echo "- Root Password: root"
 echo "- Mercure: http://localhost:3000"
 echo "- MailHog: http://localhost:8025"
 echo ""
