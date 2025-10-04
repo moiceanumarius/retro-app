@@ -45,21 +45,33 @@ if [ ! -f docker/nginx/ssl/cert.pem ] || [ ! -f docker/nginx/ssl/key.pem ]; then
     print_warning "Continuing without SSL..."
 fi
 
+# Detect docker-compose command
+if command -v docker-compose >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+elif command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+else
+    print_error "docker-compose not found! Please install docker-compose."
+    exit 1
+fi
+
+print_status "Using Docker Compose command: $DOCKER_COMPOSE"
+
 # Load environment variables
 print_status "Loading production environment variables..."
 export $(cat .env.prod | grep -v '^#' | xargs)
 
 # Stop existing containers
 print_status "Stopping existing containers..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml down || true
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml down || true
 
 # Build production images
 print_status "Building production containers..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml build --no-cache
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml build --no-cache
 
 # Start production environment
 print_status "Starting production environment..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 # Wait for services to be ready
 print_status "Waiting for services to be ready..."
@@ -67,20 +79,20 @@ sleep 30
 
 # Run database migrations
 print_status "Running database migrations..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console doctrine:migrations:migrate --no-interaction
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console doctrine:migrations:migrate --no-interaction
 
 # Clear Symfony cache
 print_status "Clearing Symfony cache..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console cache:clear --env=prod
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console cache:clear --env=prod
 
 # Warm up cache
 print_status "Warming up cache..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console cache:warmup --env=prod
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console cache:warmup --env=prod
 
 # Set proper permissions
 print_status "Setting proper permissions..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -T app chown -R www-data:www-data /var/www/html/var
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml exec -T app chmod -R 755 /var/www/html/var
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app chown -R www-data:www-data /var/www/html/var
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app chmod -R 755 /var/www/html/var
 
 # Health check
 print_status "Performing health check..."
@@ -89,13 +101,13 @@ if curl -f http://localhost/ > /dev/null 2>&1; then
 else
     print_error "❌ Application health check failed!"
     print_status "Checking logs..."
-    docker-compose -f docker-compose.yml -f docker-compose.prod.yml logs --tail=50
+        $DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml logs --tail=50
     exit 1
 fi
 
 # Show running containers
 print_status "Production containers status:"
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml ps
+$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml ps
 
 print_status "🎉 Production deployment completed successfully!"
 print_status "Application is available at: http://localhost (or https://localhost with SSL)"
