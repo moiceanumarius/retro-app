@@ -17,6 +17,8 @@ services:
       - MERCURE_PUBLIC_URL=https://your-domain.com/.well-known/mercure
       - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
       - DATABASE_URL=mysql://retro_user:retro_password@mariadb:3306/retro_app?serverVersion=10.11&charset=utf8mb4
+    env_file:
+      - .env.prod
     depends_on:
       - mariadb
       - redis
