@@ -15,8 +15,8 @@ services:
       - APP_DEBUG=false
       - MERCURE_URL=http://mercure/.well-known/mercure
       - MERCURE_PUBLIC_URL=https://your-domain.com/.well-known/mercure
-      - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
-      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mysql:3306/retro_app?serverVersion=5.7&charset=utf8mb4
+      - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET:-PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=}
+      - DATABASE_URL=mysql://${MYSQL_USER:-retro_user}:${MYSQL_PASSWORD:-retro_password}@mysql:3306/retro_app?serverVersion=8.0&charset=utf8mb4
     depends_on:
       - mysql
       - redis
@@ -41,13 +41,13 @@ services:
     restart: unless-stopped
 
   mysql:
-    image: mysql:5.7
+    image: mysql:8.0
     container_name: retro_app_mysql_prod
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-1q2w3e!!#}
       MYSQL_DATABASE: retro_app
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER:-retro_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-retro_password}
     volumes:
       - mysql_prod_data:/var/lib/mysql
       - ./docker/mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
@@ -73,8 +73,8 @@ services:
     container_name: retro_app_mercure_prod
     command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
     environment:
-      - MERCURE_PUBLISHER_JWT_KEY=${MERCURE_JWT_SECRET}
-      - MERCURE_SUBSCRIBER_JWT_KEY=${MERCURE_JWT_SECRET}
+      - MERCURE_PUBLISHER_JWT_KEY=${MERCURE_JWT_SECRET:-PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=}
+      - MERCURE_SUBSCRIBER_JWT_KEY=${MERCURE_JWT_SECRET:-PROO5FmK6pnhG2PV1hWf98sZTwxPh4YXxVCAx/s3aWU=}
       - SERVER_NAME=:80
     ports:
       - "3000:80"
