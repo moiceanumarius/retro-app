@@ -51,6 +51,10 @@ CMD ["php-fpm"]
 # Production stage
 FROM base as production
 
+# Set environment to production
+ENV APP_ENV=prod
+ENV APP_DEBUG=false
+
 # Remove development dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
