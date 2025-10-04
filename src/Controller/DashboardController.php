@@ -23,14 +23,19 @@ final class DashboardController extends AbstractController
         // Get user's teams
         $userTeams = $this->getUserTeams($user);
         
-        // Calculate statistics
-        $stats = $this->calculateDashboardStats($user, $userTeams);
+        // Check if user has organization and teams
+        $hasOrganization = $this->userHasOrganization($user);
+        $hasTeams = !empty($userTeams);
+        $showStatistics = $hasOrganization && $hasTeams;
         
-        // Get recent activity
-        $recentActivity = $this->getRecentActivity($user);
+        // Calculate statistics only if user has organization and teams
+        $stats = $showStatistics ? $this->calculateDashboardStats($user, $userTeams) : [];
         
-        // Get upcoming deadlines
-        $upcomingDeadlines = $this->getUpcomingDeadlines($user);
+        // Get recent activity only if user has organization and teams
+        $recentActivity = $showStatistics ? $this->getRecentActivity($user) : [];
+        
+        // Get upcoming deadlines only if user has organization and teams
+        $upcomingDeadlines = $showStatistics ? $this->getUpcomingDeadlines($user) : [];
         
         return $this->render('dashboard/index.html.twig', [
             'user_roles' => $userRoles,
@@ -42,6 +47,9 @@ final class DashboardController extends AbstractController
             'stats' => $stats,
             'recent_activity' => $recentActivity,
             'upcoming_deadlines' => $upcomingDeadlines,
+            'show_statistics' => $showStatistics,
+            'has_organization' => $hasOrganization,
+            'has_teams' => $hasTeams,
         ]);
     }
 
@@ -57,6 +65,14 @@ final class DashboardController extends AbstractController
            ->orderBy('t.name', 'ASC');
 
         return $qb->getQuery()->getResult();
+    }
+
+    private function userHasOrganization($user): bool
+    {
+        $organizationMember = $this->entityManager->getRepository(\App\Entity\OrganizationMember::class)
+            ->findOneBy(['user' => $user, 'isActive' => true]);
+            
+        return $organizationMember !== null;
     }
 
     private function calculateDashboardStats($user, $userTeams): array

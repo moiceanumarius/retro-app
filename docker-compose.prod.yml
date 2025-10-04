@@ -13,6 +13,9 @@ services:
     environment:
       - APP_ENV=prod
       - APP_DEBUG=false
+      - MERCURE_URL=http://mercure/.well-known/mercure
+      - MERCURE_PUBLIC_URL=https://your-domain.com/.well-known/mercure
+      - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
     depends_on:
       - mysql
       - redis
@@ -59,6 +62,21 @@ services:
       - redis_prod_data:/data
       - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf
     command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - retro_network
+    restart: unless-stopped
+
+  # Mercure for real-time updates
+  mercure:
+    image: dunglas/mercure
+    container_name: retro_app_mercure_prod
+    command: ["caddy", "run", "--config", "/etc/caddy/Caddyfile"]
+    environment:
+      - MERCURE_PUBLISHER_JWT_KEY=${MERCURE_JWT_SECRET}
+      - MERCURE_SUBSCRIBER_JWT_KEY=${MERCURE_JWT_SECRET}
+      - SERVER_NAME=:80
+    ports:
+      - "3000:80"
     networks:
       - retro_network
     restart: unless-stopped

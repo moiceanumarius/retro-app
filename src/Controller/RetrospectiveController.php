@@ -47,7 +47,7 @@ class RetrospectiveController extends AbstractController
             ->andWhere('t.isActive = :active')
             ->setParameter('user', $user)
             ->setParameter('active', true)
-            ->orderBy('r.scheduledAt', 'DESC')
+            ->orderBy('r.createdAt', 'DESC')
             ->getQuery()
             ->getResult();
 
@@ -71,7 +71,7 @@ class RetrospectiveController extends AbstractController
         }
 
         $retrospectives = $this->entityManager->getRepository(Retrospective::class)
-            ->findBy(['team' => $team], ['scheduledAt' => 'DESC']);
+            ->findBy(['team' => $team], ['createdAt' => 'DESC']);
 
         return $this->render('retrospective/team.html.twig', [
             'team' => $team,
@@ -216,7 +216,7 @@ class RetrospectiveController extends AbstractController
             
             $this->addFlash('success', '✅ Retrospective updated successfully!');
             
-            return $this->redirectToRoute('app_retrospectives_show', ['id' => $retrospective->getId()]);
+            return $this->redirectToRoute('app_retrospectives');
         }
         
         return $this->render('retrospective/edit.html.twig', [
@@ -551,6 +551,14 @@ class RetrospectiveController extends AbstractController
         $retrospective->setTimerStartedAt(null);
         $retrospective->setUpdatedAt(new \DateTime());
         
+        // Clear all timer like states for this retrospective
+        $timerLikeRepository = $this->entityManager->getRepository(\App\Entity\TimerLike::class);
+        $timerLikes = $timerLikeRepository->findBy(['retrospective' => $retrospective]);
+        
+        foreach ($timerLikes as $timerLike) {
+            $this->entityManager->remove($timerLike);
+        }
+        
         $this->entityManager->flush();
         
         // Broadcast timer stop to all connected clients
@@ -558,7 +566,8 @@ class RetrospectiveController extends AbstractController
             "retrospective/{$id}/timer",
             json_encode([
                 'type' => 'timer_stopped',
-                'message' => 'Timer stopped by facilitator'
+                'message' => 'Timer stopped by facilitator',
+                'timerLikeStatesCleared' => true
             ])
         );
         $this->hub->publish($update);
@@ -1636,6 +1645,9 @@ class RetrospectiveController extends AbstractController
         $connectedUsers = $this->getConnectedUsers($id);
         // error_log("Found " . count($connectedUsers) . " connected users");
         
+        // Publish heartbeat update with timer like states
+        $this->publishConnectedUsersUpdate($id);
+        
         return $this->json([
             'success' => true,
             'users' => $connectedUsers
@@ -1887,12 +1899,35 @@ class RetrospectiveController extends AbstractController
             // Get updated connected users
             $connectedUsers = $this->getConnectedUsers($retrospectiveId);
             
+            // Get timer like states for all connected users
+            $timerLikeRepo = $this->entityManager->getRepository(\App\Entity\TimerLike::class);
+            $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($retrospectiveId);
+            
+            if ($retrospective) {
+                $timerLikes = $timerLikeRepo->findByRetrospective($retrospective);
+                $timerLikeStates = [];
+                
+                foreach ($timerLikes as $timerLike) {
+                    if ($timerLike->isLiked()) {
+                        $timerLikeStates[$timerLike->getUser()->getId()] = [
+                            'userId' => $timerLike->getUser()->getId(),
+                            'userName' => $timerLike->getUser()->getFullName(),
+                            'isLiked' => true,
+                            'timestamp' => $timerLike->getUpdatedAt()->getTimestamp()
+                        ];
+                    }
+                }
+            } else {
+                $timerLikeStates = [];
+            }
+            
             // Publish update to connected-users topic
             $update = new Update(
                 "retrospective/{$retrospectiveId}/connected-users",
                 json_encode([
                     'type' => 'connected_users_updated',
-                    'users' => $connectedUsers
+                    'users' => $connectedUsers,
+                    'timerLikeStates' => $timerLikeStates
                 ])
             );
             $this->hub->publish($update);
@@ -1902,7 +1937,8 @@ class RetrospectiveController extends AbstractController
                 "retrospective/{$retrospectiveId}",
                 json_encode([
                     'type' => 'connected_users_updated',
-                    'users' => $connectedUsers
+                    'users' => $connectedUsers,
+                    'timerLikeStates' => $timerLikeStates
                 ])
             );
             $this->hub->publish($update2);
@@ -2016,6 +2052,201 @@ class RetrospectiveController extends AbstractController
             
         } catch (\Exception $e) {
             $this->logger->error('Error marking item as discussed: ' . $e->getMessage());
+            return $this->json(['success' => false, 'message' => 'Internal server error'], 500);
+        }
+    }
+
+    #[Route('/retrospectives/{id}/timer-like-update', name: 'app_retrospectives_timer_like_update', methods: ['POST'])]
+    public function timerLikeUpdate(int $id, Request $request): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        error_log("DEBUG: timerLikeUpdate method START - ID: $id");
+        try {
+            error_log("DEBUG: timerLikeUpdate called for ID: $id");
+            
+            $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+            
+            if (!$retrospective) {
+                error_log("DEBUG: Retrospective not found for ID: $id");
+                return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+            }
+
+            error_log("DEBUG: Retrospective found: " . $retrospective->getId());
+
+            // Check access
+            if (!$this->hasTeamAccess($retrospective->getTeam())) {
+                error_log("DEBUG: Access denied for team: " . $retrospective->getTeam()->getId());
+                return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+            }
+
+            error_log("DEBUG: Access granted");
+
+            $user = $this->getUser();
+            if (!$user) {
+                error_log("DEBUG: User not authenticated");
+                return $this->json(['success' => false, 'message' => 'User not authenticated'], 401);
+            }
+
+            error_log("DEBUG: User authenticated: " . $user->getId());
+
+            $data = json_decode($request->getContent(), true);
+            error_log("DEBUG: Request data: " . json_encode($data));
+            
+            $isLiked = $data['isLiked'] ?? false;
+            $userId = $data['userId'] ?? $user->getId();
+            $userName = $data['userName'] ?? $user->getFullName();
+            $skipSave = $data['skipSave'] ?? false;
+
+            error_log("DEBUG: Processed data - isLiked: " . ($isLiked ? 'true' : 'false') . ", userId: $userId, userName: $userName, skipSave: " . ($skipSave ? 'true' : 'false'));
+
+            // Save timer like state in database only if not skipping save
+            if (!$skipSave) {
+                $timerLikeRepo = $this->entityManager->getRepository(\App\Entity\TimerLike::class);
+                $existingTimerLike = $timerLikeRepo->findByUserAndRetrospective($user, $retrospective);
+                
+                if ($existingTimerLike) {
+                    $existingTimerLike->setIsLiked($isLiked);
+                } else {
+                    $timerLike = new \App\Entity\TimerLike();
+                    $timerLike->setUser($user);
+                    $timerLike->setRetrospective($retrospective);
+                    $timerLike->setIsLiked($isLiked);
+                    $this->entityManager->persist($timerLike);
+                }
+                
+                $this->entityManager->flush();
+                error_log("DEBUG: Timer like state saved in database for user {$userId} in retrospective {$id}");
+            } else {
+                error_log("DEBUG: Skipping database save for user {$userId} in retrospective {$id} - broadcast only");
+            }
+
+            // Send real-time update via Mercure to all users
+            $update = new Update(
+                "retrospectives/{$id}/discussion",
+                json_encode([
+                    'type' => 'timer_like_update',
+                    'userId' => $userId,
+                    'userName' => $userName,
+                    'isLiked' => $isLiked,
+                    'timestamp' => time()
+                ])
+            );
+            
+            error_log("DEBUG: Publishing Mercure update");
+            $this->hub->publish($update);
+            error_log("DEBUG: Mercure update published successfully");
+
+            return $this->json([
+                'success' => true, 
+                'message' => 'Timer like update broadcasted',
+                'data' => [
+                    'userId' => $userId,
+                    'userName' => $userName,
+                    'isLiked' => $isLiked
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            error_log("DEBUG: Exception in timerLikeUpdate: " . $e->getMessage());
+            error_log("DEBUG: Exception trace: " . $e->getTraceAsString());
+            $this->logger->error('Error broadcasting timer like update: ' . $e->getMessage());
+            return $this->json(['success' => false, 'message' => 'Internal server error'], 500);
+        }
+    }
+
+    #[Route('/retrospectives/{id}/timer-like-status', name: 'app_retrospectives_timer_like_status', methods: ['GET'])]
+    public function getTimerLikeStatus(int $id, Request $request): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        try {
+            $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+            
+            if (!$retrospective) {
+                return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+            }
+
+            // Check access
+            if (!$this->hasTeamAccess($retrospective->getTeam())) {
+                return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+            }
+
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['success' => false, 'message' => 'User not authenticated'], 401);
+            }
+
+            // Get timer like state from database
+            $timerLikeRepo = $this->entityManager->getRepository(\App\Entity\TimerLike::class);
+            $timerLike = $timerLikeRepo->findByUserAndRetrospective($user, $retrospective);
+
+            if ($timerLike) {
+                return $this->json([
+                    'success' => true,
+                    'data' => [
+                        'isLiked' => $timerLike->isLiked(),
+                        'timestamp' => $timerLike->getUpdatedAt()->getTimestamp(),
+                        'userId' => $user->getId(),
+                        'retrospectiveId' => $id
+                    ]
+                ]);
+            } else {
+                return $this->json([
+                    'success' => true,
+                    'data' => [
+                        'isLiked' => false,
+                        'timestamp' => null,
+                        'userId' => $user->getId(),
+                        'retrospectiveId' => $id
+                    ]
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            $this->logger->error('Error getting timer like status: ' . $e->getMessage());
+            return $this->json(['success' => false, 'message' => 'Internal server error'], 500);
+        }
+    }
+
+    #[Route('/retrospectives/{id}/all-timer-like-states', name: 'app_retrospectives_all_timer_like_states', methods: ['GET'])]
+    public function getAllTimerLikeStates(int $id, Request $request): \Symfony\Component\HttpFoundation\JsonResponse
+    {
+        try {
+            $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+            
+            if (!$retrospective) {
+                return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
+            }
+
+            // Check access
+            if (!$this->hasTeamAccess($retrospective->getTeam())) {
+                return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+            }
+
+            $user = $this->getUser();
+            if (!$user) {
+                return $this->json(['success' => false, 'message' => 'User not authenticated'], 401);
+            }
+
+            // Get all timer like states from database
+            $timerLikeRepo = $this->entityManager->getRepository(\App\Entity\TimerLike::class);
+            $timerLikes = $timerLikeRepo->findByRetrospective($retrospective);
+            
+            $allStates = [];
+            
+            foreach ($timerLikes as $timerLike) {
+                $allStates[] = [
+                    'userId' => $timerLike->getUser()->getId(),
+                    'userName' => $timerLike->getUser()->getFullName(),
+                    'isLiked' => $timerLike->isLiked(),
+                    'timestamp' => $timerLike->getUpdatedAt()->getTimestamp()
+                ];
+            }
+
+            return $this->json([
+                'success' => true,
+                'data' => $allStates
+            ]);
+
+        } catch (\Exception $e) {
+            $this->logger->error('Error getting all timer like states: ' . $e->getMessage());
             return $this->json(['success' => false, 'message' => 'Internal server error'], 500);
         }
     }

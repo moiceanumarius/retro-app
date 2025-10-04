@@ -57,6 +57,9 @@ class Retrospective
     #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
     private ?\DateTimeInterface $timerStartedAt = null;
 
+    #[ORM\Column]
+    private ?int $voteNumbers = null;
+
     #[ORM\OneToMany(mappedBy: 'retrospective', targetEntity: RetrospectiveItem::class, cascade: ['persist', 'remove'])]
     private Collection $items;
 
@@ -75,6 +78,7 @@ class Retrospective
         $this->updatedAt = new \DateTime();
         $this->status = 'planned';
         $this->currentStep = 'feedback';
+        $this->voteNumbers = 5;
     }
 
     public function getId(): ?int
@@ -356,6 +360,17 @@ class Retrospective
             }
         }
 
+        return $this;
+    }
+
+    public function getVoteNumbers(): ?int
+    {
+        return $this->voteNumbers;
+    }
+
+    public function setVoteNumbers(int $voteNumbers): static
+    {
+        $this->voteNumbers = $voteNumbers;
         return $this;
     }
 }

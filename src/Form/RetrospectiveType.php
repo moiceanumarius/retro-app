@@ -7,7 +7,8 @@ use App\Entity\Team;
 use Symfony\Bridge\Doctrine\Form\Type\EntityType;
 use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
-use Symfony\Component\Form\Extension\Core\Type\DateTimeType;
+use Symfony\Component\Form\Extension\Core\Type\DateType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -42,11 +43,22 @@ class RetrospectiveType extends AbstractType
                     'class' => 'form-control'
                 ]
             ])
-            ->add('scheduledAt', DateTimeType::class, [
-                'label' => 'Scheduled Date & Time',
+            ->add('scheduledAt', DateType::class, [
+                'label' => 'Scheduled Date',
                 'widget' => 'single_text',
+                'html5' => true,
                 'attr' => [
-                    'class' => 'form-control'
+                    'class' => 'form-control',
+                    'type' => 'date'
+                ]
+            ])
+            ->add('voteNumbers', IntegerType::class, [
+                'label' => 'Allowed Vote Numbers',
+                'attr' => [
+                    'class' => 'form-control',
+                    'min' => 1,
+                    'max' => 20,
+                    'placeholder' => 'Enter number of votes allowed per user'
                 ]
             ])
         ;

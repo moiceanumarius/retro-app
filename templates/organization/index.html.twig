@@ -18,7 +18,7 @@
                 <p>Manage organizations and assign high-level users</p>
             </div>
             <div class="header-actions">
-                {% if app.user.hasRole('ROLE_ADMIN') %}
+                {% if app.user.hasRole('ROLE_ADMIN') and not userOrganization %}
                 <a href="{{ path('app_organizations_create') }}" class="btn btn-primary">
                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
@@ -231,7 +231,7 @@
             </div>
             <h3>No organizations yet</h3>
             <p>Create your first organization to start managing high-level users</p>
-            {% if app.user.hasRole('ROLE_ADMIN') %}
+            {% if app.user.hasRole('ROLE_ADMIN') and not userOrganization %}
             <a href="{{ path('app_organizations_create') }}" class="btn btn-primary">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>

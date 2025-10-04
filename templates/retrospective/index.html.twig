@@ -6,6 +6,22 @@
 
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+    <style>
+        .team-actions .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+        .team-actions .btn-success:hover {
+            background: #38a169;
+        }
+        .team-actions .btn-warning {
+            background: #ed8936;
+            color: white;
+        }
+        .team-actions .btn-warning:hover {
+            background: #dd6b20;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
@@ -95,8 +111,8 @@
                         </div>
                     </div>
                     <div class="team-actions">
-                        <a href="{{ path('app_retrospectives_show', {'id': retrospective.id}) }}" class="btn btn-sm btn-primary">
-                            View
+                        <a href="{{ path('app_retrospectives_show', {'id': retrospective.id}) }}" class="btn btn-sm {% if retrospective.isActive() %}btn-success{% else %}btn-primary{% endif %}">
+                            {% if retrospective.isActive() %}Join{% else %}View{% endif %}
                         </a>
                         {% if retrospective.facilitator == app.user %}
                             {% if retrospective.isPlanned() %}
@@ -104,7 +120,7 @@
                                     Start
                                 </a>
                             {% elseif retrospective.isActive() %}
-                                <a href="{{ path('app_retrospectives_complete', {'id': retrospective.id}) }}" class="btn btn-sm btn-secondary">
+                                <a href="{{ path('app_retrospectives_complete', {'id': retrospective.id}) }}" class="btn btn-sm btn-warning">
                                     Complete
                                 </a>
                             {% endif %}

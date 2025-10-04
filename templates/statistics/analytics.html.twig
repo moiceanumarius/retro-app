@@ -1,0 +1,852 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}{{ page_title }} - Retrospective App{% endblock %}
+
+{% block body %}
+<div class="analytics-dashboard">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1>📊 Analytics Dashboard</h1>
+            <p>Detailed insights and statistics for your teams</p>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-secondary" id="refreshAllBtn">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                </svg>
+                Refresh All
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-state" id="loadingState">
+        <div class="loading-spinner"></div>
+        <p>Loading analytics data...</p>
+    </div>
+
+    <!-- Error State -->
+    <div class="error-state" id="errorState" style="display: none;">
+        <div class="error-icon">⚠️</div>
+        <h3>Failed to load analytics</h3>
+        <p id="errorMessage">Something went wrong while loading the data.</p>
+        <button class="btn btn-primary" onclick="loadAnalytics()">Try Again</button>
+    </div>
+
+    <!-- Analytics Content -->
+    <div class="analytics-content" id="analyticsContent" style="display: none;">
+        
+        <!-- Overview Cards -->
+        <div class="overview-section">
+            <h2>📈 Overview</h2>
+            <div class="overview-grid">
+                <div class="overview-card">
+                    <div class="card-icon retrospective">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="totalRetrospectives">-</h3>
+                        <p>Total Retrospectives</p>
+                        <small id="retrospectiveDetails">-</small>
+                    </div>
+                </div>
+
+                <div class="overview-card">
+                    <div class="card-icon actions">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="totalActions">-</h3>
+                        <p>Total Actions</p>
+                        <small id="actionDetails">-</small>
+                    </div>
+                </div>
+
+                <div class="overview-card">
+                    <div class="card-icon completion">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="completionRate">-</h3>
+                        <p>Completion Rate</p>
+                        <small id="completionDetails">-</small>
+                    </div>
+                </div>
+
+                <div class="overview-card">
+                    <div class="card-icon productivity">
+                        <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                        </svg>
+                    </div>
+                    <div class="card-content">
+                        <h3 id="productivityScore">-</h3>
+                        <p>Productivity Score</p>
+                        <small id="productivityDetails">-</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="charts-section">
+            <h2>📊 Charts & Trends</h2>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3>Retrospective Completion Trend</h3>
+                    <canvas id="completionTrendChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>Action Status Distribution</h3>
+                    <canvas id="actionStatusChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>Team Performance</h3>
+                    <canvas id="teamPerformanceChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>Monthly Activity</h3>
+                    <canvas id="monthlyActivityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Statistics -->
+        <div class="detailed-stats-section">
+            <h2>📋 Detailed Statistics</h2>
+            <div class="stats-tabs">
+                <button class="tab-btn active" data-tab="retrospectives">Retrospectives</button>
+                <button class="tab-btn" data-tab="actions">Actions</button>
+                <button class="tab-btn" data-tab="teams">Teams</button>
+                <button class="tab-btn" data-tab="productivity">Productivity</button>
+            </div>
+            
+            <div class="tab-content">
+                <div class="tab-panel active" id="retrospectives-tab">
+                    <div class="stats-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody id="retrospectivesTableBody">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="tab-panel" id="actions-tab">
+                    <div class="stats-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                    <th>Trend</th>
+                                </tr>
+                            </thead>
+                            <tbody id="actionsTableBody">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="tab-panel" id="teams-tab">
+                    <div class="stats-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Team</th>
+                                    <th>Retrospectives</th>
+                                    <th>Actions</th>
+                                    <th>Completion Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teamsTableBody">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="tab-panel" id="productivity-tab">
+                    <div class="stats-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Value</th>
+                                    <th>Period</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productivityTableBody">
+                                <!-- Data will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.analytics-dashboard {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.header-content h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.header-content p {
+    margin: 0.5rem 0 0 0;
+    color: #6b7280;
+    font-size: 1.1rem;
+}
+
+.header-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+/* Loading State */
+.loading-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e5e7eb;
+    border-top: 4px solid #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Error State */
+.error-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: #fef2f2;
+    border: 1px solid #fca5a5;
+    border-radius: 8px;
+    margin: 2rem 0;
+}
+
+.error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+}
+
+.error-state h3 {
+    color: #dc2626;
+    margin-bottom: 0.5rem;
+}
+
+.error-state p {
+    color: #7f1d1d;
+    margin-bottom: 1.5rem;
+}
+
+/* Overview Section */
+.overview-section {
+    margin-bottom: 3rem;
+}
+
+.overview-section h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+}
+
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.overview-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.overview-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.card-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.card-icon.retrospective {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.card-icon.actions {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.card-icon.completion {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.card-icon.productivity {
+    background: #e0e7ff;
+    color: #6366f1;
+}
+
+.card-content h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.card-content p {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.card-content small {
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+/* Charts Section */
+.charts-section {
+    margin-bottom: 3rem;
+}
+
+.charts-section h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+}
+
+.charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.chart-container {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chart-container h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.chart-container canvas {
+    width: 100% !important;
+    height: 300px !important;
+}
+
+/* Detailed Statistics */
+.detailed-stats-section h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1.5rem;
+}
+
+.stats-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.tab-btn {
+    background: none;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s ease;
+}
+
+.tab-btn:hover {
+    color: #374151;
+}
+
+.tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+}
+
+.tab-content {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tab-panel {
+    display: none;
+    padding: 1.5rem;
+}
+
+.tab-panel.active {
+    display: block;
+}
+
+.stats-table {
+    overflow-x: auto;
+}
+
+.stats-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.stats-table th,
+.stats-table td {
+    padding: 0.75rem;
+    text-align: left;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.stats-table th {
+    background: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+}
+
+.stats-table td {
+    color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .analytics-dashboard {
+        padding: 1rem;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .overview-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .charts-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-tabs {
+        flex-wrap: wrap;
+    }
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let charts = {};
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadAnalytics();
+    
+    // Tab switching
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tabName = this.dataset.tab;
+            switchTab(tabName);
+        });
+    });
+    
+    // Refresh button
+    document.getElementById('refreshAllBtn').addEventListener('click', function() {
+        loadAnalytics(true);
+    });
+});
+
+function loadAnalytics(showLoading = false) {
+    const loadingState = document.getElementById('loadingState');
+    const errorState = document.getElementById('errorState');
+    const analyticsContent = document.getElementById('analyticsContent');
+    
+    if (showLoading) {
+        loadingState.style.display = 'block';
+        errorState.style.display = 'none';
+        analyticsContent.style.display = 'none';
+    }
+    
+    // Load all analytics data
+    Promise.all([
+        fetch('/statistics/retrospectives', { credentials: 'include' }).then(r => r.json()),
+        fetch('/statistics/actions', { credentials: 'include' }).then(r => r.json()),
+        fetch('/statistics/teams', { credentials: 'include' }).then(r => r.json()),
+        fetch('/statistics/completion-trend', { credentials: 'include' }).then(r => r.json()),
+        fetch('/statistics/monthly-activity', { credentials: 'include' }).then(r => r.json())
+    ])
+    .then(([retrospectivesData, actionsData, teamsData, trendData, activityData]) => {
+        // Check if all responses are successful
+        if (retrospectivesData.success && actionsData.success && teamsData.success && trendData.success && activityData.success) {
+            updateOverviewCards(retrospectivesData.data, actionsData.data);
+            updateDetailedTables(retrospectivesData.data, actionsData.data, teamsData.data);
+            initializeCharts(retrospectivesData.data, actionsData.data, teamsData.data, trendData.data, activityData.data);
+            
+            loadingState.style.display = 'none';
+            errorState.style.display = 'none';
+            analyticsContent.style.display = 'block';
+        } else {
+            throw new Error('Failed to load analytics data');
+        }
+    })
+    .catch(error => {
+        console.error('Error loading analytics:', error);
+        loadingState.style.display = 'none';
+        errorState.style.display = 'block';
+        analyticsContent.style.display = 'none';
+        document.getElementById('errorMessage').textContent = error.message;
+    });
+}
+
+function updateOverviewCards(retrospectivesData, actionsData) {
+    // Update overview cards with data - with defensive checks
+    const retroBasic = retrospectivesData?.basic || {};
+    const actionBasic = actionsData?.basic || {};
+    const actionProductivity = actionsData?.productivity || {};
+    
+    document.getElementById('totalRetrospectives').textContent = retroBasic.total_retrospectives || 0;
+    document.getElementById('retrospectiveDetails').textContent = 
+        `${retroBasic.active_retrospectives || 0} active, ${retroBasic.completed_retrospectives || 0} completed`;
+    
+    document.getElementById('totalActions').textContent = actionBasic.total_actions || 0;
+    document.getElementById('actionDetails').textContent = 
+        `${actionBasic.pending_actions || 0} pending, ${actionBasic.completed_actions || 0} completed`;
+    
+    document.getElementById('completionRate').textContent = (retroBasic.completion_rate || 0) + '%';
+    document.getElementById('completionDetails').textContent = 
+        `Avg duration: ${retroBasic.average_duration_formatted || 'N/A'}`;
+    
+    document.getElementById('productivityScore').textContent = (actionProductivity.velocity_actions_per_week || 0) + '/week';
+    document.getElementById('productivityDetails').textContent = 
+        `${actionProductivity.actions_completed_last_30_days || 0} completed last 30 days`;
+}
+
+function updateDetailedTables(retrospectivesData, actionsData, teamsData) {
+    // Update retrospectives table - with defensive checks
+    const retroBasic = retrospectivesData?.basic || {};
+    const actionBasic = actionsData?.basic || {};
+    const actionProductivity = actionsData?.productivity || {};
+    
+    const retroTbody = document.getElementById('retrospectivesTableBody');
+    retroTbody.innerHTML = `
+        <tr><td>Total Retrospectives</td><td>${retroBasic.total_retrospectives || 0}</td><td>-</td></tr>
+        <tr><td>Completed</td><td>${retroBasic.completed_retrospectives || 0}</td><td>-</td></tr>
+        <tr><td>Active</td><td>${retroBasic.active_retrospectives || 0}</td><td>-</td></tr>
+        <tr><td>Planned</td><td>${retroBasic.planned_retrospectives || 0}</td><td>-</td></tr>
+        <tr><td>Completion Rate</td><td>${retroBasic.completion_rate || 0}%</td><td>-</td></tr>
+        <tr><td>Average Duration</td><td>${retroBasic.average_duration_formatted || 'N/A'}</td><td>-</td></tr>
+    `;
+    
+    // Update actions table
+    const actionsTbody = document.getElementById('actionsTableBody');
+    actionsTbody.innerHTML = `
+        <tr><td>Total Actions</td><td>${actionBasic.total_actions || 0}</td><td>-</td></tr>
+        <tr><td>Pending</td><td>${actionBasic.pending_actions || 0}</td><td>-</td></tr>
+        <tr><td>In Progress</td><td>${actionBasic.in_progress_actions || 0}</td><td>-</td></tr>
+        <tr><td>Completed</td><td>${actionBasic.completed_actions || 0}</td><td>-</td></tr>
+        <tr><td>Overdue</td><td>${actionBasic.overdue_actions || 0}</td><td>-</td></tr>
+        <tr><td>Completion Rate</td><td>${actionBasic.completion_rate || 0}%</td><td>-</td></tr>
+    `;
+    
+    // Update teams table
+    const teamsTbody = document.getElementById('teamsTableBody');
+    if (teamsData.data && Array.isArray(teamsData.data)) {
+        teamsTbody.innerHTML = teamsData.data.map(team => `
+            <tr>
+                <td>${team.team_name}</td>
+                <td>${team.retrospectives.total_retrospectives || 0}</td>
+                <td>${team.actions.total_actions || 0}</td>
+                <td>${team.retrospectives.completion_rate || 0}%</td>
+            </tr>
+        `).join('');
+    } else {
+        teamsTbody.innerHTML = '<tr><td colspan="4">No team data available</td></tr>';
+    }
+    
+    // Update productivity table
+    const productivityTbody = document.getElementById('productivityTableBody');
+    productivityTbody.innerHTML = `
+        <tr><td>Actions Created (30 days)</td><td>${actionProductivity.actions_created_last_30_days || 0}</td><td>Last 30 days</td></tr>
+        <tr><td>Actions Completed (30 days)</td><td>${actionProductivity.actions_completed_last_30_days || 0}</td><td>Last 30 days</td></tr>
+        <tr><td>Velocity</td><td>${actionProductivity.velocity_actions_per_week || 0} actions/week</td><td>Current</td></tr>
+        <tr><td>Productivity Trend</td><td>${actionProductivity.productivity_trend || 'stable'}</td><td>vs Previous</td></tr>
+    `;
+}
+
+function initializeCharts(retrospectivesData, actionsData, teamsData, trendData, activityData) {
+    // Initialize Chart.js charts
+    initializeCompletionTrendChart(trendData);
+    initializeActionStatusChart(actionsData);
+    initializeTeamPerformanceChart(teamsData);
+    initializeMonthlyActivityChart(activityData);
+}
+
+function initializeCompletionTrendChart(data) {
+    const ctx = document.getElementById('completionTrendChart').getContext('2d');
+    
+    if (charts.completionTrend) {
+        charts.completionTrend.destroy();
+    }
+    
+    // Use real data from API
+    const months = data?.months || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const completedData = data?.completed || [0, 0, 0, 0, 0, 0];
+    const plannedData = data?.planned || [0, 0, 0, 0, 0, 0];
+    
+    charts.completionTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Completed',
+                data: completedData,
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                tension: 0.4
+            }, {
+                label: 'Planned',
+                data: plannedData,
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function initializeActionStatusChart(data) {
+    const ctx = document.getElementById('actionStatusChart').getContext('2d');
+    
+    if (charts.actionStatus) {
+        charts.actionStatus.destroy();
+    }
+    
+    const actionBasic = data?.basic || {};
+    
+    charts.actionStatus = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completed', 'Pending', 'In Progress', 'Overdue'],
+            datasets: [{
+                data: [
+                    actionBasic.completed_actions || 0,
+                    actionBasic.pending_actions || 0,
+                    actionBasic.in_progress_actions || 0,
+                    actionBasic.overdue_actions || 0
+                ],
+                backgroundColor: [
+                    '#10b981',
+                    '#f59e0b',
+                    '#3b82f6',
+                    '#ef4444'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                }
+            }
+        }
+    });
+}
+
+function initializeTeamPerformanceChart(data) {
+    const ctx = document.getElementById('teamPerformanceChart').getContext('2d');
+    
+    if (charts.teamPerformance) {
+        charts.teamPerformance.destroy();
+    }
+    
+    const teamNames = data.data && Array.isArray(data.data) ? data.data.map(team => team.team_name) : ['No Teams'];
+    const completionRates = data.data && Array.isArray(data.data) ? data.data.map(team => team.retrospectives.completion_rate || 0) : [0];
+    
+    charts.teamPerformance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: teamNames,
+            datasets: [{
+                label: 'Completion Rate (%)',
+                data: completionRates,
+                backgroundColor: '#3b82f6',
+                borderColor: '#1d4ed8',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+
+function initializeMonthlyActivityChart(data) {
+    const ctx = document.getElementById('monthlyActivityChart').getContext('2d');
+    
+    if (charts.monthlyActivity) {
+        charts.monthlyActivity.destroy();
+    }
+    
+    // Use real data from API
+    const months = data?.months || ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    const createdData = data?.created || [0, 0, 0, 0, 0, 0];
+    const completedData = data?.completed || [0, 0, 0, 0, 0, 0];
+    
+    charts.monthlyActivity = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [{
+                label: 'Actions Created',
+                data: createdData,
+                backgroundColor: '#8b5cf6',
+                borderColor: '#7c3aed',
+                borderWidth: 1
+            }, {
+                label: 'Actions Completed',
+                data: completedData,
+                backgroundColor: '#06b6d4',
+                borderColor: '#0891b2',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+}
+
+function switchTab(tabName) {
+    // Hide all tab panels
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    // Show selected tab panel
+    document.getElementById(tabName + '-tab').classList.add('active');
+    
+    // Add active class to selected tab button
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+}
+</script>
+{% endblock %}

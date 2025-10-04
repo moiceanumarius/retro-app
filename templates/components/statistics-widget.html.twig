@@ -1,0 +1,348 @@
+{# Statistics Widget Component #}
+<div class="statistics-widget" id="statisticsWidget">
+    <div class="widget-header">
+        <h3>📊 Team Statistics</h3>
+        <div class="widget-controls">
+            <button class="refresh-btn" id="refreshStatsBtn" title="Refresh Statistics">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <div class="stats-grid">
+        <!-- Retrospective Statistics -->
+        <div class="stat-card">
+            <div class="stat-icon retrospective">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h4 id="totalRetrospectives">-</h4>
+                <p>Total Retrospectives</p>
+                <small class="stat-detail">
+                    <span id="activeRetrospectives">-</span> active
+                </small>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon completion">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h4 id="completionRate">-</h4>
+                <p>Completion Rate</p>
+                <small class="stat-detail">
+                    <span id="avgDuration">-</span> avg duration
+                </small>
+            </div>
+        </div>
+
+        <!-- Action Statistics -->
+        <div class="stat-card">
+            <div class="stat-icon actions">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h4 id="totalActions">-</h4>
+                <p>Total Actions</p>
+                <small class="stat-detail">
+                    <span id="pendingActions">-</span> pending
+                </small>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon productivity">
+                <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"></path>
+                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"></path>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <h4 id="actionCompletionRate">-</h4>
+                <p>Action Completion</p>
+                <small class="stat-detail">
+                    <span id="overdueActions">-</span> overdue
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <div class="widget-footer">
+        <small class="last-updated">
+            Last updated: <span id="lastUpdated">-</span>
+        </small>
+        {% if app.user.hasAnyRole(['ROLE_ADMIN', 'ROLE_SUPERVISOR']) %}
+        <a href="{{ path('app_statistics_analytics') }}" class="view-more-link">
+            View Detailed Analytics →
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+.statistics-widget {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+    border: 1px solid #f1f5f9;
+    margin-bottom: 2rem;
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.widget-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.widget-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.refresh-btn {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.refresh-btn:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.refresh-btn:active {
+    transform: scale(0.95);
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: all 0.2s ease;
+}
+
+.stat-card:hover {
+    border-color: #cbd5e1;
+    transform: translateY(-1px);
+}
+
+.stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.stat-icon.retrospective {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.stat-icon.completion {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.stat-icon.actions {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.stat-icon.productivity {
+    background: #e0e7ff;
+    color: #6366f1;
+}
+
+.stat-content h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1f2937;
+}
+
+.stat-content p {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.stat-detail {
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.widget-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.last-updated {
+    color: #9ca3af;
+    font-size: 0.75rem;
+}
+
+.view-more-link {
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.view-more-link:hover {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+/* Loading state */
+.statistics-widget.loading .stat-content h4,
+.statistics-widget.loading .stat-detail span {
+    background: #e5e7eb;
+    color: transparent;
+    border-radius: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Error state */
+.statistics-widget.error {
+    border-color: #fca5a5;
+    background: #fef2f2;
+}
+
+.error-message {
+    color: #dc2626;
+    font-size: 0.875rem;
+    text-align: center;
+    padding: 1rem;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const widget = document.getElementById('statisticsWidget');
+    const refreshBtn = document.getElementById('refreshStatsBtn');
+    
+    // Load statistics on page load
+    loadStatistics();
+    
+    // Refresh button click handler
+    refreshBtn.addEventListener('click', function() {
+        loadStatistics(true);
+    });
+    
+    // Auto-refresh every 5 minutes
+    setInterval(() => {
+        loadStatistics();
+    }, 5 * 60 * 1000);
+    
+    function loadStatistics(showLoading = false) {
+        if (showLoading) {
+            widget.classList.add('loading');
+        }
+        
+        fetch('/statistics/dashboard', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            credentials: 'include'
+        })
+        .then(response => response.json())
+        .then(data => {
+            widget.classList.remove('loading', 'error');
+            
+            if (data.success) {
+                updateStatistics(data.data);
+            } else {
+                throw new Error('Failed to load statistics');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading statistics:', error);
+            widget.classList.remove('loading');
+            widget.classList.add('error');
+            
+            // Show error message
+            const errorMsg = widget.querySelector('.error-message');
+            if (!errorMsg) {
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'error-message';
+                errorDiv.textContent = 'Failed to load statistics. Click refresh to try again.';
+                widget.appendChild(errorDiv);
+            }
+        });
+    }
+    
+    function updateStatistics(stats) {
+        // Update retrospective statistics
+        document.getElementById('totalRetrospectives').textContent = stats.total_retrospectives || 0;
+        document.getElementById('activeRetrospectives').textContent = stats.active_retrospectives || 0;
+        document.getElementById('completionRate').textContent = (stats.completion_rate || 0) + '%';
+        
+        // Update action statistics
+        document.getElementById('totalActions').textContent = stats.total_actions || 0;
+        document.getElementById('pendingActions').textContent = stats.pending_actions || 0;
+        document.getElementById('actionCompletionRate').textContent = (stats.action_completion_rate || 0) + '%';
+        document.getElementById('overdueActions').textContent = stats.overdue_actions || 0;
+        
+        // Update last updated time
+        document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+        
+        // Remove error message if exists
+        const errorMsg = widget.querySelector('.error-message');
+        if (errorMsg) {
+            errorMsg.remove();
+        }
+    }
+});
+</script>

@@ -111,8 +111,8 @@
                         {% endif %}
                     </div>
                     <div class="retrospective-actions">
-                        <a href="{{ path('app_retrospectives_show', {'id': retrospective.id}) }}" class="btn btn-sm btn-primary">
-                            View
+                        <a href="{{ path('app_retrospectives_show', {'id': retrospective.id}) }}" class="btn btn-sm {% if retrospective.isActive() %}btn-success{% else %}btn-primary{% endif %}">
+                            {% if retrospective.isActive() %}Join{% else %}View{% endif %}
                         </a>
                         {% if retrospective.facilitator == app.user %}
                             {% if retrospective.isPlanned() %}

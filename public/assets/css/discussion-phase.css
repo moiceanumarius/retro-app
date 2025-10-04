@@ -157,6 +157,7 @@
 /* Item separator for groups */
 .discussion-card .item-paragraph {
     margin: 0.5rem 0;
+    line-height: 1.6;
 }
 
 .discussion-card .item-separator {

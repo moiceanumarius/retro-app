@@ -199,7 +199,7 @@
         <div class="voting-phase">
             <div class="review-header">
                 <h2>Voting Phase</h2>
-                <p>Vote on the most important items to discuss</p>
+                <p>Vote on the most important items to discuss • Allowed number of votes: <strong style="color: black;">{{ retrospective.voteNumbers ?? 10 }}</strong></p>
             </div>
             
             <div class="feedback-columns readonly">
@@ -755,6 +755,11 @@
         </div>
         {% endif %}
         <div id="timerDisplay" class="timer-display" style="display: none;">
+            <button id="likeTimerBtn" class="like-timer-btn" title="Like Timer">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"/>
+                </svg>
+            </button>
             <span id="timerTime">10:00</span>
             <span class="timer-label" style="font-size: 0.8rem; display: inline-block; color: #6c757d;">remaining</span>
             {% if retrospective.facilitator == app.user %}
@@ -770,6 +775,12 @@
         </div>
     </div>
     
+    <script>
+        // Pass retrospective data to JavaScript
+        window.retrospectiveData = {
+            voteNumbers: {{ retrospective.voteNumbers ?? 10 }}
+        };
+    </script>
     <script src="{{ asset('assets/js/retrospective-board.js') }}"></script>
     <script src="{{ asset('assets/js/voting-system.js') }}"></script>
     

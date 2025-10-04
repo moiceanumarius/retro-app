@@ -778,6 +778,19 @@
     font-style: italic;
 }
 
+/* Vote Info Styling */
+.vote-info {
+    color: #667eea;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    background: #f0f4ff;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    display: inline-block;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .retrospective-header {
@@ -999,7 +1012,6 @@
 
 .item-paragraph {
     color: #1f2937;
-    font-size: 1rem;
     line-height: 1.6;
     margin-bottom: 0.75rem;
 }

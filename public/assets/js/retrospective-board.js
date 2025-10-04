@@ -21,7 +21,7 @@ class RetrospectiveBoard {
         // Voting system
         this.userVotes = {}; // {itemId: voteCount} or {groupId: voteCount}
         this.totalVotes = 0;
-        this.maxTotalVotes = 10;
+        this.maxTotalVotes = window.retrospectiveData ? window.retrospectiveData.voteNumbers : 10;
         this.maxVotesPerItem = 2;
         this.votingActive = false;
         
@@ -43,6 +43,9 @@ class RetrospectiveBoard {
         if (this.isInReviewStep()) {
             this.initReviewPhase();
         }
+        
+        // Timer like states will be restored via heartbeat WebSocket updates only
+        // No manual restoration to avoid conflicts
         
         // Load user votes if we're in voting phase (to show vote badges)
         if (this.isInDiscussionStep()) {
@@ -85,6 +88,14 @@ class RetrospectiveBoard {
                 this.stopTimer();
             });
         }
+
+        // Like timer button
+        const likeTimerBtn = document.getElementById('likeTimerBtn');
+        if (likeTimerBtn) {
+            likeTimerBtn.addEventListener('click', () => {
+                this.likeTimer();
+            });
+        }
         
         // Next step button
         const nextStepBtn = document.getElementById('nextStepBtn');
@@ -116,6 +127,7 @@ class RetrospectiveBoard {
         // Leave retrospective when page unloads
         window.addEventListener('beforeunload', () => {
             this.leaveRetrospective();
+            this.clearTimerLikeState();
         });
         
         // Action form controls
@@ -198,6 +210,132 @@ class RetrospectiveBoard {
         } catch (error) {
             console.error('Error stopping timer:', error);
             this.showMessage('Failed to stop timer', 'error');
+        }
+    }
+
+    async likeTimer() {
+        const likeBtn = document.getElementById('likeTimerBtn');
+        if (!likeBtn) return;
+
+        // Toggle liked state
+        const isLiked = likeBtn.classList.contains('liked');
+        const currentUserId = this.user?.id || window.user?.id;
+        
+        if (isLiked) {
+            likeBtn.classList.remove('liked');
+            // Update current user's sidebar background
+            this.updateUserSidebarBackground(false);
+            // Broadcast to all users that this user unliked
+            await this.broadcastTimerLike(false);
+        } else {
+            likeBtn.classList.add('liked');
+            // Update current user's sidebar background
+            this.updateUserSidebarBackground(true);
+            // Broadcast to all users that this user liked
+            await this.broadcastTimerLike(true);
+        }
+
+        // Add temporary pulse effect
+        likeBtn.style.animation = 'none';
+        setTimeout(() => {
+            likeBtn.style.animation = 'thumbUp 0.6s ease-in-out';
+        }, 10);
+    }
+
+    updateUserSidebarBackground(isLiked) {
+        // Find current user's element in sidebar by user ID or name
+        const currentUserId = this.user?.id || window.user?.id;
+        const currentUserName = this.user?.firstName || window.user?.firstName;
+        
+        // Try to find user element by data attribute or class
+        let userElement = null;
+        
+        // First try to find current user element (which has current-user class)
+        userElement = document.querySelector(`.current-user[data-user-id="${currentUserId}"]`);
+        
+        // If not found, try other selectors
+        if (!userElement) {
+            const possibleSelectors = [
+                `[data-user-id="${currentUserId}"]`,
+                `.user-${currentUserId}`,
+                `.user-item[data-user="${currentUserId}"]`,
+                `.sidebar-user[data-id="${currentUserId}"]`,
+                `.connected-user[data-user-id="${currentUserId}"]`
+            ];
+            
+            
+            for (const selector of possibleSelectors) {
+                userElement = document.querySelector(selector);
+                if (userElement) {
+                    break;
+                }
+            }
+        } else {
+        }
+        
+        // If still not found, try to find by text content (username)
+        if (!userElement && currentUserName) {
+            const allUserElements = document.querySelectorAll('.user-item, .sidebar-user, .connected-user, [class*="user"]');
+            
+            for (const el of allUserElements) {
+                if (el.textContent.includes(currentUserName)) {
+                    userElement = el;
+                    break;
+                }
+            }
+        }
+        
+        if (userElement) {
+            if (isLiked) {
+                userElement.classList.add('timer-liked');
+            } else {
+                userElement.classList.remove('timer-liked');
+            }
+        }
+    }
+
+    async broadcastTimerLike(isLiked) {
+        const currentUserId = this.user?.id || window.user?.id;
+        const currentUserName = this.user?.firstName || window.user?.firstName;
+        
+        
+        if (!currentUserId) {
+            console.error('🔍 DEBUG: Cannot broadcast timer like: User ID not found');
+            return;
+        }
+
+        try {
+            // Get CSRF token (same as other actions)
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+            
+            const requestBody = {
+                isLiked: isLiked,
+                userId: currentUserId,
+                userName: currentUserName,
+                _token: csrfToken
+            };
+            
+            
+            // Send via API endpoint (same pattern as other actions)
+            const response = await fetch(`/retrospectives/${this.retrospectiveId}/timer-like-update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-Token': csrfToken
+                },
+                credentials: 'include',
+                body: JSON.stringify(requestBody)
+            });
+
+
+            if (response.ok) {
+            } else {
+                console.error('🔍 DEBUG: Failed to send timer like update:', response.statusText);
+            }
+        } catch (error) {
+            console.error('🔍 DEBUG: Error sending timer like update:', error);
         }
     }
     
@@ -776,6 +914,12 @@ class RetrospectiveBoard {
         }
         
         try {
+            // Stop timer if it's running before moving to next step
+            if (this.timerInterval && !this.timerManuallyStopped) {
+                console.log('Stopping timer before moving to next step');
+                await this.stopTimer();
+            }
+            
             const response = await fetch(`/retrospectives/${this.retrospectiveId}/next-step`, {
                 method: 'POST',
                 headers: {
@@ -1105,7 +1249,13 @@ class RetrospectiveBoard {
                 this.handleItemsReordered(data);
                 break;
             case 'connected_users_updated':
+                if (data.timerLikeStates) {
+                }
                 this.handleConnectedUsersUpdated(data);
+                // Also handle timer like states if present
+                if (data.timerLikeStates) {
+                    this.handleTimerLikeStatesFromHeartbeat(data.timerLikeStates);
+                }
                 break;
             case 'user_joined':
                 this.handleUserJoined(data);
@@ -1121,6 +1271,9 @@ class RetrospectiveBoard {
                 break;
             case 'item_discussed':
                 this.handleItemDiscussed(data);
+                break;
+            case 'timer_like_update':
+                this.handleTimerLikeUpdate(data);
                 break;
             default:
                 console.log('Unknown WebSocket message type:', data.type);
@@ -1167,6 +1320,162 @@ class RetrospectiveBoard {
             this.showMessage(`${memberName} marked an item as discussed`, 'info', 2000);
         }
     }
+
+    handleTimerLikeUpdate(data) {
+        console.log('Timer like update via WebSocket:', data);
+        
+        const { userId, userName, isLiked } = data;
+        const currentUserId = this.user?.id || window.user?.id;
+        
+        // Don't process our own like updates (we already handled them locally)
+        if (userId === currentUserId) {
+            return;
+        }
+        
+        // Find the user element in sidebar by ID or name
+        let userElement = null;
+        
+        // Try different selectors to find the user in sidebar
+        const possibleSelectors = [
+            `[data-user-id="${userId}"]`,
+            `.user-${userId}`,
+            `.user-item[data-user="${userId}"]`,
+            `.sidebar-user[data-id="${userId}"]`,
+            `.connected-user[data-user-id="${userId}"]`
+        ];
+        
+        for (const selector of possibleSelectors) {
+            userElement = document.querySelector(selector);
+            if (userElement) break;
+        }
+        
+        // If still not found, try to find by text content (username)
+        if (!userElement && userName) {
+            const allUserElements = document.querySelectorAll('.user-item, .sidebar-user, .connected-user, [class*="user"]');
+            for (const el of allUserElements) {
+                if (el.textContent.includes(userName)) {
+                    userElement = el;
+                    break;
+                }
+            }
+        }
+        
+        if (userElement) {
+            if (isLiked) {
+                userElement.classList.add('timer-liked');
+                console.log(`User ${userName} liked the timer`);
+            } else {
+                userElement.classList.remove('timer-liked');
+                console.log(`User ${userName} unliked the timer`);
+            }
+        } else {
+            console.log(`User element not found for timer like update. User ID: ${userId}, User Name: ${userName}`);
+        }
+    }
+
+    // Timer like state is automatically saved via broadcastTimerLike() endpoint
+
+    // Timer like state restoration is now handled entirely by WebSocket heartbeat
+    // No manual restoration needed - this eliminates race conditions
+
+    updateUserSidebarBackgroundForUser(userId, userName, isLiked) {
+        
+        // Find the user element in sidebar by ID or name
+        let userElement = null;
+        
+        // Try different selectors to find the user in sidebar
+        const possibleSelectors = [
+            `[data-user-id="${userId}"]`,
+            `.user-${userId}`,
+            `.user-item[data-user="${userId}"]`,
+            `.sidebar-user[data-id="${userId}"]`,
+            `.connected-user[data-user-id="${userId}"]`
+        ];
+        
+        
+        for (const selector of possibleSelectors) {
+            userElement = document.querySelector(selector);
+            if (userElement) break;
+        }
+        
+        // If still not found, try to find by text content (username)
+        if (!userElement && userName) {
+            const allUserElements = document.querySelectorAll('.user-item, .sidebar-user, .connected-user, [class*="user"]');
+            
+            for (const el of allUserElements) {
+                if (el.textContent.includes(userName)) {
+                    userElement = el;
+                    break;
+                }
+            }
+        }
+        
+        if (userElement) {
+            
+            if (isLiked) {
+                userElement.classList.add('timer-liked');
+            } else {
+                userElement.classList.remove('timer-liked');
+            }
+            
+        } else {
+        }
+    }
+
+    handleTimerLikeStatesFromHeartbeat(timerLikeStates) {
+        // This is the SINGLE source of truth for timer like states
+        
+        // Store the states for potential reapplication after DOM updates
+        this.lastTimerLikeStates = timerLikeStates;
+        
+        // Get all user elements that currently have timer-liked class
+        const currentLikedElements = document.querySelectorAll('.timer-liked');
+        const currentLikedUserIds = Array.from(currentLikedElements).map(el => el.getAttribute('data-user-id'));
+        
+        // Get all user IDs that should be liked according to heartbeat
+        const shouldBeLikedUserIds = Object.values(timerLikeStates)
+            .filter(userState => userState.isLiked)
+            .map(userState => userState.userId.toString());
+        
+        
+        // Remove timer-liked class from users who should NOT be liked
+        currentLikedUserIds.forEach(userId => {
+            if (!shouldBeLikedUserIds.includes(userId)) {
+                const userElement = document.querySelector(`[data-user-id="${userId}"]`);
+                if (userElement) {
+                    userElement.classList.remove('timer-liked');
+                }
+            }
+        });
+        
+        // Add timer-liked class to users who should be liked
+        shouldBeLikedUserIds.forEach(userId => {
+            if (!currentLikedUserIds.includes(userId)) {
+                const userState = Object.values(timerLikeStates).find(state => state.userId.toString() === userId);
+                if (userState) {
+                    this.updateUserSidebarBackgroundForUser(userState.userId, userState.userName, true);
+                }
+            }
+        });
+        
+    }
+
+    clearTimerLikeState() {
+        try {
+            const currentUserId = this.user?.id || window.user?.id;
+            const retrospectiveId = this.retrospectiveId || window.retrospectiveId;
+            
+            if (!currentUserId || !retrospectiveId) {
+                return;
+            }
+            
+            // Timer like state is managed on the server side
+            // No need to clear localStorage since we're not using it anymore
+            console.log(`Timer like state is managed on server for user ${currentUserId} in retrospective ${retrospectiveId}`);
+        } catch (error) {
+            console.error('Error clearing timer like state:', error);
+        }
+    }
     
     
     async checkConnectedUsers() {
@@ -1206,18 +1515,39 @@ class RetrospectiveBoard {
         const currentUser = container.querySelector('.current-user');
         const currentUserId = currentUser ? currentUser.dataset.userId : null;
         
-        // Remove all non-current users
+        // Store existing timer-liked states before recreating elements
+        const existingTimerLikedStates = {};
         const existingUsers = container.querySelectorAll('.user-item:not(.current-user)');
+        existingUsers.forEach(user => {
+            const userId = user.dataset.userId;
+            if (user.classList.contains('timer-liked')) {
+                existingTimerLikedStates[userId] = true;
+            }
+        });
+        
+        
+        // Remove all non-current users
         existingUsers.forEach(user => user.remove());
         
         // Add other connected users
         users.forEach(user => {
             if (user.id != currentUserId) {
                 const userElement = this.createUserElement(user);
+                
+                // Restore timer-liked state if it existed before
+                if (existingTimerLikedStates[user.id]) {
+                    userElement.classList.add('timer-liked');
+                }
+                
                 container.appendChild(userElement);
-            } else {
             }
         });
+        
+        // After recreating elements, reapply timer like states from heartbeat
+        // This ensures the states are applied to the newly created elements
+        if (this.lastTimerLikeStates) {
+            this.handleTimerLikeStatesFromHeartbeat(this.lastTimerLikeStates);
+        }
         
     }
     
@@ -1312,6 +1642,9 @@ class RetrospectiveBoard {
         this.stopTimerDisplay();
         this.hideAddItemForms();
         
+        // Clear all timer like states when timer is stopped
+        this.clearAllTimerLikeStates();
+        
         // Stop voting if we're in voting phase
         if (this.isInDiscussionStep() && this.votingActive) {
             console.log('Stopping voting in voting phase');
@@ -1405,6 +1738,12 @@ class RetrospectiveBoard {
     }
     
     handleConnectedUsersUpdated(data) {
+        // Process timer like states FIRST, before updating connected users
+        if (data.timerLikeStates) {
+            this.handleTimerLikeStatesFromHeartbeat(data.timerLikeStates);
+        }
+        
+        // Then update connected users
         this.updateConnectedUsers(data.users);
     }
     
@@ -3131,9 +3470,6 @@ RetrospectiveBoard.prototype.handleAddAction = async function(e) {
     const dueDate = document.getElementById('actionDueDate').value;
     
     // DEBUG: Log what we're sending
-    console.log('DEBUG JS - Description:', description);
-    console.log('DEBUG JS - AssignedToId:', assignedToId, 'Type:', typeof assignedToId);
-    console.log('DEBUG JS - DueDate:', dueDate);
     
     if (!description) {
         this.showMessage('Please enter a description', 'error');
@@ -3146,7 +3482,6 @@ RetrospectiveBoard.prototype.handleAddAction = async function(e) {
         dueDate: dueDate || null
     };
     
-    console.log('DEBUG JS - Request data:', JSON.stringify(requestData));
     
     try {
         const response = await fetch(`/retrospectives/${this.retrospectiveId}/add-action`, {
@@ -3169,16 +3504,12 @@ RetrospectiveBoard.prototype.handleAddAction = async function(e) {
                 window.location.reload();
             }, 1000);
         } else {
-            console.log('DEBUG JS - Response status:', response.status);
-            console.log('DEBUG JS - Response headers:', Object.fromEntries(response.headers.entries()));
             const errorText = await response.text();
-            console.log('DEBUG JS - Response text (first 500 chars):', errorText.substring(0, 500));
             
             try {
                 const errorData = JSON.parse(errorText);
                 this.showMessage(errorData.message || 'Failed to add action item', 'error');
             } catch (e) {
-                console.log('DEBUG JS - Could not parse error as JSON, showing HTML error page');
                 this.showMessage('Server error - check console for details', 'error');
             }
         }
@@ -3218,6 +3549,25 @@ RetrospectiveBoard.prototype.heartbeatConnectedUsers = async function() {
     } catch (error) {
         console.error('Error in heartbeat users:', error);
     }
+};
+
+// Add clearAllTimerLikeStates method to RetrospectiveBoard prototype
+RetrospectiveBoard.prototype.clearAllTimerLikeStates = function() {
+    // Remove timer-liked class from all user elements
+    const allLikedElements = document.querySelectorAll('.timer-liked');
+    
+    allLikedElements.forEach(element => {
+        element.classList.remove('timer-liked');
+    });
+    
+    // Reset the like button state
+    const likeBtn = document.getElementById('likeTimerBtn');
+    if (likeBtn) {
+        likeBtn.classList.remove('liked');
+    }
+    
+    // Clear stored timer like states
+    this.lastTimerLikeStates = {};
 };
 
 // Cleanup polling on page unload
