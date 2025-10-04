@@ -32,6 +32,16 @@ if ! docker info > /dev/null 2>&1; then
     exit 1
 fi
 
+# Check if .env.dev exists, generate if not
+if [ ! -f .env.dev ]; then
+    print_warning ".env.dev file not found. Generating development environment file..."
+    ./generate-env-dev.sh
+fi
+
+# Load environment variables
+print_status "Loading development environment variables..."
+export $(cat .env.dev | grep -v '^#' | xargs)
+
 # Stop existing containers
 print_status "Stopping existing containers..."
 docker-compose -f docker-compose.yml -f docker-compose.dev.yml down || true

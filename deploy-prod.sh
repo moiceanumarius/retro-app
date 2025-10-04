@@ -29,7 +29,10 @@ print_error() {
 # Check if .env.prod exists
 if [ ! -f .env.prod ]; then
     print_error ".env.prod file not found!"
-    print_warning "Please copy .env.prod.example to .env.prod and configure it with your production values."
+    print_warning "Generating .env.prod template..."
+    ./generate-env-prod.sh
+    print_warning "Please edit .env.prod with your actual credentials before continuing."
+    print_warning "Run this script again after configuring .env.prod"
     exit 1
 fi
 

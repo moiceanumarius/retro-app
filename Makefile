@@ -24,11 +24,15 @@ help:
 	@echo "  make clean        - Clean up containers and volumes"
 	@echo "  make logs         - Show logs for all services"
 	@echo "  make shell        - Open shell in app container"
+	@echo ""
+	@echo "Environment:"
+	@echo "  make env-dev      - Generate .env.dev file"
+	@echo "  make env-prod     - Generate .env.prod file"
 
 # Development commands
 dev:
 	@echo "Starting development environment..."
-	docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+	@./setup-dev.sh
 
 dev-build:
 	@echo "Building development containers..."
@@ -45,11 +49,7 @@ dev-shell:
 # Production commands
 prod:
 	@echo "Starting production environment..."
-	@if [ ! -f .env.prod ]; then \
-		echo "Error: .env.prod file not found. Please copy .env.prod.example to .env.prod and configure it."; \
-		exit 1; \
-	fi
-	docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+	@./deploy-prod.sh
 
 prod-build:
 	@echo "Building production containers..."
@@ -95,6 +95,15 @@ cache-clear:
 migrate:
 	@echo "Running database migrations..."
 	docker-compose exec app php bin/console doctrine:migrations:migrate
+
+# Environment generation commands
+env-dev:
+	@echo "Generating .env.dev file..."
+	@./generate-env-dev.sh
+
+env-prod:
+	@echo "Generating .env.prod file..."
+	@./generate-env-prod.sh
 
 # Allow passing arguments to console command
 %:
