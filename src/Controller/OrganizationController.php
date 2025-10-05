@@ -657,10 +657,16 @@ final class OrganizationController extends AbstractController
         
         try {
             // Obținerea tuturor utilizatorilor care NU au organizație activă
+            // Folosim o subquery pentru a exclude utilizatorii cu organizații active
             $users = $this->userRepository->createQueryBuilder('u')
-                ->leftJoin('u.organizationMemberships', 'om')
-                ->where('(om.isActive IS NULL OR om.isActive = :inactive OR om.leftAt IS NOT NULL)')
-                ->setParameter('inactive', false)
+                ->where('u.id NOT IN (
+                    SELECT DISTINCT u2.id 
+                    FROM App\Entity\User u2 
+                    JOIN u2.organizationMemberships om2 
+                    WHERE om2.isActive = :active 
+                    AND om2.leftAt IS NULL
+                )')
+                ->setParameter('active', true)
                 ->orderBy('u.lastName', 'ASC')
                 ->addOrderBy('u.firstName', 'ASC')
                 ->getQuery()
