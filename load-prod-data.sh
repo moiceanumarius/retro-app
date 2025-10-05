@@ -45,16 +45,25 @@ else
   exit 1
 fi
 
-# 4. Load fixtures using our PHP script
-print_status "Loading fixtures (roles, permissions, and test users)..."
-if sudo docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_FILE" exec -T app php load-fixtures.php; then
-  print_success "Fixtures loaded successfully."
+# 4. Load RBAC fixtures (roles and permissions)
+print_status "Loading RBAC fixtures (roles and permissions)..."
+if sudo docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_FILE" exec -T app php bin/console doctrine:fixtures:load --fixtures=src/DataFixtures/RbacFixtures.php --no-interaction; then
+  print_success "RBAC fixtures loaded successfully."
 else
-  print_error "Failed to load fixtures. Check logs for details. Exiting."
+  print_error "Failed to load RBAC fixtures. Check logs for details. Exiting."
   exit 1
 fi
 
-# 5. Clear cache
+# 5. Load User fixtures (test users)
+print_status "Loading User fixtures (test users)..."
+if sudo docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_FILE" exec -T app php bin/console doctrine:fixtures:load --fixtures=src/DataFixtures/UserFixtures.php --no-interaction; then
+  print_success "User fixtures loaded successfully."
+else
+  print_error "Failed to load User fixtures. Check logs for details. Exiting."
+  exit 1
+fi
+
+# 6. Clear cache
 print_status "Clearing application cache..."
 if sudo docker compose --env-file "$ENV_FILE" -f "$DOCKER_COMPOSE_FILE" exec -T app php bin/console cache:clear; then
   print_success "Application cache cleared."
