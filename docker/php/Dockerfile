@@ -57,7 +57,7 @@ ENV APP_ENV=prod
 ENV APP_DEBUG=true
 
 # Install production dependencies only (no dev dependencies)
-RUN composer install --optimize-autoloader --no-interaction --no-dev
+RUN composer install --optimize-autoloader --no-interaction --no-dev --no-scripts
 
 # Install additional production extensions
 RUN docker-php-ext-install opcache
