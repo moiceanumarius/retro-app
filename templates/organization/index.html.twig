@@ -161,6 +161,90 @@
             </div>
         </div>
 
+        <!-- Remove User from Organization Section -->
+        <div class="teams-section">
+            <div class="section-header">
+                <h2>Remove User from Organization</h2>
+                <p>Remove users from organizations and reset their roles to MEMBER</p>
+            </div>
+            
+            <div class="form-card">
+                <form id="removeUserFromOrgForm" method="post" action="">
+                    <input type="hidden" name="_token" value="{{ csrf_token('remove_user_from_organization') }}">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            {# Organization Dropdown for Removal #}
+                            <label for="removeOrganization" class="form-label">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z"></path>
+                                </svg>
+                                Organization *
+                            </label>
+                            <select id="removeOrganization" name="removeOrganization" class="form-select" required>
+                                {% if userOrganization %}
+                                    <option value="{{ userOrganization.id }}">{{ userOrganization.name }}</option>
+                                {% else %}
+                                    <option value="">No organization available</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            {# Member Search Dropdown #}
+                            <label for="memberDropdownButton" class="form-label">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                                </svg>
+                                Search & Select Member to Remove
+                            </label>
+                            <div class="modern-dropdown" style="position: relative; width: 100%;">
+                                <button type="button" id="memberDropdownButton" class="modern-dropdown-button" 
+                                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
+                                    <span id="selectedMemberText" style="flex: 1; text-align: left; color: #6b7280;">Select a member...</span>
+                                    <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
+                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </button>
+                                <div id="memberDropdown" class="modern-dropdown-menu" 
+                                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 1000; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
+                                    <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
+                                             style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
+                                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                        </svg>
+                                        <input type="text" id="memberSearchInput" class="dropdown-search-input" 
+                                               style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; background: white; outline: none; transition: border-color 0.2s ease;" 
+                                               placeholder="Search members..." autocomplete="off">
+                                    </div>
+                                    <div id="memberDropdownList" class="dropdown-list" style="max-height: 250px; overflow-y: auto;">
+                                        <!-- Members will be populated here -->
+                                    </div>
+                                </div>
+                                <input type="hidden" id="selectedMember" name="member" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-danger" id="removeUserBtn" disabled>
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"></path>
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            Remove User from Organization
+                        </button> 
+                        <button type="button" class="btn btn-secondary" onclick="resetRemoveForm()">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                            </svg>
+                            Reset Form
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- Active Organizations Section -->
         {% if organizations|length > 0 %}
         <div class="teams-section">
@@ -308,10 +392,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize search dropdown functionality
     initUserSearchDropdown();
     initFormValidation();
+    
+    // Initialize remove member functionality
+    initMemberSearchDropdown();
+    initRemoveFormValidation();
 });
 
 let searchTimeout = null;
 let allUsers = [];
+let allMembers = [];
 
 /**
  * Initialize modern dropdown functionality
@@ -620,6 +709,325 @@ function submitAddUserForm() {
     .catch(error => {
             console.error('Error:', error);
             showFlashMessage('❌ Failed to add user to organization. Please try again.', 'danger');
+    })
+    .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
+    });
+}
+
+/**
+ * Initialize member search dropdown functionality for removal
+ */
+function initMemberSearchDropdown() {
+    const dropdownButton = document.getElementById('memberDropdownButton');
+    const dropdownMenu = document.getElementById('memberDropdown');
+    const searchInput = document.getElementById('memberSearchInput');
+    const memberDropdownList = document.getElementById('memberDropdownList');
+    const organizationSelect = document.getElementById('removeOrganization');
+    
+    if (!dropdownButton || !dropdownMenu) return;
+    
+    // Load members when organization changes
+    organizationSelect.addEventListener('change', function() {
+        const orgId = this.value;
+        if (orgId) {
+            loadOrganizationMembers(orgId);
+        } else {
+            allMembers = [];
+            clearSelectedMember();
+        }
+    });
+    
+    // Load initial members if organization is selected
+    if (organizationSelect.value) {
+        loadOrganizationMembers(organizationSelect.value);
+    }
+    
+    // Show/hide dropdown
+    dropdownButton.addEventListener('click', function(e) {
+        e.stopPropagation();
+        toggleMemberDropdown();
+    });
+    
+    // Search functionality
+    searchInput.addEventListener('input', function() {
+        const query = this.value.trim().toLowerCase();
+        filterMembers(query);
+    });
+    
+    // Handle member selection
+    memberDropdownList.addEventListener('click', function(e) {
+        const memberOption = e.target.closest('.member-option');
+        if (memberOption) {
+            const memberId = memberOption.dataset.value;
+            const memberName = memberOption.dataset.name;
+            const memberEmail = memberOption.dataset.email;
+            
+            selectMember(memberId, memberName, memberEmail);
+            closeMemberDropdown();
+        }
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.modern-dropdown')) {
+            closeMemberDropdown();
+        }
+    });
+    
+    function toggleMemberDropdown() {
+        if (dropdownMenu.style.display === 'none' || dropdownMenu.style.display === '') {
+            dropdownMenu.style.display = 'block';
+            populateMembers(); // Show all members initially
+            setTimeout(() => searchInput.focus(), 100);
+        } else {
+            closeMemberDropdown();
+        }
+    }
+    
+    function closeMemberDropdown() {
+        dropdownMenu.style.display = 'none';
+        searchInput.value = ''; // Clear search
+    }
+    
+    // Populate members in dropdown
+    function populateMembers() {
+        memberDropdownList.innerHTML = allMembers.map(member => 
+            `<div class="member-option" data-value="${member.id}" data-name="${member.firstName} ${member.lastName}" data-email="${member.email}" data-role="${member.role || 'N/A'}" 
+                 style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
+                 onmouseover="this.style.backgroundColor='#f8fafc'" 
+                 onmouseout="this.style.backgroundColor='white'">
+                <div class="member-option-content" style="flex: 1;">
+                    <div class="member-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${member.firstName} ${member.lastName}</div>
+                    <div class="member-option-email" style="color: #64748b; font-size: 0.75rem;">${member.email}</div>
+                </div>
+                <span class="badge badge-${member.role ? member.role.toLowerCase() : 'default'}" 
+                      style="font-size: 0.65rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.025em; white-space: nowrap;
+                             background: ${member.role === 'ADMIN' ? '#fee2e2' : member.role === 'SUPERVISOR' ? '#fef3c7' : member.role === 'FACILITATOR' ? '#dbeafe' : '#f3f4f6'};
+                             color: ${member.role === 'ADMIN' ? '#991b1b' : member.role === 'SUPERVISOR' ? '#92400e' : member.role === 'FACILITATOR' ? '#1e40af' : '#6b7280'};">
+                    ${member.role || 'N/A'}
+                </span>
+            </div>`
+        ).join('');
+    }
+    
+    // Filter members based on search query
+    function filterMembers(query) {
+        const filteredMembers = allMembers.filter(member => {
+            if (!query) return true;
+            
+            const fullName = `${member.firstName} ${member.lastName}`.toLowerCase();
+            const email = member.email.toLowerCase();
+            
+            return fullName.includes(query) || email.includes(query);
+        });
+        
+        memberDropdownList.innerHTML = filteredMembers.map(member => 
+            `<div class="member-option" data-value="${member.id}" data-name="${member.firstName} ${member.lastName}" data-email="${member.email}" data-role="${member.role || 'N/A'}" 
+                 style="display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; transition: background-color 0.2s ease; border-bottom: 1px solid #f1f5f9;"
+                 onmouseover="this.style.backgroundColor='#f8fafc'" 
+                 onmouseout="this.style.backgroundColor='white'">
+                <div class="member-option-content" style="flex: 1;">
+                    <div class="member-option-name" style="font-weight: 600; color: #1e293b; font-size: 0.875rem; margin-bottom: 0.125rem;">${member.firstName} ${member.lastName}</div>
+                    <div class="member-option-email" style="color: #64748b; font-size: 0.75rem;">${member.email}</div>
+                </div>
+                <span class="badge badge-${member.role ? member.role.toLowerCase() : 'default'}" 
+                      style="font-size: 0.65rem; font-weight: 600; padding: 0.125rem 0.375rem; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.025em; white-space: nowrap;
+                             background: ${member.role === 'ADMIN' ? '#fee2e2' : member.role === 'SUPERVISOR' ? '#fef3c7' : member.role === 'FACILITATOR' ? '#dbeafe' : '#f3f4f6'};
+                             color: ${member.role === 'ADMIN' ? '#991b1b' : member.role === 'SUPERVISOR' ? '#92400e' : member.role === 'FACILITATOR' ? '#1e40af' : '#6b7280'};">
+                    ${member.role || 'N/A'}
+                </span>
+            </div>`
+        ).join('');
+        
+        if (filteredMembers.length === 0 && query) {
+            memberDropdownList.innerHTML = '<div class="no-results">No members found</div>';
+        }
+    }
+}
+
+/**
+ * Load organization members from backend API
+ */
+function loadOrganizationMembers(organizationId) {
+    console.log('Loading organization members for org:', organizationId);
+    
+    fetch(`/organizations/${organizationId}/members`)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                allMembers = data.members || [];
+                console.log(`Loaded ${allMembers.length} members for organization`);
+            } else {
+                throw new Error(data.message || 'API returned error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading organization members:', error);
+            allMembers = [];
+            showFlashMessage('❌ Failed to load organization members', 'danger');
+        });
+}
+
+/**
+ * Select a member from dropdown
+ */
+function selectMember(memberId, memberName, memberEmail) {
+    const selectedMemberInput = document.getElementById('selectedMember');
+    const selectedMemberText = document.getElementById('selectedMemberText');
+    
+    // Set hidden input value
+    selectedMemberInput.value = memberId;
+    
+    // Update button text to show selected member
+    selectedMemberText.textContent = `${memberName} (${memberEmail})`;
+    selectedMemberText.style.color = '#1e293b';
+    selectedMemberText.style.fontWeight = '500';
+    
+    // Enable submit button
+    validateRemoveForm();
+}
+
+/**
+ * Clear selected member
+ */
+function clearSelectedMember() {
+    const selectedMemberInput = document.getElementById('selectedMember');
+    const selectedMemberText = document.getElementById('selectedMemberText');
+    
+    selectedMemberInput.value = '';
+    selectedMemberText.textContent = 'Select a member...';
+    selectedMemberText.style.color = '#6b7280';
+    selectedMemberText.style.fontWeight = 'normal';
+    
+    validateRemoveForm();
+}
+
+/**
+ * Initialize remove form validation
+ */
+function initRemoveFormValidation() {
+    const organizationSelect = document.getElementById('removeOrganization');
+    const form = document.getElementById('removeUserFromOrgForm');
+    
+    // Check if user has an organization
+    if (organizationSelect && !organizationSelect.value) {
+        // Disable the entire form if no organization is available
+        const submitBtn = document.getElementById('removeUserBtn');
+        const memberDropdown = document.getElementById('memberDropdownButton');
+        
+        if (submitBtn) submitBtn.disabled = true;
+        if (memberDropdown) memberDropdown.disabled = true;
+        
+        return;
+    }
+    
+    if (organizationSelect) {
+        organizationSelect.addEventListener('change', validateRemoveForm);
+    }
+    
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validateRemoveForm()) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+            
+            // Show confirmation dialog
+            const memberName = document.getElementById('selectedMemberText').textContent;
+            if (!confirm(`Are you sure you want to remove ${memberName} from the organization? This will also remove them from all organization teams and reset their role to MEMBER.`)) {
+                return;
+            }
+            
+            submitRemoveUserForm();
+        });
+    }
+}
+
+/**
+ * Validate remove form and enable/disable submit button
+ */
+function validateRemoveForm() {
+    const organization = document.getElementById('removeOrganization').value;
+    const selectedMember = document.getElementById('selectedMember').value;
+    const removeUserBtn = document.getElementById('removeUserBtn');
+    
+    const isValid = organization && selectedMember;
+    
+    if (removeUserBtn) {
+        removeUserBtn.disabled = !isValid;
+    }
+    
+    return isValid;
+}
+
+/**
+ * Reset remove form
+ */
+function resetRemoveForm() {
+    const form = document.getElementById('removeUserFromOrgForm');
+    if (form) {
+        form.reset();
+        clearSelectedMember();
+        validateRemoveForm();
+    }
+}
+
+/**
+ * Submit remove user form via AJAX
+ */
+function submitRemoveUserForm() {
+    const formData = new FormData();
+    const organizationId = document.getElementById('removeOrganization').value;
+    const memberId = document.getElementById('selectedMember').value;
+    const csrfToken = document.querySelector('#removeUserFromOrgForm input[name="_token"]').value;
+    
+    formData.append('_token', csrfToken);
+    
+    const submitBtn = document.getElementById('removeUserBtn');
+    const originalText = submitBtn.innerHTML;
+    
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = `
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9 11.5a1 1 0 11-2 0 1 1 0 012 0zm4-3a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"></path>
+        </svg>
+        Removing user...
+    `;
+    
+    // Find the member ID from the selected member data
+    const selectedMemberData = allMembers.find(member => member.id == memberId);
+    const memberIdToRemove = selectedMemberData ? selectedMemberData.memberId : memberId;
+    
+    fetch(`/organizations/${organizationId}/remove-member/${memberIdToRemove}`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.text()) // Handle HTML response
+    .then(data => {
+        // Check if response indicates success (redirect or success message)
+        if (data.includes('success') || data.includes('redirect')) {
+            showFlashMessage('✅ User removed successfully from organization!', 'success');
+            resetRemoveForm();
+            // Refresh page after 1.5 seconds to show updated members
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        } else {
+            showFlashMessage('❌ Failed to remove user from organization', 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showFlashMessage('❌ Failed to remove user from organization. Please try again.', 'danger');
     })
     .finally(() => {
         submitBtn.disabled = false;

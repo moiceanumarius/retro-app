@@ -561,6 +561,75 @@ final class OrganizationController extends AbstractController
     }
 
     /**
+     * API endpoint pentru obținerea membrilor unei organizații
+     * 
+     * Returnează membrii activi ai unei organizații pentru dropdown-ul de eliminare
+     * 
+     * @param int $id ID-ul organizației
+     * @return JsonResponse Lista membrilor organizației
+     */
+    #[Route('/{id}/members', name: 'app_api_organization_members', methods: ['GET'])]
+    public function getOrganizationMembers(int $id): JsonResponse
+    {
+        // Verificarea permisirii - doar ADMIN
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+        
+        try {
+            $organization = $this->organizationRepository->find($id);
+            
+            if (!$organization) {
+                return $this->json([
+                    'success' => false,
+                    'message' => 'Organization not found',
+                    'members' => []
+                ], 404);
+            }
+            
+            // Obținerea membrilor activi ai organizației
+            $members = $this->organizationMemberRepository->findActiveByOrganization($organization);
+            
+            $results = [];
+            foreach ($members as $member) {
+                $user = $member->getUser();
+                
+                // Obținerea rolului principal al utilizatorului
+                $primaryRole = 'N/A';
+                foreach ($user->getUserRoles() as $userRole) {
+                    if ($userRole->isActive() && $userRole->getRole()) {
+                        $roleCode = $userRole->getRole()->getCode();
+                        // Extragem doar numele rolului fără ROLE_ prefix
+                        $primaryRole = str_replace('ROLE_', '', $roleCode);
+                        break; // Luăm primul rol activ găsit
+                    }
+                }
+                
+                $results[] = [
+                    'id' => $user->getId(),
+                    'memberId' => $member->getId(), // ID-ul membrului în organizație
+                    'firstName' => $user->getFirstName(),
+                    'lastName' => $user->getLastName(),
+                    'email' => $user->getEmail(),
+                    'role' => $primaryRole,
+                    'organizationRole' => $member->getRole(),
+                ];
+            }
+            
+            return $this->json([
+                'success' => true,
+                'members' => $results,
+                'count' => count($results)
+            ]);
+            
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error loading organization members: ' . $e->getMessage(),
+                'members' => []
+            ], 500);
+        }
+    }
+
+    /**
      * API endpoint pentru obținerea utilizatorilor cu roluri elevated pentru dropdown
      * 
      * Returnează utilizatorii care nu au rolul MEMBER (ADMIN, SUPERVISOR, FACILITATOR)
