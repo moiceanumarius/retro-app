@@ -53,18 +53,41 @@ final class RoleController extends AbstractController
             }
         }
 
-        // Count users per role
+        // Count users per role (filtered by organization)
         $roleCounts = [];
+        $userOrganization = null;
+        
+        // Get current user's organization
+        foreach ($currentUser->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $userOrganization = $membership->getOrganization();
+                break;
+            }
+        }
+        
         foreach ($roles as $role) {
-            $count = $this->entityManager->getRepository(UserRole::class)
-                ->createQueryBuilder('ur')
-                ->select('COUNT(ur.id)')
-                ->where('ur.role = :role')
-                ->andWhere('ur.isActive = :active')
-                ->setParameter('role', $role)
-                ->setParameter('active', true)
-                ->getQuery()
-                ->getSingleScalarResult();
+            if ($userOrganization) {
+                // Count only users from the same organization
+                $count = $this->entityManager->getRepository(UserRole::class)
+                    ->createQueryBuilder('ur')
+                    ->select('COUNT(ur.id)')
+                    ->leftJoin('ur.user', 'u')
+                    ->leftJoin('u.organizationMemberships', 'om')
+                    ->where('ur.role = :role')
+                    ->andWhere('ur.isActive = :active')
+                    ->andWhere('om.organization = :organization')
+                    ->andWhere('om.isActive = :orgActive')
+                    ->andWhere('om.leftAt IS NULL')
+                    ->setParameter('role', $role)
+                    ->setParameter('active', true)
+                    ->setParameter('organization', $userOrganization)
+                    ->setParameter('orgActive', true)
+                    ->getQuery()
+                    ->getSingleScalarResult();
+            } else {
+                // If user has no organization, return 0
+                $count = 0;
+            }
             
             $roleCounts[$role->getCode()] = $count;
         }
