@@ -649,17 +649,11 @@ final class OrganizationController extends AbstractController
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
         
         try {
-            // Obținerea utilizatorilor cu roluri elevated care NU au organizație activă
+            // Obținerea tuturor utilizatorilor care NU au organizație activă
             $users = $this->userRepository->createQueryBuilder('u')
-                ->leftJoin('u.userRoles', 'ur')
-                ->leftJoin('ur.role', 'r')
                 ->leftJoin('u.organizationMemberships', 'om')
-                ->where('ur.isActive = :active')
-                ->andWhere('r.code IN (:elevatedRoles)')
-                ->andWhere('(om.isActive IS NULL OR om.isActive = :inactive OR om.leftAt IS NOT NULL)')
-                ->setParameter('active', true)
+                ->where('(om.isActive IS NULL OR om.isActive = :inactive OR om.leftAt IS NOT NULL)')
                 ->setParameter('inactive', false)
-                ->setParameter('elevatedRoles', ['ROLE_ADMIN', 'ROLE_SUPERVISOR', 'ROLE_FACILITATOR'])
                 ->orderBy('u.lastName', 'ASC')
                 ->addOrderBy('u.firstName', 'ASC')
                 ->getQuery()
