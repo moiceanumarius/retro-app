@@ -1,3 +1,6 @@
+env_file:
+  - .env.prod
+
 services:
   app:
     build:
@@ -16,7 +19,7 @@ services:
       - MERCURE_URL=http://mercure/.well-known/mercure
       - MERCURE_PUBLIC_URL=https://your-domain.com/.well-known/mercure
       - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
-      - DATABASE_URL=mysql://${MYSQL_USER:-default_user}:${MYSQL_PASSWORD:-default_pass}@mariadb:3306/retro_app?serverVersion=10.11&charset=utf8mb4
+      - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mariadb:3306/retro_app?serverVersion=10.11&charset=utf8mb4
     env_file:
       - .env.prod
     depends_on:
@@ -47,10 +50,10 @@ services:
     image: mariadb:10.11
     container_name: retro_app_mariadb_prod
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-default_root_pass}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
       MYSQL_DATABASE: retro_app
-      MYSQL_USER: ${MYSQL_USER:-default_user}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-default_pass}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
