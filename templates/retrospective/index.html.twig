@@ -106,8 +106,12 @@
                             <span class="stat-label">Team Members</span>
                         </div>
                         <div class="stat">
+                            <span class="stat-number">{{ retrospective.team.name }}</span>
+                            <span class="stat-label">Team</span>
+                        </div>
+                        <div class="stat">
                             <span class="stat-number">{{ retrospective.scheduledAt|date('M d') }}</span>
-                            <span class="stat-label">Scheduled - {{ retrospective.team.name }}</span>
+                            <span class="stat-label">Scheduled</span>
                         </div>
                     </div>
                     <div class="team-actions">
