@@ -19,14 +19,14 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www/html
 
-# Copy application code
-COPY . .
+# Copy only composer files for dependency installation
+COPY composer.json composer.lock ./
 
 # Fix git ownership issue and install PHP dependencies
 RUN git config --global --add safe.directory /var/www/html && \
-    composer install --optimize-autoloader --no-interaction
+    composer install --optimize-autoloader --no-interaction --no-scripts
 
-# Set permissions
+# Set permissions for working directory
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html
 

@@ -7,6 +7,7 @@ services:
     container_name: retro_app_php_prod
     working_dir: /var/www/html
     volumes:
+      - .:/var/www/html
       - ./docker/php/php.ini:/usr/local/etc/php/php.ini
       - ./docker/php/php-prod.ini:/usr/local/etc/php/conf.d/99-prod.ini
       - app_prod_data:/var/www/html/var
