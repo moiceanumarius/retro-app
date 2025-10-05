@@ -7,11 +7,12 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Bundle\SecurityBundle\Security;
 
 final class AuthController extends AbstractController
 {
     #[Route('/login', name: 'app_login')]
-    public function login(AuthenticationUtils $authenticationUtils, Request $request): Response
+    public function login(AuthenticationUtils $authenticationUtils, Request $request, Security $security): Response
     {
         // if ($this->getUser()) {
         //     return $this->redirectToRoute('target_path');
@@ -24,11 +25,20 @@ final class AuthController extends AbstractController
         
         // Get invitation token from URL parameter
         $invitationToken = $request->query->get('invitation');
+        
+        // Get the target path from Security service (where user was redirected from)
+        $targetPath = $security->getTargetPath($request->getSession(), 'main');
+        
+        // If there's an invitation token, set target path to invitation accept route
+        if ($invitationToken) {
+            $targetPath = $this->generateUrl('app_team_invitation_accept', ['token' => $invitationToken]);
+        }
 
         return $this->render('auth/login.html.twig', [
             'last_username' => $lastUsername,
             'error' => $error,
             'invitation_token' => $invitationToken,
+            'target_path' => $targetPath,
         ]);
     }
 
