@@ -25,7 +25,10 @@
         "symfony/yaml": "7.3.*",
         "symfonycasts/verify-email-bundle": "^1.17.4",
         "twig/extra-bundle": "^2.12|^3.21",
-        "twig/twig": "^2.12|^3.21.1",
+        "twig/twig": "^2.12|^3.21.1"
+    },
+    "require-dev": {
+        "symfony/maker-bundle": "^1.64",
         "doctrine/doctrine-fixtures-bundle": "^4.1"
     },
     "config": {
