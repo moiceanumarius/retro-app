@@ -47,10 +47,10 @@ services:
     image: mariadb:10.11
     container_name: retro_app_mariadb_prod
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-default_root_pass}
       MYSQL_DATABASE: retro_app
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_USER: ${MYSQL_USER:-default_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-default_pass}
     ports:
       - "3306:3306"
     volumes:
