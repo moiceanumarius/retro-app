@@ -27,7 +27,31 @@ final class RoleController extends AbstractController
         }
 
         $roles = $this->entityManager->getRepository(Role::class)->findAll();
-        $users = $this->entityManager->getRepository(User::class)->findAll();
+        
+        // Get only users from the current user's organization
+        $currentUser = $this->getUser();
+        $users = [];
+        
+        // Find the current user's organization
+        foreach ($currentUser->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $organization = $membership->getOrganization();
+                // Get all users from this organization
+                $users = $this->entityManager->getRepository(User::class)
+                    ->createQueryBuilder('u')
+                    ->leftJoin('u.organizationMemberships', 'om')
+                    ->where('om.organization = :organization')
+                    ->andWhere('om.isActive = :active')
+                    ->andWhere('om.leftAt IS NULL')
+                    ->setParameter('organization', $organization)
+                    ->setParameter('active', true)
+                    ->orderBy('u.lastName', 'ASC')
+                    ->addOrderBy('u.firstName', 'ASC')
+                    ->getQuery()
+                    ->getResult();
+                break;
+            }
+        }
 
         // Count users per role
         $roleCounts = [];
@@ -163,13 +187,37 @@ final class RoleController extends AbstractController
         $orderColumn = isset($allParams['order'][0]['column']) ? (int) $allParams['order'][0]['column'] : 3;
         $orderDir = $allParams['order'][0]['dir'] ?? 'desc';
 
+        // Get current user's organization
+        $currentUser = $this->getUser();
+        $organization = null;
+        
+        foreach ($currentUser->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $organization = $membership->getOrganization();
+                break;
+            }
+        }
+
         $qb = $this->entityManager->createQueryBuilder()
             ->select('ur')
             ->from(UserRole::class, 'ur')
             ->leftJoin('ur.user', 'u')
             ->leftJoin('ur.role', 'r')
+            ->leftJoin('u.organizationMemberships', 'om')
             ->where('ur.isActive = :active')
             ->setParameter('active', true);
+            
+        // Filter by organization if user belongs to one
+        if ($organization) {
+            $qb->andWhere('om.organization = :organization')
+               ->andWhere('om.isActive = :orgActive')
+               ->andWhere('om.leftAt IS NULL')
+               ->setParameter('organization', $organization)
+               ->setParameter('orgActive', true);
+        } else {
+            // If user has no organization, return empty result
+            $qb->andWhere('1 = 0');
+        }
 
         // Apply global search
         if (!empty($searchValue)) {
