@@ -65,8 +65,9 @@ RUN docker-php-ext-install opcache
 # Create log directory
 RUN mkdir -p /var/log && chown www-data:www-data /var/log
 
-# Set production permissions
-RUN chown -R www-data:www-data /var/www/html \
+# Create var directory and set production permissions
+RUN mkdir -p /var/www/html/var \
+    && chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html \
     && chmod -R 777 /var/www/html/var
 
