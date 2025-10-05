@@ -77,8 +77,13 @@ final class OrganizationController extends AbstractController
             }
         }
         
-        // Obținerea tuturor organizațiilor (active și inactive) pentru afișare
-        $organizations = $this->organizationRepository->findAllOrganizations();
+        // Obținerea organizațiilor din care utilizatorul curent face parte
+        $organizations = [];
+        foreach ($currentUser->getOrganizationMemberships() as $membership) {
+            if ($membership->getOrganization()) {
+                $organizations[] = $membership->getOrganization();
+            }
+        }
         
         // Organizațiile recent create pentru sidebar
         $recentOrganizations = $this->organizationRepository->findRecent(5);
