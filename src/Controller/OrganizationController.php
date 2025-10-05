@@ -475,7 +475,7 @@ final class OrganizationController extends AbstractController
         }
         
         // Verificarea token-ului CSRF pentru securitate
-        if ($this->isCsrfTokenValid('remove_member', $request->request->get('_token'))) {
+        if ($this->isCsrfTokenValid('remove_user_from_organization', $request->request->get('_token'))) {
             // Mark member as left organization
             $this->organizationMemberRepository->markAsLeft($member);
             
