@@ -55,171 +55,175 @@
             </div>
         </div>
 
-        <!-- Add User to Organization Section -->
+        <!-- User Management Sections - Side by Side -->
         <div class="teams-section">
-            <div class="section-header">
-                <h2>Add User to Organization</h2>
-                <p>Assign users to organizations with their roles</p>
-            </div>
-            
-            <div class="form-card">
-                <form id="addUserToOrgForm" method="post" action="">
-                    <input type="hidden" name="_token" value="{{ csrf_token('add_user_to_organization') }}">
+            <div class="user-management-grid">
+                <!-- Add User to Organization Section -->
+                <div class="user-management-column">
+                    <div class="section-header">
+                        <h2>Add User to Organization</h2>
+                        <p>Assign users to organizations with their roles</p>
+                    </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            {# Organization Dropdown #}
-                            <label for="organization" class="form-label">
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
-                                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z"></path>
-                                </svg>
-                                Organization *
-                            </label>
-                            <select id="organization" name="organization" class="form-select" required>
-                                {% if userOrganization %}
-                                    <option value="{{ userOrganization.id }}">{{ userOrganization.name }}</option>
-                                {% else %}
-                                    <option value="">No organization available</option>
-                                {% endif %}
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            {# User Search Dropdown #}
-                            <label for="userDropdownButton" class="form-label">
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
-                                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM15.472 13.472a4 4 0 010 5.656 4 4 0 01-5.656 0l-3.179-3.179c4.686-4.686 4.686-12.284 0-16.97l3.179 3.179a4 4 0 010 5.656z"></path>
-                                </svg>
-                                Search & Select User (Elevated Roles)
-                            </label>
-                            <div class="modern-dropdown" style="position: relative; width: 100%;">
-                                <button type="button" id="userDropdownButton" class="modern-dropdown-button" 
-                                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
-                                    <span id="selectedUserText" style="flex: 1; text-align: left; color: #6b7280;">Select a user...</span>
-                                    <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
-                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </button>
-                                <div id="userDropdown" class="modern-dropdown-menu" 
-                                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 1000; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
-                                    <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
-                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
-                                             style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
-                                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                    <div class="form-card">
+                        <form id="addUserToOrgForm" method="post" action="">
+                            <input type="hidden" name="_token" value="{{ csrf_token('add_user_to_organization') }}">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {# Organization Dropdown #}
+                                    <label for="organization" class="form-label">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z"></path>
                                         </svg>
-                                        <input type="text" id="userSearchInput" class="dropdown-search-input" 
-                                               style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; background: white; outline: none; transition: border-color 0.2s ease;" 
-                                               placeholder="Search users..." autocomplete="off">
-                                    </div>
-                                    <div id="userDropdownList" class="dropdown-list" style="max-height: 250px; overflow-y: auto;">
-                                        <!-- Users will be populated here -->
+                                        Organization *
+                                    </label>
+                                    <select id="organization" name="organization" class="form-select" required>
+                                        {% if userOrganization %}
+                                            <option value="{{ userOrganization.id }}">{{ userOrganization.name }}</option>
+                                        {% else %}
+                                            <option value="">No organization available</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    {# User Search Dropdown #}
+                                    <label for="userDropdownButton" class="form-label">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM15.472 13.472a4 4 0 010 5.656 4 4 0 01-5.656 0l-3.179-3.179c4.686-4.686 4.686-12.284 0-16.97l3.179 3.179a4 4 0 010 5.656z"></path>
+                                        </svg>
+                                        Search & Select User (Elevated Roles)
+                                    </label>
+                                    <div class="modern-dropdown" style="position: relative; width: 100%;">
+                                        <button type="button" id="userDropdownButton" class="modern-dropdown-button" 
+                                                style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
+                                            <span id="selectedUserText" style="flex: 1; text-align: left; color: #6b7280;">Select a user...</span>
+                                            <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </button>
+                                        <div id="userDropdown" class="modern-dropdown-menu" 
+                                             style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 1000; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
+                                            <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
+                                                     style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
+                                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                <input type="text" id="userSearchInput" class="dropdown-search-input" 
+                                                       style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; background: white; outline: none; transition: border-color 0.2s ease;" 
+                                                       placeholder="Search users..." autocomplete="off">
+                                            </div>
+                                            <div id="userDropdownList" class="dropdown-list" style="max-height: 250px; overflow-y: auto;">
+                                                <!-- Users will be populated here -->
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="selectedUser" name="user" required>
                                     </div>
                                 </div>
-                                <input type="hidden" id="selectedUser" name="user" required>
                             </div>
-                        </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-primary" id="addUserBtn" disabled>
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Add User to Organization
+                                </button> 
+                                <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Reset Form
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" id="addUserBtn" disabled>
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                            </svg>
-                            Add User to Organization
-                        </button> 
-                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
-                            </svg>
-                            Reset Form
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+                </div>
 
-        <!-- Remove User from Organization Section -->
-        <div class="teams-section">
-            <div class="section-header">
-                <h2>Remove User from Organization</h2>
-                <p>Remove users from organizations and reset their roles to MEMBER</p>
-            </div>
-            
-            <div class="form-card">
-                <form id="removeUserFromOrgForm" method="post" action="">
-                    <input type="hidden" name="_token" value="{{ csrf_token('remove_user_from_organization') }}">
+                <!-- Remove User from Organization Section -->
+                <div class="user-management-column">
+                    <div class="section-header">
+                        <h2>Remove User from Organization</h2>
+                        <p>Remove users from organizations and reset their roles to MEMBER</p>
+                    </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            {# Organization Dropdown for Removal #}
-                            <label for="removeOrganization" class="form-label">
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
-                                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z"></path>
-                                </svg>
-                                Organization *
-                            </label>
-                            <select id="removeOrganization" name="removeOrganization" class="form-select" required>
-                                {% if userOrganization %}
-                                    <option value="{{ userOrganization.id }}">{{ userOrganization.name }}</option>
-                                {% else %}
-                                    <option value="">No organization available</option>
-                                {% endif %}
-                            </select>
-                        </div>
-                        
-                        <div class="form-group">
-                            {# Member Search Dropdown #}
-                            <label for="memberDropdownButton" class="form-label">
-                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
-                                    <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
-                                </svg>
-                                Search & Select Member to Remove
-                            </label>
-                            <div class="modern-dropdown" style="position: relative; width: 100%;">
-                                <button type="button" id="memberDropdownButton" class="modern-dropdown-button" 
-                                        style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
-                                    <span id="selectedMemberText" style="flex: 1; text-align: left; color: #6b7280;">Select a member...</span>
-                                    <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
-                                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </button>
-                                <div id="memberDropdown" class="modern-dropdown-menu" 
-                                     style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 1000; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
-                                    <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
-                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
-                                             style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
-                                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                    <div class="form-card">
+                        <form id="removeUserFromOrgForm" method="post" action="">
+                            <input type="hidden" name="_token" value="{{ csrf_token('remove_user_from_organization') }}">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    {# Organization Dropdown for Removal #}
+                                    <label for="removeOrganization" class="form-label">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                            <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.707.707a1 1 0 001.414-1.414l-7-7z"></path>
                                         </svg>
-                                        <input type="text" id="memberSearchInput" class="dropdown-search-input" 
-                                               style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; background: white; outline: none; transition: border-color 0.2s ease;" 
-                                               placeholder="Search members..." autocomplete="off">
-                                    </div>
-                                    <div id="memberDropdownList" class="dropdown-list" style="max-height: 250px; overflow-y: auto;">
-                                        <!-- Members will be populated here -->
+                                        Organization *
+                                    </label>
+                                    <select id="removeOrganization" name="removeOrganization" class="form-select" required>
+                                        {% if userOrganization %}
+                                            <option value="{{ userOrganization.id }}">{{ userOrganization.name }}</option>
+                                        {% else %}
+                                            <option value="">No organization available</option>
+                                        {% endif %}
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group">
+                                    {# Member Search Dropdown #}
+                                    <label for="memberDropdownButton" class="form-label">
+                                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="margin-right: 8px;">
+                                            <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"></path>
+                                        </svg>
+                                        Search & Select Member to Remove
+                                    </label>
+                                    <div class="modern-dropdown" style="position: relative; width: 100%;">
+                                        <button type="button" id="memberDropdownButton" class="modern-dropdown-button" 
+                                                style="width: 100%; padding: 0.75rem 1rem; border: 2px solid #e2e8f0; border-radius: 8px; background: white; color: #374151; font-size: 0.875rem; cursor: pointer; transition: all 0.2s ease; outline: none; display: flex; align-items: center; justify-content: space-between;">
+                                            <span id="selectedMemberText" style="flex: 1; text-align: left; color: #6b7280;">Select a member...</span>
+                                            <svg class="dropdown-arrow" width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="transition: transform 0.2s ease; color: #6b7280;">
+                                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                            </svg>
+                                        </button>
+                                        <div id="memberDropdown" class="modern-dropdown-menu" 
+                                             style="display: none; position: absolute; top: 100%; left: 0; right: 0; background: white; border: 2px solid #e2e8f0; border-radius: 8px; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); z-index: 1000; margin-top: 0.25rem; max-height: 300px; overflow: hidden;">
+                                            <div class="dropdown-search" style="position: relative; padding: 0.75rem; border-bottom: 1px solid #f1f5f9;">
+                                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" class="search-icon" 
+                                                     style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: #9ca3af; pointer-events: none;">
+                                                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                                                </svg>
+                                                <input type="text" id="memberSearchInput" class="dropdown-search-input" 
+                                                       style="width: 100%; padding: 0.5rem 1rem 0.5rem 2.5rem; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.875rem; background: white; outline: none; transition: border-color 0.2s ease;" 
+                                                       placeholder="Search members..." autocomplete="off">
+                                            </div>
+                                            <div id="memberDropdownList" class="dropdown-list" style="max-height: 250px; overflow-y: auto;">
+                                                <!-- Members will be populated here -->
+                                            </div>
+                                        </div>
+                                        <input type="hidden" id="selectedMember" name="member" required>
                                     </div>
                                 </div>
-                                <input type="hidden" id="selectedMember" name="member" required>
                             </div>
-                        </div>
+                            
+                            <div class="form-actions">
+                                <button type="submit" class="btn btn-danger" id="removeUserBtn" disabled>
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"></path>
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Remove User from Organization
+                                </button> 
+                                <button type="button" class="btn btn-secondary" onclick="resetRemoveForm()">
+                                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Reset Form
+                                </button>
+                            </div>
+                        </form>
                     </div>
-                    
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-danger" id="removeUserBtn" disabled>
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" clip-rule="evenodd"></path>
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                            </svg>
-                            Remove User from Organization
-                        </button> 
-                        <button type="button" class="btn btn-secondary" onclick="resetRemoveForm()">
-                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
-                            </svg>
-                            Reset Form
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -1013,4 +1017,69 @@ function submitRemoveUserForm() {
     });
 }
 </script>
+
+<!-- Custom Styles for Two-Column Layout -->
+<style>
+.user-management-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.user-management-column {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-management-column .section-header {
+    margin-bottom: 1rem;
+}
+
+.user-management-column .form-card {
+    flex: 1;
+    height: fit-content;
+}
+
+.user-management-column .form-row {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.user-management-column .form-group {
+    margin-bottom: 1rem;
+}
+
+.user-management-column .form-actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+}
+
+.user-management-column .form-actions button {
+    flex: 1;
+    min-width: 140px;
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .user-management-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .user-management-column .form-actions {
+        flex-direction: column;
+    }
+    
+    .user-management-column .form-actions button {
+        flex: none;
+        width: 100%;
+    }
+}
+</style>
 {% endblock %}
