@@ -568,7 +568,7 @@ final class OrganizationController extends AbstractController
      * @param int $id ID-ul organizației
      * @return JsonResponse Lista membrilor organizației
      */
-    #[Route('/{id}/members', name: 'app_api_organization_members', methods: ['GET'])]
+    #[Route('/{id}/api/members', name: 'app_api_organization_members', methods: ['GET'])]
     public function getOrganizationMembers(int $id): JsonResponse
     {
         // Verificarea permisirii - doar ADMIN

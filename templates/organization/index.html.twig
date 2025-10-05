@@ -853,7 +853,7 @@ function initMemberSearchDropdown() {
 function loadOrganizationMembers(organizationId) {
     console.log('Loading organization members for org:', organizationId);
     
-    fetch(`/organizations/${organizationId}/members`)
+    fetch(`/organizations/${organizationId}/api/members`)
         .then(response => {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
