@@ -90,7 +90,7 @@
             </div>
             <div class="teams-grid">
                 {% for retrospective in retrospectives %}
-                <div class="team-card {{ retrospective.status }}">
+                <div class="team-card {{ retrospective.status }}{% if retrospective.facilitator == app.user %} owned{% elseif retrospective.team.hasMember(app.user) %} member{% endif %}">
                     <div class="team-header">
                         <div class="team-info">
                             <h3>{{ retrospective.title }}</h3>
