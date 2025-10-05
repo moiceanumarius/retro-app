@@ -55,13 +55,31 @@ final class DashboardController extends AbstractController
 
     private function getUserTeams($user): array
     {
+        // Get user's organization
+        $userOrganization = null;
+        foreach ($user->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $userOrganization = $membership->getOrganization();
+                break;
+            }
+        }
+
+        // If user has no organization, return empty array
+        if (!$userOrganization) {
+            return [];
+        }
+
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('t')
            ->from(\App\Entity\Team::class, 't')
            ->leftJoin('t.teamMembers', 'tm')
            ->leftJoin('tm.user', 'u')
-           ->where('t.owner = :user OR u = :user')
+           ->where('(t.owner = :user OR u = :user)')
+           ->andWhere('t.organization = :organization')
+           ->andWhere('t.isActive = :active')
            ->setParameter('user', $user)
+           ->setParameter('organization', $userOrganization)
+           ->setParameter('active', true)
            ->orderBy('t.name', 'ASC');
 
         return $qb->getQuery()->getResult();

@@ -252,30 +252,46 @@ class StatisticsController extends AbstractController
     }
 
     /**
-     * Obține ID-urile echipelor utilizatorului curent
+     * Obține ID-urile echipelor utilizatorului curent (filtrate pe organizație)
      * 
      * @param mixed $user
      * @return array
      */
     private function getUserTeamIds($user): array
     {
-        if ($user->hasRole('ROLE_ADMIN')) {
-            // Admin poate vedea toate statisticile
-            $teams = $this->entityManager->getRepository(\App\Entity\Team::class)
-                ->findBy(['isActive' => true]);
-            return array_map(fn($team) => $team->getId(), $teams);
+        // Get user's organization
+        $userOrganization = null;
+        foreach ($user->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $userOrganization = $membership->getOrganization();
+                break;
+            }
+        }
+
+        // If user has no organization, return empty array
+        if (!$userOrganization) {
+            return [];
         }
 
         $teamIds = [];
         
-        // Echipe pe care le deține utilizatorul
+        // Echipe pe care le deține utilizatorul din organizația sa
         $ownedTeams = $this->entityManager->getRepository(\App\Entity\Team::class)
-            ->findBy(['owner' => $user, 'isActive' => true]);
+            ->createQueryBuilder('t')
+            ->where('t.owner = :user')
+            ->andWhere('t.isActive = :active')
+            ->andWhere('t.organization = :organization')
+            ->setParameter('user', $user)
+            ->setParameter('active', true)
+            ->setParameter('organization', $userOrganization)
+            ->getQuery()
+            ->getResult();
+
         foreach ($ownedTeams as $team) {
             $teamIds[] = $team->getId();
         }
 
-        // Echipe din care face parte utilizatorul (ca membru)
+        // Echipe din care face parte utilizatorul (ca membru) din organizația sa
         $memberTeams = $this->entityManager->getRepository(\App\Entity\TeamMember::class)
             ->createQueryBuilder('tm')
             ->join('tm.team', 't')
@@ -283,8 +299,10 @@ class StatisticsController extends AbstractController
             ->andWhere('tm.isActive = :active')
             ->andWhere('t.isActive = :active')
             ->andWhere('t.owner != :user')
+            ->andWhere('t.organization = :organization')
             ->setParameter('user', $user)
             ->setParameter('active', true)
+            ->setParameter('organization', $userOrganization)
             ->getQuery()
             ->getResult();
 
