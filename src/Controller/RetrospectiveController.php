@@ -38,12 +38,12 @@ class RetrospectiveController extends AbstractController
     {
         $user = $this->getUser();
         
-        // Get retrospectives where user is facilitator or team member
+        // Get retrospectives where user is facilitator or active team member
         $retrospectives = $this->entityManager->getRepository(Retrospective::class)
             ->createQueryBuilder('r')
             ->join('r.team', 't')
             ->leftJoin('t.teamMembers', 'tm')
-            ->where('r.facilitator = :user OR tm.user = :user')
+            ->where('r.facilitator = :user OR (tm.user = :user AND tm.isActive = :active)')
             ->andWhere('t.isActive = :active')
             ->setParameter('user', $user)
             ->setParameter('active', true)
