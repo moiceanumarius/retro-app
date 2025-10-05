@@ -51,15 +51,15 @@ print_success "Environment variables loaded successfully"
 
 # Stop existing containers
 print_status "Stopping existing containers..."
-sudo docker compose -f docker-compose.prod.yml down
+sudo docker compose --env-file .env.prod -f docker-compose.prod.yml down
 
 # Pull latest images (if any)
 print_status "Pulling latest images..."
-sudo docker compose -f docker-compose.prod.yml pull
+sudo docker compose --env-file .env.prod -f docker-compose.prod.yml pull
 
 # Build and start containers
 print_status "Building and starting containers..."
-sudo docker compose -f docker-compose.prod.yml up -d --build
+sudo docker compose --env-file .env.prod -f docker-compose.prod.yml up -d --build
 
 # Wait for services to be ready
 print_status "Waiting for services to be ready..."
@@ -67,7 +67,7 @@ sleep 10
 
 # Check container status
 print_status "Checking container status..."
-sudo docker compose -f docker-compose.prod.yml ps
+sudo docker compose --env-file .env.prod -f docker-compose.prod.yml ps
 
 print_success "Deployment completed successfully!"
 print_warning "Don't forget to:"

@@ -51,8 +51,6 @@ services:
       MYSQL_DATABASE: retro_app
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    env_file:
-      - .env.prod
     ports:
       - "3306:3306"
     volumes:
