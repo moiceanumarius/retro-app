@@ -21,6 +21,11 @@
         .team-actions .btn-warning:hover {
             background: #dd6b20;
         }
+        
+        /* Stiluri pentru cardurile de retrospectivă */
+        .team-card.active {
+            border-left-color: #56ab2f; /* Verde pentru retrospectiva active */
+        }
     </style>
 {% endblock %}
 
@@ -90,7 +95,7 @@
             </div>
             <div class="teams-grid">
                 {% for retrospective in retrospectives %}
-                <div class="team-card {{ retrospective.status }}{% if retrospective.facilitator == app.user %} owned{% elseif retrospective.team.hasMember(app.user) %} member{% endif %}">
+                <div class="team-card {{ retrospective.status }}{% if retrospective.isActive() %} active{% elseif retrospective.facilitator == app.user %} owned{% elseif retrospective.team.hasMember(app.user) %} member{% endif %}">
                     <div class="team-header">
                         <div class="team-info">
                             <h3>{{ retrospective.title }}</h3>
