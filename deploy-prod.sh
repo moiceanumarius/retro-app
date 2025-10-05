@@ -81,13 +81,17 @@ sleep 30
 print_status "Running database migrations..."
 $DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console doctrine:migrations:migrate --no-interaction
 
-# Clear Symfony cache
-print_status "Clearing Symfony cache..."
-$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console cache:clear --env=prod
+# Clear Symfony cache (skip if debug is enabled)
+if [ "$APP_DEBUG" = "true" ]; then
+    print_warning "Debug mode enabled - skipping cache clear and warmup"
+else
+    print_status "Clearing Symfony cache..."
+    $DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console cache:clear --env=prod
 
-# Warm up cache
-print_status "Warming up cache..."
-$DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console cache:warmup --env=prod
+    # Warm up cache
+    print_status "Warming up cache..."
+    $DOCKER_COMPOSE -f docker-compose.yml -f docker-compose.prod.yml exec -T app php bin/console cache:warmup --env=prod
+fi
 
 # Set proper permissions
 print_status "Setting proper permissions..."
@@ -119,6 +123,17 @@ print_status "   - All services running in Docker containers"
 print_status "   - MySQL, Redis, Nginx, PHP-FPM, Mercure, Prometheus"
 print_status "   - Production-optimized configurations"
 print_status "   - Automatic restarts and health monitoring"
+
+# Show debug status
+if [ "$APP_DEBUG" = "true" ]; then
+    print_warning "🔍 DEBUG MODE ENABLED:"
+    print_warning "   - Error details will be displayed"
+    print_warning "   - Development tools are available"
+    print_warning "   - Cache is not optimized"
+    print_warning "   - Remember to disable debug for production!"
+else
+    print_status "✅ Production mode: Debug disabled"
+fi
 
 echo ""
 print_warning "Don't forget to:"

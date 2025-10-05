@@ -20,14 +20,26 @@ final class Version20250929133435 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE TABLE user (id INT AUTO_INCREMENT NOT NULL, email VARCHAR(180) NOT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, first_name VARCHAR(255) NOT NULL, last_name VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL, updated_at DATETIME DEFAULT NULL, is_verified TINYINT(1) NOT NULL, UNIQUE INDEX UNIQ_IDENTIFIER_EMAIL (email), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
-        $this->addSql('ALTER TABLE retrospective_items DROP FOREIGN KEY `retrospective_items_ibfk_1`');
-        $this->addSql('ALTER TABLE retrospectives DROP FOREIGN KEY `retrospectives_ibfk_1`');
-        $this->addSql('ALTER TABLE sprints DROP FOREIGN KEY `sprints_ibfk_1`');
-        $this->addSql('DROP TABLE retrospective_items');
-        $this->addSql('DROP TABLE retrospectives');
-        $this->addSql('DROP TABLE sprints');
-        $this->addSql('DROP TABLE teams');
+        if (!$schema->hasTable('user')) {
+            $this->addSql('CREATE TABLE user (id INT AUTO_INCREMENT NOT NULL, email VARCHAR(180) NOT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, first_name VARCHAR(255) NOT NULL, last_name VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL, updated_at DATETIME DEFAULT NULL, is_verified TINYINT(1) NOT NULL, UNIQUE INDEX UNIQ_IDENTIFIER_EMAIL (email), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8mb4');
+        }
+        
+        // Only drop tables if they exist
+        if ($schema->hasTable('retrospective_items')) {
+            $this->addSql('ALTER TABLE retrospective_items DROP FOREIGN KEY `retrospective_items_ibfk_1`');
+            $this->addSql('DROP TABLE retrospective_items');
+        }
+        if ($schema->hasTable('retrospectives')) {
+            $this->addSql('ALTER TABLE retrospectives DROP FOREIGN KEY `retrospectives_ibfk_1`');
+            $this->addSql('DROP TABLE retrospectives');
+        }
+        if ($schema->hasTable('sprints')) {
+            $this->addSql('ALTER TABLE sprints DROP FOREIGN KEY `sprints_ibfk_1`');
+            $this->addSql('DROP TABLE sprints');
+        }
+        if ($schema->hasTable('teams')) {
+            $this->addSql('DROP TABLE teams');
+        }
     }
 
     public function down(Schema $schema): void

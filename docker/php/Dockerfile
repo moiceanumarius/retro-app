@@ -53,10 +53,14 @@ FROM base as production
 
 # Set environment to production
 ENV APP_ENV=prod
-ENV APP_DEBUG=false
+ENV APP_DEBUG=true
 
-# Remove development dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
+# Install development dependencies for debugging
+RUN composer install --optimize-autoloader --no-interaction
+
+# Install Xdebug for debugging
+RUN pecl install xdebug \
+    && docker-php-ext-enable xdebug
 
 # Install additional production extensions
 RUN docker-php-ext-install opcache
