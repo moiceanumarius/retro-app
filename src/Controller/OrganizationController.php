@@ -594,8 +594,15 @@ final class OrganizationController extends AbstractController
             $members = $this->organizationMemberRepository->findActiveByOrganization($organization);
             
             $results = [];
+            $organizationOwner = $organization->getOwner();
+            
             foreach ($members as $member) {
                 $user = $member->getUser();
+                
+                // Skip organization owner - they cannot be removed
+                if ($user === $organizationOwner) {
+                    continue;
+                }
                 
                 // Obținerea rolului principal al utilizatorului
                 $primaryRole = 'N/A';
