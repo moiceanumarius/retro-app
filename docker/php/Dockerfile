@@ -22,8 +22,9 @@ WORKDIR /var/www/html
 # Copy application code
 COPY . .
 
-# Install PHP dependencies
-RUN composer install --optimize-autoloader --no-interaction
+# Fix git ownership issue and install PHP dependencies
+RUN git config --global --add safe.directory /var/www/html && \
+    composer install --optimize-autoloader --no-interaction
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www/html \
