@@ -7,12 +7,14 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
-use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\Security\Http\Util\TargetPathTrait;
 
 final class AuthController extends AbstractController
 {
+    use TargetPathTrait;
+
     #[Route('/login', name: 'app_login')]
-    public function login(AuthenticationUtils $authenticationUtils, Request $request, Security $security): Response
+    public function login(AuthenticationUtils $authenticationUtils, Request $request): Response
     {
         // if ($this->getUser()) {
         //     return $this->redirectToRoute('target_path');
@@ -26,8 +28,8 @@ final class AuthController extends AbstractController
         // Get invitation token from URL parameter
         $invitationToken = $request->query->get('invitation');
         
-        // Get the target path from Security service (where user was redirected from)
-        $targetPath = $security->getTargetPath($request->getSession(), 'main');
+        // Get the target path from session (where user was redirected from)
+        $targetPath = $this->getTargetPath($request->getSession(), 'main');
         
         // If there's an invitation token, set target path to invitation accept route
         if ($invitationToken) {
