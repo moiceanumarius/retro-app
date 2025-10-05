@@ -15,7 +15,7 @@ services:
       - APP_ENV=prod
       - APP_DEBUG=true
       - MERCURE_URL=http://mercure/.well-known/mercure
-      - MERCURE_PUBLIC_URL=https://retro.estimatorapp.site/.well-known/mercure
+      - MERCURE_PUBLIC_URL=http://retro.estimatorapp.site/.well-known/mercure
       - MERCURE_JWT_SECRET=${MERCURE_JWT_SECRET}
       - DATABASE_URL=mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@mariadb:3306/retro_app?serverVersion=10.11&charset=utf8mb4
     env_file:
