@@ -181,7 +181,16 @@
             
             {% if not registrationForm.vars.valid %}
                 <div class="form-errors">
-                    {{ form_errors(registrationForm) }}
+                    {% for error in registrationForm.vars.errors %}
+                        <div>{{ error.message }}</div>
+                    {% endfor %}
+                    {% for child in registrationForm %}
+                        {% if child.vars.errors|length > 0 %}
+                            {% for error in child.vars.errors %}
+                                <div>{{ error.message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endfor %}
                 </div>
             {% endif %}
             

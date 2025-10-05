@@ -35,6 +35,11 @@ final class AuthController extends AbstractController
         if ($invitationToken) {
             $targetPath = $this->generateUrl('app_team_invitation_accept', ['token' => $invitationToken]);
         }
+        
+        // Ensure target_path is always set (fallback to dashboard)
+        if (!$targetPath) {
+            $targetPath = $this->generateUrl('app_dashboard');
+        }
 
         return $this->render('auth/login.html.twig', [
             'last_username' => $lastUsername,
