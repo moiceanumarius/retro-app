@@ -1155,7 +1155,10 @@ class RetrospectiveBoard {
             url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/connected-users`);
             url.searchParams.append('topic', `retrospective/${this.retrospectiveId}/step`);
             url.searchParams.append('topic', `retrospectives/${this.retrospectiveId}/discussion`);
-            url.searchParams.append('Authorization', mercureToken);
+            
+            // Mercure accepts JWT token as query parameter for EventSource
+            // Since EventSource doesn't support custom headers, we pass the token as query parameter
+            url.searchParams.append('authorization', mercureToken);
             
             this.eventSource = new EventSource(url.toString());
             
