@@ -62,9 +62,6 @@ final class OrganizationController extends AbstractController
         // Verificarea permisirii - doar ADMIN
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        // Statistici generale pentru admin dashboard
-        $statistics = $this->organizationRepository->getStatistics();
-        
         // Obținerea organizației utilizatorului curent pentru dropdown-ul "Add User to Organization"
         $currentUser = $this->getUser();
         $userOrganization = null;
@@ -76,6 +73,9 @@ final class OrganizationController extends AbstractController
                 break;
             }
         }
+        
+        // Statistici pentru organizația utilizatorului curent
+        $statistics = $this->organizationRepository->getStatistics($userOrganization);
         
         // Obținerea organizațiilor din care utilizatorul curent face parte
         $organizations = [];

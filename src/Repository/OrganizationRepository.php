@@ -178,32 +178,53 @@ class OrganizationRepository extends ServiceEntityRepository
     }
 
     /**
-     * Returnează statisticile pentru organizații
+     * Returnează statisticile pentru organizații (filtrate pe organizația specificată)
      * 
+     * @param Organization|null $organization Organizația pentru care se calculează statisticile
      * @return array Array cu statistici detaliate
      */
-    public function getStatistics(): array
+    public function getStatistics(?Organization $organization = null): array
     {
-        $qb = $this->createQueryBuilder('o');
-        
-        $totalCount = $qb
-            ->select('COUNT(o.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
+        if ($organization) {
+            // Statistici pentru o organizație specifică
+            $totalCount = 1; // Doar organizația curentă
+            $activeCount = $organization->isActive() ? 1 : 0;
+            
+            // Numărul de membri ai organizației curente
+            $totalMembers = $this->getEntityManager()
+                ->getRepository(OrganizationMember::class)
+                ->createQueryBuilder('om')
+                ->select('COUNT(om.id)')
+                ->where('om.organization = :organization')
+                ->andWhere('om.isActive = :active')
+                ->andWhere('om.leftAt IS NULL')
+                ->setParameter('organization', $organization)
+                ->setParameter('active', true)
+                ->getQuery()
+                ->getSingleScalarResult();
+        } else {
+            // Statistici pentru toate organizațiile (pentru admin global)
+            $qb = $this->createQueryBuilder('o');
+            
+            $totalCount = $qb
+                ->select('COUNT(o.id)')
+                ->getQuery()
+                ->getSingleScalarResult();
 
-        $activeCount = $qb
-            ->select('COUNT(o.id)')
-            ->where('o.isActive = :active')
-            ->setParameter('active', true)
-            ->getQuery()
-            ->getSingleScalarResult();
+            $activeCount = $qb
+                ->select('COUNT(o.id)')
+                ->where('o.isActive = :active')
+                ->setParameter('active', true)
+                ->getQuery()
+                ->getSingleScalarResult();
 
-        $totalMembers = $this->getEntityManager()
-            ->getRepository($this->getEntityName())
-            ->createQueryBuilder('o')
-            ->select('SUM(COALESCE(SIZE(o.organizationMembers), 0))')
-            ->getQuery()
-            ->getSingleScalarResult();
+            $totalMembers = $this->getEntityManager()
+                ->getRepository($this->getEntityName())
+                ->createQueryBuilder('o')
+                ->select('SUM(COALESCE(SIZE(o.organizationMembers), 0))')
+                ->getQuery()
+                ->getSingleScalarResult();
+        }
 
         return [
             'total_organizations' => $totalCount,
