@@ -40,7 +40,7 @@ class RegistrationController extends AbstractController
             $entityManager->flush();
 
             // Auto-login the user after successful registration
-            $security->login($user, 'form_login');
+            $security->login($user, 'App\Security\FormLoginAuthenticator');
 
             // Check if there's an invitation token to redirect to
             $invitationToken = $request->query->get('invitation');
