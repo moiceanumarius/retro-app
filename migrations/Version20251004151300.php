@@ -20,7 +20,7 @@ final class Version20251004151300 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE TABLE timer_likes (
+        $this->addSql('CREATE TABLE IF NOT EXISTS timer_likes (
             id INT AUTO_INCREMENT NOT NULL,
             user_id INT NOT NULL,
             retrospective_id INT NOT NULL,
@@ -33,8 +33,29 @@ final class Version20251004151300 extends AbstractMigration
             PRIMARY KEY(id)
         ) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB');
         
-        $this->addSql('ALTER TABLE timer_likes ADD CONSTRAINT FK_TIMER_LIKES_USER FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE');
-        $this->addSql('ALTER TABLE timer_likes ADD CONSTRAINT FK_TIMER_LIKES_RETROSPECTIVE FOREIGN KEY (retrospective_id) REFERENCES retrospective (id) ON DELETE CASCADE');
+        $this->addSql('SET @sql = (SELECT IF(
+            (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+             WHERE TABLE_SCHEMA = DATABASE() 
+             AND TABLE_NAME = "timer_likes" 
+             AND CONSTRAINT_NAME = "FK_TIMER_LIKES_USER") = 0,
+            "ALTER TABLE timer_likes ADD CONSTRAINT FK_TIMER_LIKES_USER FOREIGN KEY (user_id) REFERENCES user (id) ON DELETE CASCADE",
+            "SELECT 1"
+        ));
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;');
+        
+        $this->addSql('SET @sql = (SELECT IF(
+            (SELECT COUNT(*) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE 
+             WHERE TABLE_SCHEMA = DATABASE() 
+             AND TABLE_NAME = "timer_likes" 
+             AND CONSTRAINT_NAME = "FK_TIMER_LIKES_RETROSPECTIVE") = 0,
+            "ALTER TABLE timer_likes ADD CONSTRAINT FK_TIMER_LIKES_RETROSPECTIVE FOREIGN KEY (retrospective_id) REFERENCES retrospective (id) ON DELETE CASCADE",
+            "SELECT 1"
+        ));
+        PREPARE stmt FROM @sql;
+        EXECUTE stmt;
+        DEALLOCATE PREPARE stmt;');
     }
 
     public function down(Schema $schema): void
