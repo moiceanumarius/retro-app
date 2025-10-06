@@ -28,195 +28,175 @@ final class DashboardController extends AbstractController
         $hasTeams = !empty($userTeams);
         $showStatistics = $hasOrganization && $hasTeams;
         
-        // Get user's active organizations
-        $activeOrganizations = $this->getUserActiveOrganizations($user);
-
-        // Get the selected team from the session or use the first team
-        $session = $this->container->get('request_stack')->getSession();
-        $selectedTeamId = $session->get('selected_team_id');
+        // Calculate statistics only if user has organization and teams
+        $stats = $showStatistics ? $this->calculateDashboardStats($user, $userTeams) : [];
         
-        $selectedTeam = null;
-        $teamStats = null;
-        $recentRetrospectives = [];
-        $upcomingRetrospectives = [];
-        $upcomingActions = [];
-
-        if (!empty($userTeams)) {
-            // If a team is selected in the session, try to find it
-            if ($selectedTeamId) {
-                foreach ($userTeams as $team) {
-                    if ($team->getId() == $selectedTeamId) {
-                        $selectedTeam = $team;
-                        break;
-                    }
-                }
-            }
-            
-            // If no team is selected or team not found, use the first team
-            if (!$selectedTeam) {
-                $selectedTeam = $userTeams[0];
-                $session->set('selected_team_id', $selectedTeam->getId());
-            }
-
-            // Get team statistics
-            $teamStats = $this->getTeamStats($selectedTeam);
-            
-            // Get recent retrospectives for selected team
-            $recentRetrospectives = $this->getRecentRetrospectives($selectedTeam, 5);
-            
-            // Get upcoming retrospectives for selected team
-            $upcomingRetrospectives = $this->getUpcomingRetrospectives($selectedTeam, 5);
-            
-            // Get upcoming actions for the user
-            $upcomingActions = $this->getUpcomingActions($user);
-        }
-
+        // Get recent activity only if user has organization and teams
+        $recentActivity = $showStatistics ? $this->getRecentActivity($user) : [];
+        
+        // Get upcoming deadlines only if user has organization and teams
+        $upcomingDeadlines = $showStatistics ? $this->getUpcomingDeadlines($user) : [];
+        
         return $this->render('dashboard/index.html.twig', [
-            'user' => $user,
-            'userRoles' => $userRoles,
-            'userTeams' => $userTeams,
-            'hasOrganization' => $hasOrganization,
-            'hasTeams' => $hasTeams,
-            'showStatistics' => $showStatistics,
-            'activeOrganizations' => $activeOrganizations,
-            'selectedTeam' => $selectedTeam,
-            'teamStats' => $teamStats,
-            'recentRetrospectives' => $recentRetrospectives,
-            'upcomingRetrospectives' => $upcomingRetrospectives,
-            'upcomingActions' => $upcomingActions,
+            'user_roles' => $userRoles,
+            'is_admin' => $user->hasRole('ROLE_ADMIN'),
+            'is_facilitator' => $user->hasRole('ROLE_FACILITATOR'),
+            'is_supervisor' => $user->hasRole('ROLE_SUPERVISOR'),
+            'is_member' => $user->hasRole('ROLE_MEMBER'),
+            'user_teams' => $userTeams,
+            'stats' => $stats,
+            'recent_activity' => $recentActivity,
+            'upcoming_deadlines' => $upcomingDeadlines,
+            'show_statistics' => $showStatistics,
+            'has_organization' => $hasOrganization,
+            'has_teams' => $hasTeams,
         ]);
     }
 
     private function getUserTeams($user): array
     {
-        return $this->entityManager->createQueryBuilder()
-            ->select('t')
-            ->from('App\Entity\Team', 't')
-            ->join('t.teamMembers', 'tm')
-            ->where('tm.user = :user')
-            ->setParameter('user', $user)
-            ->getQuery()
-            ->getResult();
+        // Get user's organization
+        $userOrganization = null;
+        foreach ($user->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $userOrganization = $membership->getOrganization();
+                break;
+            }
+        }
+
+        // If user has no organization, return empty array
+        if (!$userOrganization) {
+            return [];
+        }
+
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('t')
+           ->from(\App\Entity\Team::class, 't')
+           ->leftJoin('t.teamMembers', 'tm')
+           ->leftJoin('tm.user', 'u')
+           ->where('(t.owner = :user OR u = :user)')
+           ->andWhere('t.organization = :organization')
+           ->andWhere('t.isActive = :active')
+           ->setParameter('user', $user)
+           ->setParameter('organization', $userOrganization)
+           ->setParameter('active', true)
+           ->orderBy('t.name', 'ASC');
+
+        return $qb->getQuery()->getResult();
     }
 
     private function userHasOrganization($user): bool
     {
-        $qb = $this->entityManager->createQueryBuilder();
-        $qb->select('COUNT(om.id)')
-            ->from('App\Entity\OrganizationMember', 'om')
-            ->where('om.user = :user')
-            ->setParameter('user', $user);
-
-        return $qb->getQuery()->getSingleScalarResult() > 0;
+        $organizationMember = $this->entityManager->getRepository(\App\Entity\OrganizationMember::class)
+            ->findOneBy(['user' => $user, 'isActive' => true]);
+            
+        return $organizationMember !== null;
     }
 
-    private function getUserActiveOrganizations($user): array
+    private function calculateDashboardStats($user, $userTeams): array
     {
-        return $this->entityManager->createQueryBuilder()
-            ->select('o')
-            ->from('App\Entity\Organization', 'o')
-            ->join('o.members', 'om')
-            ->where('om.user = :user')
-            ->andWhere('om.isActive = 1')
-            ->setParameter('user', $user)
-            ->getQuery()
-            ->getResult();
-    }
-
-    private function getTeamStats($team): array
-    {
-        $em = $this->entityManager;
+        $teamIds = array_map(fn($team) => $team->getId(), $userTeams);
         
-        // Total retrospectives for the team
-        $totalRetrospectives = $em->createQueryBuilder()
-            ->select('COUNT(r.id)')
-            ->from('App\Entity\Retrospective', 'r')
-            ->where('r.team = :team')
-            ->setParameter('team', $team)
-            ->getQuery()
-            ->getSingleScalarResult();
+        if (empty($teamIds)) {
+            return [
+                'total_teams' => 0,
+                'total_retrospectives' => 0,
+                'active_retrospectives' => 0,
+                'completed_retrospectives' => 0,
+                'total_actions' => 0,
+                'pending_actions' => 0,
+                'completed_actions' => 0,
+                'overdue_actions' => 0,
+            ];
+        }
 
-        // Completed retrospectives
-        $completedRetrospectives = $em->createQueryBuilder()
-            ->select('COUNT(r.id)')
-            ->from('App\Entity\Retrospective', 'r')
-            ->where('r.team = :team')
-            ->andWhere('r.status = :status')
-            ->setParameter('team', $team)
-            ->setParameter('status', 'completed')
-            ->getQuery()
-            ->getSingleScalarResult();
+        // Retrospective statistics
+        $qbRetro = $this->entityManager->createQueryBuilder();
+        $qbRetro->select('r.status, COUNT(r) as count')
+                ->from(\App\Entity\Retrospective::class, 'r')
+                ->where('r.team IN (:teams)')
+                ->setParameter('teams', $teamIds)
+                ->groupBy('r.status');
 
-        // Total actions
-        $totalActions = $em->createQueryBuilder()
-            ->select('COUNT(a.id)')
-            ->from('App\Entity\RetrospectiveAction', 'a')
-            ->join('a.retrospective', 'r')
-            ->where('r.team = :team')
-            ->setParameter('team', $team)
-            ->getQuery()
-            ->getSingleScalarResult();
+        $retroStats = [];
+        foreach ($qbRetro->getQuery()->getResult() as $stat) {
+            $retroStats[$stat['status']] = $stat['count'];
+        }
 
-        // Completed actions
-        $completedActions = $em->createQueryBuilder()
-            ->select('COUNT(a.id)')
-            ->from('App\Entity\RetrospectiveAction', 'a')
-            ->join('a.retrospective', 'r')
-            ->where('r.team = :team')
-            ->andWhere('a.status = :status')
-            ->setParameter('team', $team)
-            ->setParameter('status', 'completed')
-            ->getQuery()
-            ->getSingleScalarResult();
+        // Action statistics
+        $qbActions = $this->entityManager->createQueryBuilder();
+        $qbActions->select('a.status, COUNT(a) as count')
+                  ->from(\App\Entity\RetrospectiveAction::class, 'a')
+                  ->leftJoin('a.retrospective', 'r')
+                  ->where('r.team IN (:teams)')
+                  ->setParameter('teams', $teamIds)
+                  ->groupBy('a.status');
+
+        $actionStats = [];
+        foreach ($qbActions->getQuery()->getResult() as $stat) {
+            $actionStats[$stat['status']] = $stat['count'];
+        }
+
+        // Overdue actions
+        $qbOverdue = $this->entityManager->createQueryBuilder();
+        $qbOverdue->select('COUNT(a) as count')
+                  ->from(\App\Entity\RetrospectiveAction::class, 'a')
+                  ->leftJoin('a.retrospective', 'r')
+                  ->where('r.team IN (:teams)')
+                  ->andWhere('a.dueDate < :currentDate')
+                  ->andWhere('a.status NOT IN (:completedStatuses)')
+                  ->setParameter('teams', $teamIds)
+                  ->setParameter('currentDate', new \DateTime())
+                  ->setParameter('completedStatuses', ['completed', 'cancelled']);
+
+        $overdueCount = $qbOverdue->getQuery()->getSingleScalarResult();
 
         return [
-            'total_retrospectives' => $totalRetrospectives,
-            'completed_retrospectives' => $completedRetrospectives,
-            'total_actions' => $totalActions,
-            'completed_actions' => $completedActions,
+            'total_teams' => count($userTeams),
+            'total_retrospectives' => array_sum($retroStats),
+            'active_retrospectives' => $retroStats['active'] ?? 0,
+            'completed_retrospectives' => $retroStats['completed'] ?? 0,
+            'total_actions' => array_sum($actionStats),
+            'pending_actions' => ($actionStats['pending'] ?? 0) + ($actionStats['open'] ?? 0),
+            'completed_actions' => $actionStats['completed'] ?? 0,
+            'overdue_actions' => $overdueCount,
         ];
     }
 
-    private function getRecentRetrospectives($team, $limit = 5): array
-    {
-        return $this->entityManager->createQueryBuilder()
-            ->select('r')
-            ->from('App\Entity\Retrospective', 'r')
-            ->where('r.team = :team')
-            ->setParameter('team', $team)
-            ->orderBy('r.date', 'DESC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-    }
-
-    private function getUpcomingRetrospectives($team, $limit = 5): array
-    {
-        return $this->entityManager->createQueryBuilder()
-            ->select('r')
-            ->from('App\Entity\Retrospective', 'r')
-            ->where('r.team = :team')
-            ->andWhere('r.date >= :now')
-            ->setParameter('team', $team)
-            ->setParameter('now', new \DateTime())
-            ->orderBy('r.date', 'ASC')
-            ->setMaxResults($limit)
-            ->getQuery()
-            ->getResult();
-    }
-
-    private function getUpcomingActions($user): array
+    private function getRecentActivity($user): array
     {
         $qb = $this->entityManager->createQueryBuilder();
-        $qb->select('a')
-           ->from('App\Entity\RetrospectiveAction', 'a')
-           ->join('a.retrospective', 'r')
-           ->join('r.team', 't')
-           ->join('t.teamMembers', 'tm')
-           ->where('tm.user = :user')
-           ->andWhere('a.status NOT IN (:completedStatuses)')
-           ->andWhere('a.dueDate >= :currentDate')
+        $qb->select('r')
+           ->from(\App\Entity\Retrospective::class, 'r')
+           ->leftJoin('r.team', 't')
+           ->leftJoin('t.teamMembers', 'tm')
+           ->leftJoin('tm.user', 'u')
+           ->where('r.facilitator = :user OR t.owner = :user OR u = :user')
            ->setParameter('user', $user)
+           ->orderBy('r.createdAt', 'DESC')
+           ->setMaxResults(5);
+
+        return $qb->getQuery()->getResult();
+    }
+
+    private function getUpcomingDeadlines($user): array
+    {
+        $nextWeek = new \DateTime('+7 days');
+        
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('a')
+           ->from(\App\Entity\RetrospectiveAction::class, 'a')
+           ->leftJoin('a.retrospective', 'r')
+           ->leftJoin('r.team', 't')
+           ->leftJoin('t.teamMembers', 'tm')
+           ->leftJoin('tm.user', 'u')
+           ->where('a.assignedTo = :user OR t.owner = :user OR u = :user')
+           ->andWhere('a.dueDate IS NOT NULL')
+           ->andWhere('a.dueDate <= :nextWeek')
+           ->andWhere('a.dueDate >= :currentDate')
+           ->andWhere('a.status NOT IN (:completedStatuses)')
+           ->setParameter('user', $user)
+           ->setParameter('nextWeek', $nextWeek)
            ->setParameter('currentDate', new \DateTime())
            ->setParameter('completedStatuses', ['completed', 'cancelled'])
            ->orderBy('a.dueDate', 'ASC')
