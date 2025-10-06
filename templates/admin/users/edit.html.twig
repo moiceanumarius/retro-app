@@ -153,16 +153,20 @@
 
                     <!-- User Roles -->
                     <div class="mb-4">
-                        <h6 class="text-gray-600 mb-3 fw-semibold">User Roles</h6>
+                        <h6 class="text-gray-600 mb-3 fw-semibold">User Role</h6>
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> Roles are hierarchical. Select the highest role - it includes all lower permissions.
+                        </div>
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <div class="form-check p-3 border rounded">
                                     <input class="form-check-input" 
-                                           type="checkbox" 
+                                           type="radio" 
                                            id="role_member" 
-                                           name="roles[]" 
+                                           name="role" 
                                            value="ROLE_MEMBER"
-                                           {{ 'ROLE_MEMBER' in user.roles ? 'checked' : '' }}>
+                                           {{ 'ROLE_MEMBER' in user.roles and 'ROLE_FACILITATOR' not in user.roles and 'ROLE_SUPERVISOR' not in user.roles and 'ROLE_ADMIN' not in user.roles ? 'checked' : '' }}>
                                     <label class="form-check-label fw-medium text-gray-700" for="role_member">
                                         <i class="fas fa-user me-2 text-secondary"></i>Member
                                     </label>
@@ -171,11 +175,11 @@
                             <div class="col-md-6">
                                 <div class="form-check p-3 border rounded">
                                     <input class="form-check-input" 
-                                           type="checkbox" 
+                                           type="radio" 
                                            id="role_facilitator" 
-                                           name="roles[]" 
+                                           name="role" 
                                            value="ROLE_FACILITATOR"
-                                           {{ 'ROLE_FACILITATOR' in user.roles ? 'checked' : '' }}>
+                                           {{ 'ROLE_FACILITATOR' in user.roles and 'ROLE_SUPERVISOR' not in user.roles and 'ROLE_ADMIN' not in user.roles ? 'checked' : '' }}>
                                     <label class="form-check-label fw-medium text-gray-700" for="role_facilitator">
                                         <i class="fas fa-users-cog me-2 text-primary"></i>Facilitator
                                     </label>
@@ -184,11 +188,11 @@
                             <div class="col-md-6">
                                 <div class="form-check p-3 border rounded">
                                     <input class="form-check-input" 
-                                           type="checkbox" 
+                                           type="radio" 
                                            id="role_supervisor" 
-                                           name="roles[]" 
+                                           name="role" 
                                            value="ROLE_SUPERVISOR"
-                                           {{ 'ROLE_SUPERVISOR' in user.roles ? 'checked' : '' }}>
+                                           {{ 'ROLE_SUPERVISOR' in user.roles and 'ROLE_ADMIN' not in user.roles ? 'checked' : '' }}>
                                     <label class="form-check-label fw-medium text-gray-700" for="role_supervisor">
                                         <i class="fas fa-user-tie me-2 text-info"></i>Supervisor
                                     </label>
@@ -197,9 +201,9 @@
                             <div class="col-md-6">
                                 <div class="form-check p-3 border rounded">
                                     <input class="form-check-input" 
-                                           type="checkbox" 
+                                           type="radio" 
                                            id="role_admin" 
-                                           name="roles[]" 
+                                           name="role" 
                                            value="ROLE_ADMIN"
                                            {{ 'ROLE_ADMIN' in user.roles ? 'checked' : '' }}>
                                     <label class="form-check-label fw-medium text-gray-700" for="role_admin">

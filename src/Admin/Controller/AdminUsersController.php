@@ -73,7 +73,7 @@ class AdminUsersController extends AbstractController
             $email = $request->request->get('email');
             $isActive = $request->request->getBoolean('isActive');
             $isVerified = $request->request->getBoolean('isVerified');
-            $selectedRoles = $request->request->all('roles');
+            $selectedRole = $request->request->get('role');
             $newPassword = $request->request->get('newPassword');
             $confirmPassword = $request->request->get('confirmPassword');
 
@@ -115,19 +115,15 @@ class AdminUsersController extends AbstractController
             $user->setIsActive($isActive);
             $user->setIsVerified($isVerified);
 
-            // Handle roles - remove ROLE_USER from selected roles as it's automatic
-            $selectedRoles = array_filter($selectedRoles, function($role) {
-                return $role !== 'ROLE_USER';
-            });
+            // Handle role - remove ROLE_USER as it's automatic
+            if ($selectedRole && $selectedRole !== 'ROLE_USER') {
+                // Remove all existing UserRole entities for this user
+                foreach ($user->getUserRoles() as $userRole) {
+                    $this->entityManager->remove($userRole);
+                }
 
-            // Remove all existing UserRole entities for this user
-            foreach ($user->getUserRoles() as $userRole) {
-                $this->entityManager->remove($userRole);
-            }
-
-            // Add new UserRole entities for selected roles
-            foreach ($selectedRoles as $roleCode) {
-                $role = $this->roleRepository->findOneBy(['code' => $roleCode]);
+                // Add new UserRole entity for selected role
+                $role = $this->roleRepository->findOneBy(['code' => $selectedRole]);
                 if ($role) {
                     $userRole = new UserRole();
                     $userRole->setUser($user);
