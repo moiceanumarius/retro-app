@@ -9,6 +9,11 @@ security:
             entity:
                 class: App\Entity\User
                 property: email
+        # Admin user provider
+        admin_user_provider:
+            entity:
+                class: App\Admin\Entity\AdminUser
+                property: email
     firewalls:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -16,6 +21,20 @@ security:
         acme:
             pattern: ^/\.well-known/acme-challenge/
             security: false
+        admin:
+            pattern: ^/admin
+            provider: admin_user_provider
+            form_login:
+                login_path: admin_login
+                check_path: admin_login
+                default_target_path: admin_dashboard
+                enable_csrf: true
+                username_parameter: email
+                password_parameter: password
+                post_only: true
+            logout:
+                path: admin_logout
+                target: admin_login
         main:
             lazy: true
             provider: app_user_provider
@@ -38,6 +57,8 @@ security:
     # Easy way to control access for large sections of your site
     # Note: Only the *first* access control that matches will be used
     access_control:
+        - { path: ^/admin/login, roles: PUBLIC_ACCESS }
+        - { path: ^/admin, roles: ROLE_ADMIN }
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
         - { path: ^/verify/email, roles: PUBLIC_ACCESS }
