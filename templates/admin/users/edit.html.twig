@@ -326,7 +326,7 @@
             <div class="card-body">
                 <div class="d-grid gap-2">
                     <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#removeFromOrgModal">
-                        <i class="fas fa-user-minus me-2"></i>Remove user from organization
+                        <i class="fas fa-user-minus me-2"></i>Remove user from organization & teams
                     </button>
                 </div>
             </div>
@@ -340,16 +340,20 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="removeFromOrgModalLabel">
-                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Remove User from Organization
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Remove User from Organization & Teams
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle me-2"></i>
-                    <strong>Warning:</strong> This action will remove the user from their organization.
+                    <strong>Warning:</strong> This action will remove the user from their organization and all teams.
                 </div>
-                <p>Are you sure you want to remove <strong>{{ user.firstName }} {{ user.lastName }}</strong> from their organization?</p>
+                <p>Are you sure you want to remove <strong>{{ user.firstName }} {{ user.lastName }}</strong> from their organization and all teams?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Note:</strong> This action cannot be performed if the user is an organization owner or team owner. Please transfer ownership first.
+                </div>
                 <p class="text-muted small">This action can be reversed by re-adding the user to an organization.</p>
             </div>
             <div class="modal-footer">
@@ -359,7 +363,7 @@
                 <form method="post" action="{{ path('admin_users_remove_from_org', {'id': user.id}) }}" style="display: inline;">
                     <input type="hidden" name="_token" value="{{ csrf_token('remove_from_org') }}">
                     <button type="submit" class="btn btn-danger">
-                        <i class="fas fa-user-minus me-2"></i>Remove from Organization
+                        <i class="fas fa-user-minus me-2"></i>Remove from Organization & Teams
                     </button>
                 </form>
             </div>

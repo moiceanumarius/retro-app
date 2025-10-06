@@ -342,6 +342,26 @@ class AdminUsersController extends AbstractController
             return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
         }
 
+        // Check if user is owner of any organization
+        $ownedOrganizations = $this->entityManager->getRepository(\App\Entity\Organization::class)
+            ->findBy(['owner' => $user]);
+        
+        if (!empty($ownedOrganizations)) {
+            $orgNames = array_map(fn($org) => $org->getName(), $ownedOrganizations);
+            $this->addFlash('error', 'Cannot remove user from organization. User is owner of organization(s): ' . implode(', ', $orgNames) . '. Please transfer ownership first.');
+            return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
+        }
+
+        // Check if user is owner of any team
+        $ownedTeams = $this->entityManager->getRepository(\App\Entity\Team::class)
+            ->findBy(['owner' => $user, 'isActive' => true]);
+        
+        if (!empty($ownedTeams)) {
+            $teamNames = array_map(fn($team) => $team->getName(), $ownedTeams);
+            $this->addFlash('error', 'Cannot remove user from organization. User is owner of team(s): ' . implode(', ', $teamNames) . '. Please transfer ownership first.');
+            return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
+        }
+
         // Find and remove organization memberships
         $organizationMemberships = $this->entityManager->getRepository(\App\Entity\OrganizationMember::class)
             ->findBy(['user' => $user, 'isActive' => true]);
@@ -351,16 +371,35 @@ class AdminUsersController extends AbstractController
             return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
         }
 
-        $removedCount = 0;
+        $removedOrgCount = 0;
+        $removedTeamCount = 0;
+
+        // Remove from organizations
         foreach ($organizationMemberships as $membership) {
             $membership->setIsActive(false);
             $membership->setLeftAt(new \DateTimeImmutable());
-            $removedCount++;
+            $removedOrgCount++;
+        }
+
+        // Find and remove team memberships
+        $teamMemberships = $this->entityManager->getRepository(\App\Entity\TeamMember::class)
+            ->findBy(['user' => $user, 'isActive' => true]);
+
+        foreach ($teamMemberships as $teamMembership) {
+            $teamMembership->setIsActive(false);
+            $teamMembership->setLeftAt(new \DateTimeImmutable());
+            $removedTeamCount++;
         }
 
         $this->entityManager->flush();
 
-        $this->addFlash('success', "User has been removed from {$removedCount} organization(s).");
+        $message = "User has been removed from {$removedOrgCount} organization(s)";
+        if ($removedTeamCount > 0) {
+            $message .= " and {$removedTeamCount} team(s)";
+        }
+        $message .= ".";
+
+        $this->addFlash('success', $message);
         return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
     }
 }
