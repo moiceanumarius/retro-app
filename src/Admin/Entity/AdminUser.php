@@ -5,8 +5,9 @@ namespace App\Admin\Entity;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
+use App\Admin\Repository\AdminUserRepository;
 
-#[ORM\Entity(repositoryClass: "App\Admin\Repository\AdminUserRepository")]
+#[ORM\Entity(repositoryClass: AdminUserRepository::class)]
 #[ORM\Table(name: 'admin_user')]
 class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
 {
@@ -42,7 +43,7 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?\DateTimeImmutable $updatedAt = null;
 
-    #[ORM\Column(nullable)]
+    #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastLoginAt = null;
 
     public function __construct()
