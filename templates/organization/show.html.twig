@@ -8,18 +8,68 @@
     <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/organizations.css') }}">
     <style>
-        /* Force member cards to be white - inline to guarantee override */
+        /* Force all member cards to have white background by default */
         .member-card {
             background: #ffffff !important;
             background-color: #ffffff !important;
         }
-        .team-management .member-card {
-            background: #ffffff !important;
-            background-color: #ffffff !important;
-        }
+        
+        /* Allow owner cards to have gradient background */
         .member-card.owner {
-            background: #ffffff !important;
-            background-image: none !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background-color: transparent !important;
+            color: white !important;
+            border-color: #667eea !important;
+        }
+        
+        .member-card.owner .avatar-placeholder {
+            background: rgba(255, 255, 255, 0.2) !important;
+            color: white !important;
+        }
+        
+        .member-card.owner .member-info h4 {
+            color: white !important;
+        }
+        
+        .member-card.owner .member-email {
+            color: rgba(255, 255, 255, 0.8) !important;
+        }
+        
+        .member-card.owner .member-role {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+        }
+        
+        .member-card.owner .member-status {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.2) !important;
+        }
+        
+        .member-card.owner .member-joined {
+            color: rgba(255, 255, 255, 0.7) !important;
+        }
+        
+        .member-badge.owner {
+            background: #f093fb !important;
+            color: white !important;
+        }
+        
+        .member-status {
+            padding: 0.25rem 0.75rem !important;
+            border-radius: 6px !important;
+            font-size: 0.75rem !important;
+            font-weight: 500 !important;
+            text-transform: uppercase !important;
+        }
+        
+        .member-status.active {
+            background: #dcfce7 !important;
+            color: #166534 !important;
+        }
+        
+        .member-status.inactive {
+            background: #fef3c7 !important;
+            color: #92400e !important;
         }
         
         /* Remove button styling */
@@ -252,56 +302,94 @@
             <p>Manage members of this organization</p>
         </div>
         
-        {% if members|length > 0 %}
-            <div class="members-grid">
-                {% for member in members %}
-                <div class="member-card {{ member.role == 'ADMIN' ? 'admin' : (member.role == 'OWNER' ? 'owner' : '') }}">
-                    <div class="member-avatar">
-                        {% if member.user.avatar %}
-                            <img src="{{ asset('uploads/avatars/' ~ member.user.avatar) }}" alt="Avatar" class="avatar-image">
-                        {% else %}
-                            <div class="avatar-placeholder">
-                                <svg width="40" height="40" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
-                                </svg>
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="member-info">
-                        <h4>{{ member.user.firstName }} {{ member.user.lastName }}</h4>
-                        <p class="member-email">{{ member.user.email }}</p>
-                        <div class="member-meta">
-                            {% if member.role %}
-                                <span class="member-role">{{ member.role }}</span>
-                            {% endif %}
-                            {% if member.isActive %}
-                                <span class="member-status active">Active</span>
-                            {% else %}
-                                <span class="member-status inactive">Inactive</span>
-                            {% endif %}
-                        </div>
-                        <div class="member-joined">
-                            Joined {{ member.joinedAt|date('M d, Y') }}
-                        </div>
-                    </div>
-                    
-                    {% if app.user.hasRole('ROLE_ADMIN') and member.user.id != app.user.id %}
-                    <div class="member-actions">
-                        <button type="button" class="btn btn-sm btn-danger remove-member-btn" 
-                                title="Remove member"
-                                data-member-name="{{ member.user.firstName }} {{ member.user.lastName }}"
-                                data-member-id="{{ member.id }}">
-                            <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+        <div class="members-grid">
+            <!-- Organization Owner -->
+            {% if organization.owner %}
+            <div class="member-card owner">
+                <div class="member-avatar">
+                    {% if organization.owner.avatar %}
+                        <img src="{{ asset('uploads/avatars/' ~ organization.owner.avatar) }}" alt="Avatar" class="avatar-image">
+                    {% else %}
+                        <div class="avatar-placeholder">
+                            <svg width="40" height="40" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
                             </svg>
-                        </button>
-                    </div>
+                        </div>
                     {% endif %}
                 </div>
-                {% endfor %}
+                
+                <div class="member-info">
+                    <h4>{{ organization.owner.firstName }} {{ organization.owner.lastName }}</h4>
+                    <p class="member-email">{{ organization.owner.email }}</p>
+                    <div class="member-meta">
+                        {% set userRole = organization.owner.getActiveRoles()|first ?: 'ROLE_ADMIN' %}
+                        <span class="member-role">{{ userRole|replace({'ROLE_': ''}) }}</span>
+                        <span class="member-badge owner">Owner</span>
+                        {% if organization.owner.isActive %}
+                            <span class="member-status active">Active</span>
+                        {% else %}
+                            <span class="member-status inactive">Inactive</span>
+                        {% endif %}
+                    </div>
+                    <div class="member-joined">
+                        Created {{ organization.createdAt|date('M d, Y') }}
+                    </div>
+                </div>
             </div>
-        {% else %}
+            {% endif %}
+            
+            <!-- Organization Members -->
+            {% if members|length > 0 %}
+                {% for member in members %}
+                    {% if member.user.id != organization.owner.id %}
+                    <div class="member-card {{ member.role == 'ADMIN' ? 'admin' : '' }}">
+                        <div class="member-avatar">
+                            {% if member.user.avatar %}
+                                <img src="{{ asset('uploads/avatars/' ~ member.user.avatar) }}" alt="Avatar" class="avatar-image">
+                            {% else %}
+                                <div class="avatar-placeholder">
+                                    <svg width="40" height="40" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="member-info">
+                            <h4>{{ member.user.firstName }} {{ member.user.lastName }}</h4>
+                            <p class="member-email">{{ member.user.email }}</p>
+                            <div class="member-meta">
+                                <span class="member-role">{{ member.role }}</span>
+                                {% if member.user.isActive %}
+                                    <span class="member-status active">Active</span>
+                                {% else %}
+                                    <span class="member-status inactive">Inactive</span>
+                                {% endif %}
+                            </div>
+                            <div class="member-joined">
+                                Joined {{ member.joinedAt|date('M d, Y') }}
+                            </div>
+                        </div>
+                        
+                        {% if app.user.hasRole('ROLE_ADMIN') and member.user.id != app.user.id %}
+                        <div class="member-actions">
+                            <button type="button" class="btn btn-sm btn-danger remove-member-btn" 
+                                    title="Remove member"
+                                    data-member-name="{{ member.user.firstName }} {{ member.user.lastName }}"
+                                    data-member-id="{{ member.id }}">
+                                <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        </div>
+        
+        {% if not organization.owner and members|length == 0 %}
             <div class="empty-state">
                 <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>

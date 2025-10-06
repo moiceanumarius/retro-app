@@ -93,7 +93,12 @@
                         <h4>{{ member.getDisplayName() }}</h4>
                         <p class="member-email">{{ member.getEmail() }}</p>
                         <div class="member-meta">
-                            <span class="member-role">{{ member.role ?: 'Member' }}</span>
+                            {% if member.isOwner() %}
+                                {% set userRole = member.user.getActiveRoles()|first ?: 'ROLE_ADMIN' %}
+                                <span class="member-role">{{ userRole|replace({'ROLE_': ''}) }}</span>
+                            {% else %}
+                                <span class="member-role">{{ member.role ?: 'Member' }}</span>
+                            {% endif %}
                             {% if member.isOwner() %}
                                 <span class="member-badge owner">Owner</span>
                             {% endif %}
