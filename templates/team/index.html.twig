@@ -6,6 +6,22 @@
 
 {% block stylesheets %}
     <link rel="stylesheet" href="{{ asset('assets/css/team-management.css') }}">
+    <style>
+        /* Force red color for organization message */
+        .text-danger {
+            color: #dc3545 !important;
+        }
+        
+        /* Force right alignment for header actions */
+        .header-actions {
+            align-items: flex-end !important;
+        }
+        
+        /* Ensure text alignment for error message */
+        .header-actions .text-end {
+            text-align: right !important;
+        }
+    </style>
 {% endblock %}
 
 {% block body %}
@@ -16,14 +32,26 @@
                 <h1>My Teams</h1>
                 <p>Manage your teams and collaborate with your colleagues</p>
             </div>
-            <div class="header-actions">
+            <div class="header-actions d-flex flex-column align-items-end">
                 {% if app.user.hasRole('ROLE_ADMIN') or app.user.hasRole('ROLE_SUPERVISOR') or app.user.hasRole('ROLE_FACILITATOR') %}
-                <a href="{{ path('app_teams_create') }}" class="btn btn-primary">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                    </svg>
-                    Create New Team
-                </a>
+                    {% set hasOrganization = false %}
+                    {% for membership in app.user.organizationMemberships %}
+                        {% if membership.isActive and membership.leftAt is null %}
+                            {% set hasOrganization = true %}
+                        {% endif %}
+                    {% endfor %}
+                    {% if not hasOrganization %}
+                        {% for ownedOrg in app.user.ownedOrganizations %}
+                            {% set hasOrganization = true %}
+                        {% endfor %}
+                    {% endif %}
+                    
+                    <a href="{{ path('app_teams_create') }}" class="btn btn-primary">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        Create New Team
+                    </a>
                 {% endif %}
             </div>
         </div>
@@ -165,14 +193,32 @@
             <h3>No teams yet</h3>
             <p>Create your first team to start collaborating with your colleagues</p>
             {% if app.user.hasRole('ROLE_ADMIN') or app.user.hasRole('ROLE_SUPERVISOR') or app.user.hasRole('ROLE_FACILITATOR') %}
-            <a href="{{ path('app_teams_create') }}" class="btn btn-primary">
-                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
-                </svg>
-                Create Your First Team
-            </a>
+                {% set hasOrganization = false %}
+                {% for membership in app.user.organizationMemberships %}
+                    {% if membership.isActive and membership.leftAt is null %}
+                        {% set hasOrganization = true %}
+                    {% endif %}
+                {% endfor %}
+                {% if not hasOrganization %}
+                    {% for ownedOrg in app.user.ownedOrganizations %}
+                        {% set hasOrganization = true %}
+                    {% endfor %}
+                {% endif %}
+                
+                <a href="{{ path('app_teams_create') }}" class="btn btn-primary">
+                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"></path>
+                    </svg>
+                    Create Your First Team
+                </a>
+                {% if not hasOrganization %}
+                    <div class="text-danger mt-3">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        You must be part of an organization to create teams.
+                    </div>
+                {% endif %}
             {% else %}
-            <p class="text-muted">Only Administrators, Supervisors, and Facilitators can create teams.</p>
+                <p class="text-muted">Only Administrators, Supervisors, and Facilitators can create teams.</p>
             {% endif %}
         </div>
         {% endif %}

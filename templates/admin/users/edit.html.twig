@@ -237,65 +237,81 @@
                 </h5>
             </div>
             <div class="card-body">
-                <!-- User ID -->
-                <div class="mb-3">
-                    <div class="d-flex align-items-center mb-1">
-                        <i class="fas fa-hashtag me-2 text-muted"></i>
-                        <small class="text-muted fw-medium">User ID</small>
+                <div class="row g-2">
+                    <!-- User ID Widget -->
+                    <div class="col-6">
+                        <div class="info-widget">
+                            <div class="widget-icon bg-primary">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                            <div class="widget-content">
+                                <div class="widget-label">User ID</div>
+                                <div class="widget-value">#{{ user.id }}</div>
+                            </div>
+                        </div>
                     </div>
-                    <span class="fs-6 fw-semibold text-gray-800">#{{ user.id }}</span>
-                </div>
-                
-                <!-- Created Date -->
-                <div class="mb-3">
-                    <div class="d-flex align-items-center mb-1">
-                        <i class="fas fa-calendar-plus me-2 text-muted"></i>
-                        <small class="text-muted fw-medium">Created</small>
+                    
+                    <!-- Created Date Widget -->
+                    <div class="col-6">
+                        <div class="info-widget">
+                            <div class="widget-icon bg-success">
+                                <i class="fas fa-calendar-plus"></i>
+                            </div>
+                            <div class="widget-content">
+                                <div class="widget-label">Created</div>
+                                <div class="widget-value">{{ user.createdAt|date('M d, Y') }}</div>
+                                <div class="widget-subtext">{{ user.createdAt|date('H:i') }}</div>
+                            </div>
+                        </div>
                     </div>
-                    <span class="text-gray-800">{{ user.createdAt|date('M d, Y H:i') }}</span>
-                </div>
-                
-                <!-- Last Updated -->
-                <div class="mb-3">
-                    <div class="d-flex align-items-center mb-1">
-                        <i class="fas fa-clock me-2 text-muted"></i>
-                        <small class="text-muted fw-medium">Last Updated</small>
+                    
+                    <!-- Last Updated Widget -->
+                    <div class="col-6">
+                        <div class="info-widget">
+                            <div class="widget-icon bg-info">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="widget-content">
+                                <div class="widget-label">Last Updated</div>
+                                <div class="widget-value">{{ user.updatedAt|date('M d, Y') }}</div>
+                                <div class="widget-subtext">{{ user.updatedAt|date('H:i') }}</div>
+                            </div>
+                        </div>
                     </div>
-                    <span class="text-gray-800">{{ user.updatedAt|date('M d, Y H:i') }}</span>
-                </div>
-                
-                <!-- Current Status -->
-                <div class="mb-3">
-                    <div class="d-flex align-items-center mb-1">
-                        <i class="fas fa-toggle-on me-2 text-muted"></i>
-                        <small class="text-muted fw-medium">Current Status</small>
+                    
+                    <!-- Current Status Widget -->
+                    <div class="col-6">
+                        <div class="info-widget">
+                            <div class="widget-icon {{ user.isActive ? 'bg-success' : 'bg-danger' }}">
+                                <i class="fas {{ user.isActive ? 'fa-check-circle' : 'fa-times-circle' }}"></i>
+                            </div>
+                            <div class="widget-content">
+                                <div class="widget-label">Account Status</div>
+                                <div class="widget-value">
+                                    <span class="status-badge {{ user.isActive ? 'status-active' : 'status-inactive' }}">
+                                        {{ user.isActive ? 'Active' : 'Inactive' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% if user.isActive %}
-                        <span class="badge bg-success">
-                            <i class="fas fa-check-circle me-1"></i>Active
-                        </span>
-                    {% else %}
-                        <span class="badge bg-danger">
-                            <i class="fas fa-times-circle me-1"></i>Inactive
-                        </span>
-                    {% endif %}
-                </div>
-                
-                <!-- Email Status -->
-                <div class="mb-0">
-                    <div class="d-flex align-items-center mb-1">
-                        <i class="fas fa-envelope me-2 text-muted"></i>
-                        <small class="text-muted fw-medium">Email Status</small>
+                    
+                    <!-- Email Status Widget -->
+                    <div class="col-6">
+                        <div class="info-widget">
+                            <div class="widget-icon {{ user.isVerified ? 'bg-success' : 'bg-warning' }}">
+                                <i class="fas {{ user.isVerified ? 'fa-envelope-check' : 'fa-envelope' }}"></i>
+                            </div>
+                            <div class="widget-content">
+                                <div class="widget-label">Email Status</div>
+                                <div class="widget-value">
+                                    <span class="status-badge {{ user.isVerified ? 'status-verified' : 'status-unverified' }}">
+                                        {{ user.isVerified ? 'Verified' : 'Unverified' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    {% if user.isVerified %}
-                        <span class="badge bg-success">
-                            <i class="fas fa-check-circle me-1"></i>Verified
-                        </span>
-                    {% else %}
-                        <span class="badge bg-warning">
-                            <i class="fas fa-exclamation-triangle me-1"></i>Unverified
-                        </span>
-                    {% endif %}
                 </div>
             </div>
         </div>
@@ -473,6 +489,124 @@
     font-size: 0.75rem;
     color: #718096;
     margin-top: 0.25rem;
+}
+
+/* Info Widget Styles */
+.info-widget {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    height: 100%;
+    min-height: 60px;
+}
+
+.info-widget:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e0;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.widget-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+}
+
+.widget-icon i {
+    color: white;
+    font-size: 0.75rem;
+}
+
+.widget-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.widget-label {
+    font-size: 0.65rem;
+    color: #718096;
+    font-weight: 500;
+    margin-bottom: 0.125rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    line-height: 1.2;
+}
+
+.widget-value {
+    font-size: 0.75rem;
+    color: #2d3748;
+    font-weight: 600;
+    margin-bottom: 0.0625rem;
+    line-height: 1.2;
+}
+
+.widget-subtext {
+    font-size: 0.65rem;
+    color: #a0aec0;
+    font-weight: 400;
+    line-height: 1.2;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.375rem;
+    border-radius: 3px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.status-active {
+    background-color: #c6f6d5;
+    color: #22543d;
+}
+
+.status-inactive {
+    background-color: #fed7d7;
+    color: #742a2a;
+}
+
+.status-verified {
+    background-color: #c6f6d5;
+    color: #22543d;
+}
+
+.status-unverified {
+    background-color: #fef5e7;
+    color: #744210;
+}
+
+/* Widget Icon Colors */
+.bg-primary {
+    background-color: #3182ce !important;
+}
+
+.bg-success {
+    background-color: #48bb78 !important;
+}
+
+.bg-info {
+    background-color: #4299e1 !important;
+}
+
+.bg-warning {
+    background-color: #ed8936 !important;
+}
+
+.bg-danger {
+    background-color: #f56565 !important;
 }
 </style>
 

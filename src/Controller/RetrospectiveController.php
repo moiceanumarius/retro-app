@@ -89,6 +89,14 @@ class RetrospectiveController extends AbstractController
             throw $this->createAccessDeniedException('Only Administrators, Supervisors, and Facilitators can create retrospectives');
         }
 
+        // Check if user has any teams available
+        $availableTeams = $this->getUserTeams($user);
+        
+        if (empty($availableTeams)) {
+            $this->addFlash('error', 'You must be part of a team to create retrospectives.');
+            return $this->redirectToRoute('app_retrospectives');
+        }
+
         $retrospective = new Retrospective();
         $retrospective->setFacilitator($user);
         
@@ -106,6 +114,7 @@ class RetrospectiveController extends AbstractController
         
         return $this->render('retrospective/create.html.twig', [
             'form' => $form,
+            'hasTeams' => !empty($availableTeams),
         ]);
     }
 
@@ -1523,6 +1532,48 @@ class RetrospectiveController extends AbstractController
         
         // Team members have access
         return $team->hasMember($user);
+    }
+
+    private function getUserTeams($user): array
+    {
+        // Get user's organization (either as member or as owner)
+        $userOrganization = null;
+        
+        // First check if user is a member of any organization
+        foreach ($user->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $userOrganization = $membership->getOrganization();
+                break;
+            }
+        }
+        
+        // If not a member, check if user owns any organization
+        if (!$userOrganization) {
+            $ownedOrganizations = $user->getOwnedOrganizations();
+            if (!$ownedOrganizations->isEmpty()) {
+                $userOrganization = $ownedOrganizations->first();
+            }
+        }
+
+        // If user has no organization, return empty array
+        if (!$userOrganization) {
+            return [];
+        }
+
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('t')
+           ->from(\App\Entity\Team::class, 't')
+           ->leftJoin('t.teamMembers', 'tm')
+           ->leftJoin('tm.user', 'u')
+           ->where('(t.owner = :user OR u = :user)')
+           ->andWhere('t.organization = :organization')
+           ->andWhere('t.isActive = :active')
+           ->setParameter('user', $user)
+           ->setParameter('organization', $userOrganization)
+           ->setParameter('active', true)
+           ->orderBy('t.name', 'ASC');
+
+        return $qb->getQuery()->getResult();
     }
 
     private function generateMercureToken(int $retrospectiveId): string

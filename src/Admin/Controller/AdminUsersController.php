@@ -5,6 +5,7 @@ namespace App\Admin\Controller;
 use App\Entity\User;
 use App\Entity\Role;
 use App\Entity\UserRole;
+use App\Entity\DeletedUser;
 use App\Repository\UserRepository;
 use App\Repository\RoleRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -115,24 +116,37 @@ class AdminUsersController extends AbstractController
             $user->setIsActive($isActive);
             $user->setIsVerified($isVerified);
 
-            // Handle role - remove ROLE_USER as it's automatic
+            // Handle role - only update if role actually changed
             if ($selectedRole && $selectedRole !== 'ROLE_USER') {
-                // Remove all existing UserRole entities for this user
-                foreach ($user->getUserRoles() as $userRole) {
-                    $this->entityManager->remove($userRole);
+                // Get current user's highest role
+                $currentHighestRole = null;
+                $userRoles = $user->getUserRoles();
+                foreach ($userRoles as $userRole) {
+                    if ($userRole->getRole()) {
+                        $currentHighestRole = $userRole->getRole()->getCode();
+                        break; // Get the first (highest) role
+                    }
                 }
 
-                // Add new UserRole entity for selected role
-                $role = $this->roleRepository->findOneBy(['code' => $selectedRole]);
-                if ($role) {
-                    $userRole = new UserRole();
-                    $userRole->setUser($user);
-                    $userRole->setRole($role);
-                    $userRole->setAssignedAt(new \DateTimeImmutable());
-                    $userRole->setIsActive(true);
-                    $userRole->setAssignedBy('admin');
-                    
-                    $this->entityManager->persist($userRole);
+                // Only update if the role actually changed
+                if ($currentHighestRole !== $selectedRole) {
+                    // Remove all existing UserRole entities for this user
+                    foreach ($user->getUserRoles() as $userRole) {
+                        $this->entityManager->remove($userRole);
+                    }
+
+                    // Add new UserRole entity for selected role
+                    $role = $this->roleRepository->findOneBy(['code' => $selectedRole]);
+                    if ($role) {
+                        $userRole = new UserRole();
+                        $userRole->setUser($user);
+                        $userRole->setRole($role);
+                        $userRole->setAssignedAt(new \DateTimeImmutable());
+                        $userRole->setIsActive(true);
+                        $userRole->setAssignedBy('admin');
+                        
+                        $this->entityManager->persist($userRole);
+                    }
                 }
             }
 
@@ -154,5 +168,166 @@ class AdminUsersController extends AbstractController
             'user' => $user,
             'availableRoles' => $availableRoles,
         ]);
+    }
+
+    #[Route('/users/add', name: 'admin_users_add')]
+    public function add(Request $request): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        if ($request->isMethod('POST')) {
+            $firstName = $request->request->get('firstName');
+            $lastName = $request->request->get('lastName');
+            $email = $request->request->get('email');
+            $password = $request->request->get('password');
+            $confirmPassword = $request->request->get('confirmPassword');
+            $isActive = $request->request->getBoolean('isActive');
+            $isVerified = $request->request->getBoolean('isVerified');
+            $selectedRole = $request->request->get('role');
+
+            // Validate required fields
+            if (empty($firstName) || empty($lastName) || empty($email) || empty($password)) {
+                $this->addFlash('error', 'All required fields must be filled.');
+                return $this->render('admin/users/add.html.twig', [
+                    'availableRoles' => $this->roleRepository->findAll(),
+                ]);
+            }
+
+            // Validate password
+            if ($password !== $confirmPassword) {
+                $this->addFlash('error', 'Passwords do not match.');
+                return $this->render('admin/users/add.html.twig', [
+                    'availableRoles' => $this->roleRepository->findAll(),
+                ]);
+            }
+
+            if (strlen($password) < 6) {
+                $this->addFlash('error', 'Password must be at least 6 characters long.');
+                return $this->render('admin/users/add.html.twig', [
+                    'availableRoles' => $this->roleRepository->findAll(),
+                ]);
+            }
+
+            // Check if email already exists
+            $existingUser = $this->userRepository->findOneBy(['email' => $email]);
+            if ($existingUser) {
+                $this->addFlash('error', 'A user with this email already exists.');
+                return $this->render('admin/users/add.html.twig', [
+                    'availableRoles' => $this->roleRepository->findAll(),
+                ]);
+            }
+
+            // Create new user
+            $user = new User();
+            $user->setFirstName($firstName);
+            $user->setLastName($lastName);
+            $user->setEmail($email);
+            $user->setIsActive($isActive);
+            $user->setIsVerified($isVerified);
+            $user->setCreatedAt(new \DateTimeImmutable());
+            $user->setUpdatedAt(new \DateTimeImmutable());
+
+            // Hash password
+            $hashedPassword = $this->passwordHasher->hashPassword($user, $password);
+            $user->setPassword($hashedPassword);
+
+            // Handle role
+            if ($selectedRole && $selectedRole !== 'ROLE_USER') {
+                $role = $this->roleRepository->findOneBy(['code' => $selectedRole]);
+                if ($role) {
+                    $userRole = new UserRole();
+                    $userRole->setUser($user);
+                    $userRole->setRole($role);
+                    $userRole->setAssignedAt(new \DateTimeImmutable());
+                    $userRole->setIsActive(true);
+                    $userRole->setAssignedBy('admin');
+                    
+                    $this->entityManager->persist($userRole);
+                }
+            }
+
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+
+            $this->addFlash('success', 'User created successfully!');
+            return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
+        }
+
+        return $this->render('admin/users/add.html.twig', [
+            'availableRoles' => $this->roleRepository->findAll(),
+        ]);
+    }
+
+    #[Route('/users/{id}/delete', name: 'admin_users_delete', methods: ['POST'])]
+    public function delete(User $user, Request $request): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        // CSRF protection
+        if (!$this->isCsrfTokenValid('delete_user', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('admin_users');
+        }
+
+        // Prevent admin from deleting themselves
+        if ($user->getId() === $this->getUser()->getId()) {
+            $this->addFlash('error', 'You cannot delete your own account.');
+            return $this->redirectToRoute('admin_users');
+        }
+
+        // Check if user is owner of any organization
+        $ownedOrganizations = $this->entityManager->getRepository(\App\Entity\Organization::class)
+            ->findBy(['owner' => $user]);
+        
+        if (!empty($ownedOrganizations)) {
+            $orgNames = array_map(fn($org) => $org->getName(), $ownedOrganizations);
+            $this->addFlash('error', 'Cannot delete user. User is owner of organization(s): ' . implode(', ', $orgNames) . '. Please transfer ownership first.');
+            return $this->redirectToRoute('admin_users');
+        }
+
+        // Check if user is owner of any team
+        $ownedTeams = $this->entityManager->getRepository(\App\Entity\Team::class)
+            ->findBy(['owner' => $user, 'isActive' => true]);
+        
+        if (!empty($ownedTeams)) {
+            $teamNames = array_map(fn($team) => $team->getName(), $ownedTeams);
+            $this->addFlash('error', 'Cannot delete user. User is owner of team(s): ' . implode(', ', $teamNames) . '. Please transfer ownership first.');
+            return $this->redirectToRoute('admin_users');
+        }
+
+        // Create deleted user record
+        $deletedUser = new DeletedUser();
+        $deletedUser->setOriginalId($user->getId());
+        $deletedUser->setEmail($user->getEmail());
+        $deletedUser->setRoles($user->getRoles());
+        $deletedUser->setPassword($user->getPassword());
+        $deletedUser->setFirstName($user->getFirstName());
+        $deletedUser->setLastName($user->getLastName());
+        $deletedUser->setCreatedAt($user->getCreatedAt());
+        $deletedUser->setUpdatedAt($user->getUpdatedAt());
+        $deletedUser->setIsVerified($user->isVerified());
+        $deletedUser->setAvatar($user->getAvatar());
+        $deletedUser->setBio($user->getBio());
+        $deletedUser->setTimezone($user->getTimezone());
+        $deletedUser->setLanguage($user->getLanguage());
+        $deletedUser->setIsActive($user->isActive());
+        $deletedUser->setDeletedAt(new \DateTimeImmutable());
+        $deletedUser->setDeletedBy($this->getUser()->getEmail());
+
+        // Save deleted user record
+        $this->entityManager->persist($deletedUser);
+
+        // Remove all user roles first
+        $userRoles = $this->entityManager->getRepository(UserRole::class)->findBy(['user' => $user]);
+        foreach ($userRoles as $userRole) {
+            $this->entityManager->remove($userRole);
+        }
+
+        // Remove user
+        $this->entityManager->remove($user);
+        $this->entityManager->flush();
+
+        $this->addFlash('success', 'User deleted successfully and moved to deleted users.');
+        return $this->redirectToRoute('admin_users');
     }
 }

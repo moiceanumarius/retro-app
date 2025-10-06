@@ -47,6 +47,7 @@ class RetrospectiveType extends AbstractType
                 'class' => Team::class,
                 'choice_label' => 'name',
                 'label' => 'Team',
+                'required' => true,
                 'query_builder' => function(EntityRepository $er) {
                     $user = $this->security->getUser();
                     if (!$user) {
@@ -94,7 +95,9 @@ class RetrospectiveType extends AbstractType
                 },
                 'attr' => [
                     'class' => 'form-control'
-                ]
+                ],
+                'placeholder' => 'Select a team...',
+                'invalid_message' => 'Please select a team.'
             ])
             ->add('scheduledAt', DateType::class, [
                 'label' => 'Scheduled Date',

@@ -62,6 +62,28 @@ final class TeamController extends AbstractController
             throw $this->createAccessDeniedException('Only Administrators, Supervisors, and Facilitators can create teams');
         }
         
+        // Check if user is part of an organization (either as member or owner)
+        $hasOrganization = false;
+        
+        // Check if user is a member of any organization
+        foreach ($user->getOrganizationMemberships() as $membership) {
+            if ($membership->isActive() && $membership->getLeftAt() === null) {
+                $hasOrganization = true;
+                break;
+            }
+        }
+        
+        // If not a member, check if user owns any organization
+        if (!$hasOrganization) {
+            $ownedOrganizations = $user->getOwnedOrganizations();
+            $hasOrganization = !$ownedOrganizations->isEmpty();
+        }
+        
+        if (!$hasOrganization) {
+            $this->addFlash('error', 'You must be part of an organization to create teams.');
+            return $this->redirectToRoute('app_teams');
+        }
+        
         $team = new Team();
         $team->setOwner($user);
         
@@ -76,7 +98,10 @@ final class TeamController extends AbstractController
             $ownerMember->setRole('Owner');
             $ownerMember->setInvitedBy($this->getUser());
             
-            // Set organization for team (if owner is member of an organization)
+            // Set organization for team (if owner is member or owner of an organization)
+            $userOrganization = null;
+            
+            // First check if user is a member of any organization
             $ownerOrganizationMemberships = $this->entityManager
                 ->getRepository(OrganizationMember::class)
                 ->createQueryBuilder('om')
@@ -89,10 +114,17 @@ final class TeamController extends AbstractController
                 ->getResult();
             
             if (!empty($ownerOrganizationMemberships)) {
-                $ownerOrganizationMembership = $ownerOrganizationMemberships[0]; // Take first active membership
-                if ($ownerOrganizationMembership->getOrganization()) {
-                    $team->setOrganization($ownerOrganizationMembership->getOrganization());
+                $userOrganization = $ownerOrganizationMemberships[0]->getOrganization();
+            } else {
+                // If not a member, check if user owns any organization
+                $ownedOrganizations = $this->getUser()->getOwnedOrganizations();
+                if (!$ownedOrganizations->isEmpty()) {
+                    $userOrganization = $ownedOrganizations->first();
                 }
+            }
+            
+            if ($userOrganization) {
+                $team->setOrganization($userOrganization);
             }
             
             $this->entityManager->persist($team);

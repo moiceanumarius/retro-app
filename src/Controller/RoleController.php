@@ -26,18 +26,21 @@ final class RoleController extends AbstractController
             throw $this->createAccessDeniedException('Access denied. Admin or Supervisor role required.');
         }
 
-        $roles = $this->entityManager->getRepository(Role::class)->findAll();
+        $allRoles = $this->entityManager->getRepository(Role::class)->findAll();
         
-        // Get only users from the current user's organization
+        // Get only users from the current user's organization that can be managed
         $currentUser = $this->getUser();
         $users = [];
+        
+        // Filter roles based on current user's role hierarchy
+        $roles = $this->filterRolesByHierarchy($allRoles, $currentUser);
         
         // Find the current user's organization
         foreach ($currentUser->getOrganizationMemberships() as $membership) {
             if ($membership->isActive() && $membership->getLeftAt() === null) {
                 $organization = $membership->getOrganization();
                 // Get all users from this organization
-                $users = $this->entityManager->getRepository(User::class)
+                $allUsers = $this->entityManager->getRepository(User::class)
                     ->createQueryBuilder('u')
                     ->leftJoin('u.organizationMemberships', 'om')
                     ->where('om.organization = :organization')
@@ -49,6 +52,9 @@ final class RoleController extends AbstractController
                     ->addOrderBy('u.firstName', 'ASC')
                     ->getQuery()
                     ->getResult();
+                
+                // Filter users based on role hierarchy - only show users with lower or equal roles
+                $users = $this->filterUsersByRoleHierarchy($allUsers, $currentUser);
                 break;
             }
         }
@@ -242,6 +248,9 @@ final class RoleController extends AbstractController
             $qb->andWhere('1 = 0');
         }
 
+        // Apply role hierarchy filtering - only show users with roles that can be managed by current user
+        $this->applyRoleHierarchyFilter($qb, $currentUser);
+
         // Apply global search
         if (!empty($searchValue)) {
             $qb->andWhere('u.firstName LIKE :search OR u.lastName LIKE :search OR u.email LIKE :search')
@@ -306,5 +315,152 @@ final class RoleController extends AbstractController
         error_log('DataTables response: ' . json_encode($response));
         
         return new JsonResponse($response);
+    }
+
+    /**
+     * Filter users based on role hierarchy
+     * Only show users with roles that are lower or equal to the current user's role
+     * 
+     * @param array $users Array of User entities
+     * @param User $currentUser The currently logged in user
+     * @return array Filtered array of users
+     */
+    private function filterUsersByRoleHierarchy(array $users, User $currentUser): array
+    {
+        // Define role hierarchy (higher roles can manage lower roles)
+        $roleHierarchy = [
+            'ROLE_MEMBER' => 1,
+            'ROLE_FACILITATOR' => 2,
+            'ROLE_SUPERVISOR' => 3,
+            'ROLE_ADMIN' => 4,
+        ];
+
+        // Get current user's highest role level
+        $currentUserRoleLevel = 0;
+        $currentUserRoles = $currentUser->getAllRolesIncludingInherited();
+        
+        foreach ($currentUserRoles as $role) {
+            if (isset($roleHierarchy[$role])) {
+                $currentUserRoleLevel = max($currentUserRoleLevel, $roleHierarchy[$role]);
+            }
+        }
+
+        // Filter users - only include users with roles that are lower or equal to current user's role
+        $filteredUsers = [];
+        foreach ($users as $user) {
+            // Skip the current user (can't manage themselves)
+            if ($user->getId() === $currentUser->getId()) {
+                continue;
+            }
+
+            $userRoleLevel = 0;
+            $userRoles = $user->getAllRolesIncludingInherited();
+            
+            foreach ($userRoles as $role) {
+                if (isset($roleHierarchy[$role])) {
+                    $userRoleLevel = max($userRoleLevel, $roleHierarchy[$role]);
+                }
+            }
+
+            // Only include users with lower or equal role level
+            if ($userRoleLevel <= $currentUserRoleLevel) {
+                $filteredUsers[] = $user;
+            }
+        }
+
+        return $filteredUsers;
+    }
+
+    /**
+     * Apply role hierarchy filtering to a query builder
+     * Only show users with roles that can be managed by the current user
+     * 
+     * @param \Doctrine\ORM\QueryBuilder $qb The query builder to modify
+     * @param User $currentUser The currently logged in user
+     */
+    private function applyRoleHierarchyFilter(\Doctrine\ORM\QueryBuilder $qb, User $currentUser): void
+    {
+        // Define role hierarchy (higher roles can manage lower roles)
+        $roleHierarchy = [
+            'ROLE_MEMBER' => 1,
+            'ROLE_FACILITATOR' => 2,
+            'ROLE_SUPERVISOR' => 3,
+            'ROLE_ADMIN' => 4,
+        ];
+
+        // Get current user's highest role level
+        $currentUserRoleLevel = 0;
+        $currentUserRoles = $currentUser->getAllRolesIncludingInherited();
+        
+        foreach ($currentUserRoles as $role) {
+            if (isset($roleHierarchy[$role])) {
+                $currentUserRoleLevel = max($currentUserRoleLevel, $roleHierarchy[$role]);
+            }
+        }
+
+        // Build role codes that current user can manage (lower or equal levels)
+        $manageableRoleCodes = [];
+        foreach ($roleHierarchy as $roleCode => $level) {
+            if ($level <= $currentUserRoleLevel) {
+                $manageableRoleCodes[] = $roleCode;
+            }
+        }
+
+        // Apply filtering - only show users with manageable roles
+        if (!empty($manageableRoleCodes)) {
+            $qb->andWhere('r.code IN (:manageableRoles)')
+               ->setParameter('manageableRoles', $manageableRoleCodes);
+        } else {
+            // If no manageable roles, return empty result
+            $qb->andWhere('1 = 0');
+        }
+
+        // Exclude current user from results (can't manage themselves)
+        $qb->andWhere('u.id != :currentUserId')
+           ->setParameter('currentUserId', $currentUser->getId());
+    }
+
+    /**
+     * Filter roles based on role hierarchy
+     * Only show roles that are lower than the current user's role
+     * 
+     * @param array $allRoles Array of Role entities
+     * @param User $currentUser The currently logged in user
+     * @return array Filtered array of roles
+     */
+    private function filterRolesByHierarchy(array $allRoles, User $currentUser): array
+    {
+        // Define role hierarchy (higher roles can assign lower roles)
+        $roleHierarchy = [
+            'ROLE_MEMBER' => 1,
+            'ROLE_FACILITATOR' => 2,
+            'ROLE_SUPERVISOR' => 3,
+            'ROLE_ADMIN' => 4,
+        ];
+
+        // Get current user's highest role level
+        $currentUserRoleLevel = 0;
+        $currentUserRoles = $currentUser->getAllRolesIncludingInherited();
+        
+        foreach ($currentUserRoles as $role) {
+            if (isset($roleHierarchy[$role])) {
+                $currentUserRoleLevel = max($currentUserRoleLevel, $roleHierarchy[$role]);
+            }
+        }
+
+        // Filter roles - only include roles that are lower than current user's role
+        $filteredRoles = [];
+        foreach ($allRoles as $role) {
+            $roleCode = $role->getCode();
+            if (isset($roleHierarchy[$roleCode])) {
+                $roleLevel = $roleHierarchy[$roleCode];
+                // Only include roles that are lower than current user's role
+                if ($roleLevel < $currentUserRoleLevel) {
+                    $filteredRoles[] = $role;
+                }
+            }
+        }
+
+        return $filteredRoles;
     }
 }

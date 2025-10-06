@@ -55,12 +55,22 @@ final class DashboardController extends AbstractController
 
     private function getUserTeams($user): array
     {
-        // Get user's organization
+        // Get user's organization (either as member or as owner)
         $userOrganization = null;
+        
+        // First check if user is a member of any organization
         foreach ($user->getOrganizationMemberships() as $membership) {
             if ($membership->isActive() && $membership->getLeftAt() === null) {
                 $userOrganization = $membership->getOrganization();
                 break;
+            }
+        }
+        
+        // If not a member, check if user owns any organization
+        if (!$userOrganization) {
+            $ownedOrganizations = $user->getOwnedOrganizations();
+            if (!$ownedOrganizations->isEmpty()) {
+                $userOrganization = $ownedOrganizations->first();
             }
         }
 
@@ -87,10 +97,17 @@ final class DashboardController extends AbstractController
 
     private function userHasOrganization($user): bool
     {
+        // Check if user is a member of any organization
         $organizationMember = $this->entityManager->getRepository(\App\Entity\OrganizationMember::class)
             ->findOneBy(['user' => $user, 'isActive' => true]);
             
-        return $organizationMember !== null;
+        if ($organizationMember !== null) {
+            return true;
+        }
+        
+        // Check if user owns any organization
+        $ownedOrganizations = $user->getOwnedOrganizations();
+        return !$ownedOrganizations->isEmpty();
     }
 
     private function calculateDashboardStats($user, $userTeams): array

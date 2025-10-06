@@ -447,7 +447,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const csrfInput = document.createElement('input');
         csrfInput.type = 'hidden';
         csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token("remove_member") }}';
+        csrfInput.value = '{{ csrf_token("remove_user_from_organization") }}';
         form.appendChild(csrfInput);
         
         // Add to DOM and submit
