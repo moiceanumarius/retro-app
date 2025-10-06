@@ -72,6 +72,23 @@
             color: #92400e !important;
         }
         
+        /* Force 3 columns layout for members grid */
+        .members-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+        }
+        
+        @media (max-width: 1200px) {
+            .members-grid {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .members-grid {
+                grid-template-columns: 1fr !important;
+            }
+        }
+        
         /* Remove button styling */
         .member-actions .btn-danger {
             background: #dc2626 !important;
