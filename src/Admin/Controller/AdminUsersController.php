@@ -148,7 +148,7 @@ class AdminUsersController extends AbstractController
             }
             
             $this->addFlash('success', $successMessage);
-            return $this->redirectToRoute('admin_users');
+            return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
         }
 
         // Get all available roles for the form
