@@ -12,6 +12,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 #[Route('/admin')]
 class AdminUsersController extends AbstractController
@@ -19,7 +20,8 @@ class AdminUsersController extends AbstractController
     public function __construct(
         private UserRepository $userRepository,
         private RoleRepository $roleRepository,
-        private EntityManagerInterface $entityManager
+        private EntityManagerInterface $entityManager,
+        private UserPasswordHasherInterface $passwordHasher
     ) {
     }
 
@@ -72,6 +74,39 @@ class AdminUsersController extends AbstractController
             $isActive = $request->request->getBoolean('isActive');
             $isVerified = $request->request->getBoolean('isVerified');
             $selectedRoles = $request->request->all('roles');
+            $newPassword = $request->request->get('newPassword');
+            $confirmPassword = $request->request->get('confirmPassword');
+
+            // Validate password if provided
+            if (!empty($newPassword) || !empty($confirmPassword)) {
+                if (empty($newPassword) || empty($confirmPassword)) {
+                    $this->addFlash('error', 'Both password fields must be filled to change password.');
+                    return $this->render('admin/users/edit.html.twig', [
+                        'user' => $user,
+                        'availableRoles' => $this->roleRepository->findAll(),
+                    ]);
+                }
+                
+                if (strlen($newPassword) < 6) {
+                    $this->addFlash('error', 'Password must be at least 6 characters long.');
+                    return $this->render('admin/users/edit.html.twig', [
+                        'user' => $user,
+                        'availableRoles' => $this->roleRepository->findAll(),
+                    ]);
+                }
+                
+                if ($newPassword !== $confirmPassword) {
+                    $this->addFlash('error', 'Passwords do not match.');
+                    return $this->render('admin/users/edit.html.twig', [
+                        'user' => $user,
+                        'availableRoles' => $this->roleRepository->findAll(),
+                    ]);
+                }
+                
+                // Hash and set new password
+                $hashedPassword = $this->passwordHasher->hashPassword($user, $newPassword);
+                $user->setPassword($hashedPassword);
+            }
 
             // Update user data
             $user->setFirstName($firstName);
@@ -107,7 +142,12 @@ class AdminUsersController extends AbstractController
 
             $this->entityManager->flush();
 
-            $this->addFlash('success', 'User updated successfully!');
+            $successMessage = 'User updated successfully!';
+            if (!empty($newPassword)) {
+                $successMessage .= ' Password has been changed.';
+            }
+            
+            $this->addFlash('success', $successMessage);
             return $this->redirectToRoute('admin_users');
         }
 
