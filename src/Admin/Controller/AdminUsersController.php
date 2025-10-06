@@ -330,4 +330,37 @@ class AdminUsersController extends AbstractController
         $this->addFlash('success', 'User deleted successfully and moved to deleted users.');
         return $this->redirectToRoute('admin_users');
     }
+
+    #[Route('/users/{id}/remove-from-org', name: 'admin_users_remove_from_org', methods: ['POST'])]
+    public function removeFromOrganization(User $user, Request $request): Response
+    {
+        $this->denyAccessUnlessGranted('ROLE_ADMIN');
+
+        // CSRF protection
+        if (!$this->isCsrfTokenValid('remove_from_org', $request->request->get('_token'))) {
+            $this->addFlash('error', 'Invalid CSRF token.');
+            return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
+        }
+
+        // Find and remove organization memberships
+        $organizationMemberships = $this->entityManager->getRepository(\App\Entity\OrganizationMember::class)
+            ->findBy(['user' => $user, 'isActive' => true]);
+
+        if (empty($organizationMemberships)) {
+            $this->addFlash('warning', 'User is not a member of any organization.');
+            return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
+        }
+
+        $removedCount = 0;
+        foreach ($organizationMemberships as $membership) {
+            $membership->setIsActive(false);
+            $membership->setLeftAt(new \DateTimeImmutable());
+            $removedCount++;
+        }
+
+        $this->entityManager->flush();
+
+        $this->addFlash('success', "User has been removed from {$removedCount} organization(s).");
+        return $this->redirectToRoute('admin_users_edit', ['id' => $user->getId()]);
+    }
 }

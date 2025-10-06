@@ -315,6 +315,55 @@
                 </div>
             </div>
         </div>
+
+        <!-- User Actions -->
+        <div class="card shadow-sm border-0 mt-4">
+            <div class="card-header bg-white border-bottom">
+                <h5 class="card-title mb-0 text-gray-800">
+                    <i class="fas fa-cogs me-2 text-warning"></i>User Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#removeFromOrgModal">
+                        <i class="fas fa-user-minus me-2"></i>Remove user from organization
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Remove from Organization Modal -->
+<div class="modal fade" id="removeFromOrgModal" tabindex="-1" aria-labelledby="removeFromOrgModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="removeFromOrgModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>Remove User from Organization
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Warning:</strong> This action will remove the user from their organization.
+                </div>
+                <p>Are you sure you want to remove <strong>{{ user.firstName }} {{ user.lastName }}</strong> from their organization?</p>
+                <p class="text-muted small">This action can be reversed by re-adding the user to an organization.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancel
+                </button>
+                <form method="post" action="{{ path('admin_users_remove_from_org', {'id': user.id}) }}" style="display: inline;">
+                    <input type="hidden" name="_token" value="{{ csrf_token('remove_from_org') }}">
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-user-minus me-2"></i>Remove from Organization
+                    </button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
