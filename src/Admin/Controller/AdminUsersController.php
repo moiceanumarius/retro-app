@@ -36,16 +36,47 @@ class AdminUsersController extends AbstractController
         $limit = 10;
         $offset = ($page - 1) * $limit;
 
-        // Get total count
-        $totalUsers = $this->userRepository->count([]);
+        // Search and sort parameters
+        $search = trim($request->query->get('search', ''));
+        $sortBy = $request->query->get('sort', 'createdAt');
+        $sortOrder = $request->query->get('order', 'DESC');
         
-        // Get users for current page
-        $users = $this->userRepository->findBy(
-            [],
-            ['createdAt' => 'DESC'],
-            $limit,
-            $offset
-        );
+        // Validate sort parameters
+        $allowedSorts = ['id', 'firstName', 'lastName', 'email', 'createdAt', 'isActive', 'isVerified'];
+        if (!in_array($sortBy, $allowedSorts)) {
+            $sortBy = 'createdAt';
+        }
+        if (!in_array($sortOrder, ['ASC', 'DESC'])) {
+            $sortOrder = 'DESC';
+        }
+
+        // Build query
+        $qb = $this->userRepository->createQueryBuilder('u');
+        
+        // Add search conditions
+        if (!empty($search)) {
+            $qb->andWhere(
+                $qb->expr()->orX(
+                    $qb->expr()->like('u.firstName', ':search'),
+                    $qb->expr()->like('u.lastName', ':search'),
+                    $qb->expr()->like('u.email', ':search')
+                )
+            )
+            ->setParameter('search', '%' . $search . '%');
+        }
+
+        // Get total count with search
+        $totalUsers = $qb->select('COUNT(u.id)')
+                        ->getQuery()
+                        ->getSingleScalarResult();
+
+        // Get users for current page with search and sort
+        $users = $qb->select('u')
+                   ->orderBy('u.' . $sortBy, $sortOrder)
+                   ->setFirstResult($offset)
+                   ->setMaxResults($limit)
+                   ->getQuery()
+                   ->getResult();
 
         // Calculate pagination info
         $totalPages = ceil($totalUsers / $limit);
@@ -60,6 +91,9 @@ class AdminUsersController extends AbstractController
             'has_next_page' => $hasNextPage,
             'has_prev_page' => $hasPrevPage,
             'limit' => $limit,
+            'search' => $search,
+            'sort_by' => $sortBy,
+            'sort_order' => $sortOrder,
         ]);
     }
 

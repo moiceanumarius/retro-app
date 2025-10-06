@@ -2,377 +2,464 @@
 
 {% block title %}Users - RetroApp{% endblock %}
 
+{% block page_title %}Users{% endblock %}
+
+{% block page_subtitle %}
+    <div class="admin-content-subtitle">{{ total_users }} total users</div>
+{% endblock %}
+
 {% block body %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Users</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <a href="{{ path('admin_users_add') }}" class="btn btn-sm btn-primary">
-                <i class="fas fa-plus me-1"></i>Add User
-            </a>
+    <!-- Search and Add User Section -->
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+        <!-- Search Form -->
+        <div style="flex: 1; max-width: 400px;">
+            <form method="GET" action="{{ path('admin_users') }}" style="display: flex; gap: 0.5rem;">
+                <input type="text" 
+                       name="search" 
+                       value="{{ search }}" 
+                       placeholder="Search users by name or email..." 
+                       class="admin-form-control"
+                       style="flex: 1;">
+                <button type="submit" class="admin-btn admin-btn-secondary">
+                    <i class="fas fa-search"></i>
+                </button>
+                {% if search %}
+                    <a href="{{ path('admin_users') }}" class="admin-btn admin-btn-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                {% endif %}
+            </form>
         </div>
+        
+        <!-- Add User Button -->
+        <a href="{{ path('admin_users_add') }}" class="admin-btn admin-btn-primary">
+            <i class="fas fa-plus"></i>
+            Add User
+        </a>
     </div>
-</div>
 
-<!-- Users Table -->
-<div class="card shadow">
-    <div class="card-header py-3 d-flex justify-content-between align-items-center">
-        <h6 class="m-0 font-weight-bold text-primary">All Users</h6>
-        <span class="badge badge-info">{{ total_users }} total users</span>
-    </div>
-    <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-bordered" width="100%" cellspacing="0">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Roles</th>
-                        <th>Status</th>
-                        <th>Verified</th>
-                        <th>Created</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.id }}</td>
-                        <td>{{ user.firstName }} {{ user.lastName }}</td>
-                        <td>{{ user.email }}</td>
-                        <td>
-                            {% for role in user.roles %}
-                                <span class="badge badge-secondary me-1">{{ role }}</span>
-                            {% endfor %}
-                        </td>
-                        <td>
-                            {% if user.isActive %}
-                                <span class="badge badge-success">Active</span>
+    <!-- Users Table -->
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>
+                        <a href="{{ path('admin_users', {'sort': 'id', 'order': sort_by == 'id' and sort_order == 'ASC' ? 'DESC' : 'ASC', 'search': search}) }}" 
+                           class="admin-sort-link">
+                            ID
+                            {% if sort_by == 'id' %}
+                                <i class="fas fa-sort-{{ sort_order == 'ASC' ? 'up' : 'down' }}"></i>
                             {% else %}
-                                <span class="badge badge-danger">Inactive</span>
+                                <i class="fas fa-sort" style="opacity: 0.3;"></i>
                             {% endif %}
-                        </td>
-                        <td>
-                            {% if user.isVerified %}
-                                <span class="badge badge-success">Verified</span>
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ path('admin_users', {'sort': 'firstName', 'order': sort_by == 'firstName' and sort_order == 'ASC' ? 'DESC' : 'ASC', 'search': search}) }}" 
+                           class="admin-sort-link">
+                            Name
+                            {% if sort_by == 'firstName' %}
+                                <i class="fas fa-sort-{{ sort_order == 'ASC' ? 'up' : 'down' }}"></i>
                             {% else %}
-                                <span class="badge badge-warning">Unverified</span>
+                                <i class="fas fa-sort" style="opacity: 0.3;"></i>
                             {% endif %}
-                        </td>
-                        <td>{{ user.createdAt|date('M d, Y H:i') }}</td>
-                        <td>
-                            <div class="btn-group" role="group">
-                                <a href="{{ path('admin_users_edit', {'id': user.id}) }}" class="btn btn-sm btn-outline-primary" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button type="button" class="btn btn-sm btn-outline-danger delete-user-btn" 
-                                        title="Delete" 
-                                        data-user-id="{{ user.id }}" 
-                                        data-user-name="{{ user.firstName }} {{ user.lastName }}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ path('admin_users', {'sort': 'email', 'order': sort_by == 'email' and sort_order == 'ASC' ? 'DESC' : 'ASC', 'search': search}) }}" 
+                           class="admin-sort-link">
+                            Email
+                            {% if sort_by == 'email' %}
+                                <i class="fas fa-sort-{{ sort_order == 'ASC' ? 'up' : 'down' }}"></i>
+                            {% else %}
+                                <i class="fas fa-sort" style="opacity: 0.3;"></i>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Roles</th>
+                    <th>
+                        <a href="{{ path('admin_users', {'sort': 'isActive', 'order': sort_by == 'isActive' and sort_order == 'ASC' ? 'DESC' : 'ASC', 'search': search}) }}" 
+                           class="admin-sort-link">
+                            Status
+                            {% if sort_by == 'isActive' %}
+                                <i class="fas fa-sort-{{ sort_order == 'ASC' ? 'up' : 'down' }}"></i>
+                            {% else %}
+                                <i class="fas fa-sort" style="opacity: 0.3;"></i>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ path('admin_users', {'sort': 'isVerified', 'order': sort_by == 'isVerified' and sort_order == 'ASC' ? 'DESC' : 'ASC', 'search': search}) }}" 
+                           class="admin-sort-link">
+                            Verified
+                            {% if sort_by == 'isVerified' %}
+                                <i class="fas fa-sort-{{ sort_order == 'ASC' ? 'up' : 'down' }}"></i>
+                            {% else %}
+                                <i class="fas fa-sort" style="opacity: 0.3;"></i>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>
+                        <a href="{{ path('admin_users', {'sort': 'createdAt', 'order': sort_by == 'createdAt' and sort_order == 'ASC' ? 'DESC' : 'ASC', 'search': search}) }}" 
+                           class="admin-sort-link">
+                            Created
+                            {% if sort_by == 'createdAt' %}
+                                <i class="fas fa-sort-{{ sort_order == 'ASC' ? 'up' : 'down' }}"></i>
+                            {% else %}
+                                <i class="fas fa-sort" style="opacity: 0.3;"></i>
+                            {% endif %}
+                        </a>
+                    </th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td>{{ user.id }}</td>
+                    <td>
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 40px; height: 40px; border-radius: 50%; background-color: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; margin-right: 0.75rem;">
+                                <i class="fas fa-user" style="color: var(--admin-primary);"></i>
                             </div>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="8" class="text-center text-muted">No users found</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-        
-        <!-- Pagination -->
-        {% if total_pages > 1 %}
-        <div class="d-flex justify-content-between align-items-center mt-3">
-            <div>
-                <small class="text-muted">
+                            <div>
+                                <div style="font-weight: 500;">{{ user.firstName }} {{ user.lastName }}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td>{{ user.email }}</td>
+                    <td>
+                        {% for role in user.roles %}
+                            <span class="admin-badge admin-badge-info" style="margin-right: 0.25rem;">{{ role }}</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if user.isActive %}
+                            <span class="admin-badge admin-badge-success">Active</span>
+                        {% else %}
+                            <span class="admin-badge admin-badge-danger">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if user.isVerified %}
+                            <span class="admin-badge admin-badge-success">Verified</span>
+                        {% else %}
+                            <span class="admin-badge admin-badge-warning">Unverified</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ user.createdAt|date('M d, Y H:i') }}</td>
+                    <td>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <a href="{{ path('admin_users_edit', {'id': user.id}) }}" 
+                               class="admin-btn admin-btn-sm admin-btn-primary" 
+                               title="Edit">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <button type="button" 
+                                    class="admin-btn admin-btn-sm admin-btn-danger delete-user-btn" 
+                                    title="Delete" 
+                                    data-user-id="{{ user.id }}" 
+                                    data-user-name="{{ user.firstName }} {{ user.lastName }}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" class="admin-text-center" style="color: var(--admin-text-muted); padding: 2rem;">
+                        <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                        <div>No users found</div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem;">
+        <div>
+            <small style="color: var(--admin-text-muted);">
+                {% if search %}
+                    Showing {{ ((current_page - 1) * limit) + 1 }} to {{ min(current_page * limit, total_users) }} of {{ total_users }} users matching "{{ search }}"
+                {% else %}
                     Showing {{ ((current_page - 1) * limit) + 1 }} to {{ min(current_page * limit, total_users) }} of {{ total_users }} users
-                </small>
+                {% endif %}
+            </small>
+        </div>
+        <nav>
+            <div style="display: flex; gap: 0.25rem;">
+                {% if has_prev_page %}
+                    <a href="{{ path('admin_users', {'page': current_page - 1, 'search': search, 'sort': sort_by, 'order': sort_order}) }}" 
+                       class="admin-btn admin-btn-sm admin-btn-secondary">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% endif %}
+                
+                {% for page_num in range(max(1, current_page - 2), min(total_pages, current_page + 2)) %}
+                    <a href="{{ path('admin_users', {'page': page_num, 'search': search, 'sort': sort_by, 'order': sort_order}) }}" 
+                       class="admin-btn admin-btn-sm {% if page_num == current_page %}admin-btn-primary{% else %}admin-btn-secondary{% endif %}">
+                        {{ page_num }}
+                    </a>
+                {% endfor %}
+                
+                {% if has_next_page %}
+                    <a href="{{ path('admin_users', {'page': current_page + 1, 'search': search, 'sort': sort_by, 'order': sort_order}) }}" 
+                       class="admin-btn admin-btn-sm admin-btn-secondary">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
             </div>
-            <nav>
-                <ul class="pagination pagination-sm mb-0">
-                    {% if has_prev_page %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ path('admin_users', {'page': current_page - 1}) }}">
-                                <i class="fas fa-chevron-left"></i>
-                            </a>
-                        </li>
-                    {% endif %}
-                    
-                    {% for page_num in range(max(1, current_page - 2), min(total_pages, current_page + 2)) %}
-                        <li class="page-item {% if page_num == current_page %}active{% endif %}">
-                            <a class="page-link" href="{{ path('admin_users', {'page': page_num}) }}">{{ page_num }}</a>
-                        </li>
-                    {% endfor %}
-                    
-                    {% if has_next_page %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ path('admin_users', {'page': current_page + 1}) }}">
-                                <i class="fas fa-chevron-right"></i>
-                            </a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-        </div>
-        {% endif %}
+        </nav>
     </div>
-</div>
+    {% endif %}
 
-<style>
-.shadow {
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-}
-
-.card {
-    border: 1px solid #e3e6f0;
-    border-radius: 0.35rem;
-}
-
-.table th {
-    border-top: none;
-    font-weight: 600;
-    color: #5a5c69;
-    background-color: #f8f9fc;
-}
-
-.badge-success {
-    background-color: #1cc88a;
-    color: white;
-}
-
-.badge-danger {
-    background-color: #e74a3b;
-    color: white;
-}
-
-.badge-warning {
-    background-color: #f6c23e;
-    color: #212529;
-}
-
-.badge-info {
-    background-color: #36b9cc;
-    color: white;
-}
-
-.badge-secondary {
-    background-color: #858796;
-    color: white;
-}
-
-.btn-group .btn {
-    margin-right: 2px;
-}
-
-.btn-group .btn:last-child {
-    margin-right: 0;
-}
-
-/* Confirmation Modal Styles */
-.confirm-modal {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    z-index: 10000;
-    animation: fadeIn 0.2s ease-out;
-}
-
-.confirm-modal.active {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-.confirm-modal-content {
-    background: white;
-    border-radius: 12px;
-    padding: 2rem;
-    max-width: 400px;
-    width: 90%;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    animation: slideIn 0.3s ease-out;
-}
-
-.confirm-modal-header {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin-bottom: 1rem;
-}
-
-.confirm-modal-icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: #fee;
-    color: #dc3545;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    font-weight: bold;
-}
-
-.confirm-modal-title {
-    font-size: 1.25rem;
-    font-weight: 600;
-    color: #2d3748;
-    margin: 0;
-}
-
-.confirm-modal-body {
-    color: #64748b;
-    font-size: 1rem;
-    line-height: 1.5;
-    margin-bottom: 1.5rem;
-}
-
-.confirm-modal-footer {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: flex-end;
-}
-
-.confirm-modal-btn {
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-size: 0.95rem;
-    border: none;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.confirm-modal-btn-cancel {
-    background: #f1f5f9;
-    color: #64748b;
-}
-
-.confirm-modal-btn-cancel:hover {
-    background: #e2e8f0;
-}
-
-.confirm-modal-btn-confirm {
-    background: #dc3545;
-    color: white;
-}
-
-.confirm-modal-btn-confirm:hover {
-    background: #c82333;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-
-@keyframes slideIn {
-    from {
-        opacity: 0;
-        transform: translateY(-20px);
+    <style>
+    /* Sort link styles */
+    .admin-sort-link {
+        color: var(--admin-text-color);
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        transition: color 0.2s ease;
     }
-    to {
+    
+    .admin-sort-link:hover {
+        color: var(--admin-primary);
+        text-decoration: none;
+    }
+    
+    .admin-sort-link i {
+        font-size: 0.75rem;
+        opacity: 0.7;
+    }
+    
+    .admin-sort-link:hover i {
         opacity: 1;
-        transform: translateY(0);
     }
-}
-</style>
+    
+    /* Search form styles */
+    .admin-form-control {
+        border: 1px solid var(--admin-border-color);
+        border-radius: 0.375rem;
+        padding: 0.5rem 0.75rem;
+        font-size: 0.875rem;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    
+    .admin-form-control:focus {
+        outline: none;
+        border-color: var(--admin-primary);
+        box-shadow: 0 0 0 0.2rem rgba(99, 102, 241, 0.25);
+    }
+    </style>
 
-<!-- Confirmation Modal -->
-<div id="confirmModal" class="confirm-modal">
-    <div class="confirm-modal-content">
-        <div class="confirm-modal-header">
-            <div class="confirm-modal-icon">!</div>
-            <h3 class="confirm-modal-title" id="confirmModalTitle">Delete User</h3>
-        </div>
-        <div class="confirm-modal-body" id="confirmModalBody">
-            Are you sure you want to delete this user?
-        </div>
-        <div class="confirm-modal-footer">
-            <button class="confirm-modal-btn confirm-modal-btn-cancel" id="confirmModalCancel">Cancel</button>
-            <button class="confirm-modal-btn confirm-modal-btn-confirm" id="confirmModalConfirm">Delete</button>
+    <!-- Confirmation Modal -->
+    <div id="confirmModal" class="confirm-modal">
+        <div class="confirm-modal-content">
+            <div class="confirm-modal-header">
+                <div class="confirm-modal-icon">!</div>
+                <h3 class="confirm-modal-title" id="confirmModalTitle">Delete User</h3>
+            </div>
+            <div class="confirm-modal-body" id="confirmModalBody">
+                Are you sure you want to delete this user?
+            </div>
+            <div class="confirm-modal-footer">
+                <button class="confirm-modal-btn confirm-modal-btn-cancel" id="confirmModalCancel">Cancel</button>
+                <button class="confirm-modal-btn confirm-modal-btn-confirm" id="confirmModalConfirm">Delete</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const modal = document.getElementById('confirmModal');
-    const titleEl = document.getElementById('confirmModalTitle');
-    const bodyEl = document.getElementById('confirmModalBody');
-    const cancelBtn = document.getElementById('confirmModalCancel');
-    const confirmBtn = document.getElementById('confirmModalConfirm');
-    
-    let pendingDeletion = null;
-    
-    // Handle delete user buttons
-    document.addEventListener('click', function(e) {
-        if (e.target.classList.contains('delete-user-btn') || e.target.closest('.delete-user-btn')) {
-            const btn = e.target.classList.contains('delete-user-btn') ? e.target : e.target.closest('.delete-user-btn');
-            const userId = btn.dataset.userId;
-            const userName = btn.dataset.userName;
+    <style>
+    /* Confirmation Modal Styles */
+    .confirm-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        animation: fadeIn 0.2s ease-out;
+    }
 
-            // Set modal content
-            titleEl.textContent = 'Delete User';
-            bodyEl.innerHTML = `Are you sure you want to delete <strong>${userName}</strong>?<br><br><em>This action cannot be undone. The user will be moved to deleted users.</em>`;
-            
-            // Store pending deletion data
-            pendingDeletion = {
-                userId: userId,
-                userName: userName,
-                btn: btn
-            };
-            
-            // Show modal
-            modal.classList.add('active');
+    .confirm-modal.active {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .confirm-modal-content {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        max-width: 400px;
+        width: 90%;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        animation: slideIn 0.3s ease-out;
+    }
+
+    .confirm-modal-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+
+    .confirm-modal-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: #fee;
+        color: #dc3545;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 24px;
+        font-weight: bold;
+    }
+
+    .confirm-modal-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin: 0;
+    }
+
+    .confirm-modal-body {
+        color: #64748b;
+        font-size: 1rem;
+        line-height: 1.5;
+        margin-bottom: 1.5rem;
+    }
+
+    .confirm-modal-footer {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+    }
+
+    .confirm-modal-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .confirm-modal-btn-cancel {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .confirm-modal-btn-cancel:hover {
+        background: #e2e8f0;
+    }
+
+    .confirm-modal-btn-confirm {
+        background: #dc3545;
+        color: white;
+    }
+
+    .confirm-modal-btn-confirm:hover {
+        background: #c82333;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
         }
-    });
-    
-    // Handle modal cancel
-    cancelBtn.addEventListener('click', function() {
-        modal.classList.remove('active');
-        pendingDeletion = null;
-    });
-    
-    // Handle modal confirm
-    confirmBtn.addEventListener('click', function() {
-        if (!pendingDeletion) return;
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    </style>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmModalTitle');
+        const bodyEl = document.getElementById('confirmModalBody');
+        const cancelBtn = document.getElementById('confirmModalCancel');
+        const confirmBtn = document.getElementById('confirmModalConfirm');
         
-        const { userId, userName, btn } = pendingDeletion;
+        let pendingDeletion = null;
         
-        // Create hidden form
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = `/admin/users/${userId}/delete`;
-        form.style.display = 'none';
+        // Handle delete user buttons
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('delete-user-btn') || e.target.closest('.delete-user-btn')) {
+                const btn = e.target.classList.contains('delete-user-btn') ? e.target : e.target.closest('.delete-user-btn');
+                const userId = btn.dataset.userId;
+                const userName = btn.dataset.userName;
+
+                // Set modal content
+                titleEl.textContent = 'Delete User';
+                bodyEl.innerHTML = `Are you sure you want to delete <strong>${userName}</strong>?<br><br><em>This action cannot be undone. The user will be moved to deleted users.</em>`;
+                
+                // Store pending deletion data
+                pendingDeletion = {
+                    userId: userId,
+                    userName: userName,
+                    btn: btn
+                };
+                
+                // Show modal
+                modal.classList.add('active');
+            }
+        });
         
-        // Add CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token("delete_user") }}';
-        form.appendChild(csrfInput);
-        
-        // Add to DOM and submit
-        document.body.appendChild(form);
-        form.submit();
-    });
-    
-    // Close modal on background click
-    modal.addEventListener('click', function(e) {
-        if (e.target === modal) {
+        // Handle modal cancel
+        cancelBtn.addEventListener('click', function() {
             modal.classList.remove('active');
             pendingDeletion = null;
-        }
+        });
+        
+        // Handle modal confirm
+        confirmBtn.addEventListener('click', function() {
+            if (!pendingDeletion) return;
+            
+            const { userId, userName, btn } = pendingDeletion;
+            
+            // Create hidden form
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/users/${userId}/delete`;
+            form.style.display = 'none';
+            
+            // Add CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = '{{ csrf_token("delete_user") }}';
+            form.appendChild(csrfInput);
+            
+            // Add to DOM and submit
+            document.body.appendChild(form);
+            form.submit();
+        });
+        
+        // Close modal on background click
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                modal.classList.remove('active');
+                pendingDeletion = null;
+            }
+        });
     });
-});
-</script>
+    </script>
 {% endblock %}

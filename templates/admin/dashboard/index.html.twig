@@ -2,149 +2,94 @@
 
 {% block title %}Admin Dashboard - RetroApp{% endblock %}
 
+{% block page_title %}Dashboard{% endblock %}
+
+{% block page_subtitle %}
+    <div class="admin-content-subtitle">Welcome back, {{ app.user.firstName }} {{ app.user.lastName }}</div>
+{% endblock %}
+
 {% block body %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">Dashboard</h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group me-2">
-            <span class="text-muted">Welcome, {{ app.user.firstName }} {{ app.user.lastName }}</span>
-        </div>
-    </div>
-</div>
-
     <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-xl-6 col-md-6 mb-4">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                Total Admins
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_admins }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-shield fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+    <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+            <div class="admin-stat-header">
+                <div class="admin-stat-title">Total Admins</div>
+                <div class="admin-stat-icon">
+                    <i class="fas fa-user-shield"></i>
                 </div>
             </div>
+            <h3 class="admin-stat-value">{{ stats.total_admins }}</h3>
         </div>
 
-        <div class="col-xl-6 col-md-6 mb-4">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="row no-gutters align-items-center">
-                        <div class="col mr-2">
-                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                Active Admins
-                            </div>
-                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.active_admins }}</div>
-                        </div>
-                        <div class="col-auto">
-                            <i class="fas fa-user-check fa-2x text-gray-300"></i>
-                        </div>
-                    </div>
+        <div class="admin-stat-card success">
+            <div class="admin-stat-header">
+                <div class="admin-stat-title">Active Admins</div>
+                <div class="admin-stat-icon">
+                    <i class="fas fa-user-check"></i>
                 </div>
             </div>
+            <h3 class="admin-stat-value">{{ stats.active_admins }}</h3>
         </div>
     </div>
 
-    <!-- Recent Admins -->
-    <div class="row">
-        <div class="col-12">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                    <h6 class="m-0 font-weight-bold text-primary">Recent Admin Users</h6>
-                </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-bordered" width="100%" cellspacing="0">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Email</th>
-                                    <th>Status</th>
-                                    <th>Created</th>
-                                    <th>Last Login</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for admin in recent_admins %}
-                                <tr>
-                                    <td>{{ admin.firstName }} {{ admin.lastName }}</td>
-                                    <td>{{ admin.email }}</td>
-                                    <td>
-                                        {% if admin.isActive %}
-                                            <span class="badge badge-success">Active</span>
-                                        {% else %}
-                                            <span class="badge badge-danger">Inactive</span>
-                                        {% endif %}
-                                    </td>
-                                    <td>{{ admin.createdAt|date('M d, Y') }}</td>
-                                    <td>
-                                        {% if admin.lastLoginAt %}
-                                            {{ admin.lastLoginAt|date('M d, Y H:i') }}
-                                        {% else %}
-                                            <span class="text-muted">Never</span>
-                                        {% endif %}
-                                    </td>
-                                </tr>
+    <!-- Recent Admins Table -->
+    <div class="admin-card">
+        <div class="admin-card-header">
+            <h2 class="admin-card-title">Recent Admin Users</h2>
+        </div>
+        <div class="admin-card-body">
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Created</th>
+                            <th>Last Login</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for admin in recent_admins %}
+                        <tr>
+                            <td>
+                                <div style="display: flex; align-items: center;">
+                                    <div style="width: 40px; height: 40px; border-radius: 50%; background-color: rgba(99, 102, 241, 0.1); display: flex; align-items: center; justify-content: center; margin-right: 0.75rem;">
+                                        <i class="fas fa-user" style="color: var(--admin-primary);"></i>
+                                    </div>
+                                    <div>
+                                        <div style="font-weight: 500;">{{ admin.firstName }} {{ admin.lastName }}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>{{ admin.email }}</td>
+                            <td>
+                                {% if admin.isActive %}
+                                    <span class="admin-badge admin-badge-success">Active</span>
                                 {% else %}
-                                <tr>
-                                    <td colspan="5" class="text-center text-muted">No admin users found</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+                                    <span class="admin-badge admin-badge-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ admin.createdAt|date('M d, Y') }}</td>
+                            <td>
+                                {% if admin.lastLoginAt %}
+                                    {{ admin.lastLoginAt|date('M d, Y H:i') }}
+                                {% else %}
+                                    <span style="color: var(--admin-text-muted);">Never</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="admin-text-center" style="color: var(--admin-text-muted); padding: 2rem;">
+                                <i class="fas fa-users" style="font-size: 2rem; margin-bottom: 1rem; opacity: 0.5;"></i>
+                                <div>No admin users found</div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
-
-<style>
-.border-left-primary {
-    border-left: 0.25rem solid #4e73df !important;
-}
-
-.border-left-success {
-    border-left: 0.25rem solid #1cc88a !important;
-}
-
-.text-gray-300 {
-    color: #dddfeb !important;
-}
-
-.text-gray-800 {
-    color: #5a5c69 !important;
-}
-
-.shadow {
-    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15) !important;
-}
-
-.card {
-    border: 1px solid #e3e6f0;
-    border-radius: 0.35rem;
-}
-
-.table th {
-    border-top: none;
-    font-weight: 600;
-    color: #5a5c69;
-    background-color: #f8f9fc;
-}
-
-.badge-success {
-    background-color: #1cc88a;
-    color: white;
-}
-
-.badge-danger {
-    background-color: #e74a3b;
-    color: white;
-}
-</style>
 {% endblock %}
