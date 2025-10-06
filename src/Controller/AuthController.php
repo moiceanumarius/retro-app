@@ -25,6 +25,12 @@ final class AuthController extends AbstractController
         // last username entered by the user
         $lastUsername = $authenticationUtils->getLastUsername();
         
+        // Get email from URL parameter for pre-filling
+        $prefillEmail = $request->query->get('email');
+        if ($prefillEmail && !$lastUsername) {
+            $lastUsername = $prefillEmail;
+        }
+        
         // Get invitation token from URL parameter
         $invitationToken = $request->query->get('invitation');
         

@@ -26,8 +26,10 @@ class AdminAuthController extends AbstractController
         // Last username entered by the user
         $lastUsername = $authenticationUtils->getLastUsername();
 
-        // Create login form
-        $form = $this->createForm(AdminLoginType::class);
+        // Create login form with data
+        $form = $this->createForm(AdminLoginType::class, [
+            'email' => $lastUsername,
+        ]);
 
         return $this->render('admin/auth/login.html.twig', [
             'form' => $form,

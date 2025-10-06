@@ -85,21 +85,36 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
      */
     public function getRoles(): array
     {
-        $roles = $this->roles;
-        // guarantee every user at least has ROLE_ADMIN
-        $roles[] = 'ROLE_ADMIN';
-
-        return array_unique($roles);
+        // Admin users only have ROLE_ADMIN
+        return ['ROLE_ADMIN'];
     }
 
     /**
      * @param array<string> $roles
+     * Note: Admin users always have ROLE_ADMIN, so this method is not used
      */
     public function setRoles(array $roles): static
     {
-        $this->roles = $roles;
-
+        // Admin users always have ROLE_ADMIN, ignore roles parameter
         return $this;
+    }
+
+    /**
+     * Check if user has a specific role (simplified for admin users)
+     */
+    public function hasRole(string $role): bool
+    {
+        // Admin users only have ROLE_ADMIN
+        return $role === 'ROLE_ADMIN';
+    }
+
+    /**
+     * Check if user has any of the specified roles (simplified for admin users)
+     */
+    public function hasAnyRole(array $roles): bool
+    {
+        // Admin users only have ROLE_ADMIN, so check if ROLE_ADMIN is in the list
+        return in_array('ROLE_ADMIN', $roles, true);
     }
 
     /**
