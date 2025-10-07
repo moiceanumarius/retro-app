@@ -25,6 +25,12 @@ class RetrospectiveBoard {
         this.maxVotesPerItem = 2;
         this.votingActive = false;
         
+        // Connected users manager
+        this.connectedUsersManager = new ConnectedUsersManager(
+            this.retrospectiveId,
+            window.retrospectiveData ? window.retrospectiveData.teamOwnerId : null
+        );
+        
         // Store global reference for cleanup
         window.retrospectiveBoard = this;
         
@@ -1426,41 +1432,13 @@ class RetrospectiveBoard {
     }
 
     handleTimerLikeStatesFromHeartbeat(timerLikeStates) {
-        // This is the SINGLE source of truth for timer like states
-        
         // Store the states for potential reapplication after DOM updates
         this.lastTimerLikeStates = timerLikeStates;
         
-        // Get all user elements that currently have timer-liked class
-        const currentLikedElements = document.querySelectorAll('.timer-liked');
-        const currentLikedUserIds = Array.from(currentLikedElements).map(el => el.getAttribute('data-user-id'));
-        
-        // Get all user IDs that should be liked according to heartbeat
-        const shouldBeLikedUserIds = Object.values(timerLikeStates)
-            .filter(userState => userState.isLiked)
-            .map(userState => userState.userId.toString());
-        
-        
-        // Remove timer-liked class from users who should NOT be liked
-        currentLikedUserIds.forEach(userId => {
-            if (!shouldBeLikedUserIds.includes(userId)) {
-                const userElement = document.querySelector(`[data-user-id="${userId}"]`);
-                if (userElement) {
-                    userElement.classList.remove('timer-liked');
-                }
-            }
-        });
-        
-        // Add timer-liked class to users who should be liked
-        shouldBeLikedUserIds.forEach(userId => {
-            if (!currentLikedUserIds.includes(userId)) {
-                const userState = Object.values(timerLikeStates).find(state => state.userId.toString() === userId);
-                if (userState) {
-                    this.updateUserSidebarBackgroundForUser(userState.userId, userState.userName, true);
-                }
-            }
-        });
-        
+        // Use the connected users manager to handle timer like states
+        if (this.connectedUsersManager) {
+            this.connectedUsersManager.handleTimerLikeStates(timerLikeStates);
+        }
     }
 
     clearTimerLikeState() {
@@ -1508,72 +1486,9 @@ class RetrospectiveBoard {
     }
     
     updateConnectedUsers(users) {
-        const container = document.getElementById('connectedUsers');
-        if (!container) {
-            console.error('connectedUsers container not found');
-            return;
+        if (this.connectedUsersManager) {
+            this.connectedUsersManager.updateUsers(users);
         }
-        
-        // Get current user ID
-        const currentUser = container.querySelector('.current-user');
-        const currentUserId = currentUser ? currentUser.dataset.userId : null;
-        
-        // Store existing timer-liked states before recreating elements
-        const existingTimerLikedStates = {};
-        const existingUsers = container.querySelectorAll('.user-item:not(.current-user)');
-        existingUsers.forEach(user => {
-            const userId = user.dataset.userId;
-            if (user.classList.contains('timer-liked')) {
-                existingTimerLikedStates[userId] = true;
-            }
-        });
-        
-        
-        // Remove all non-current users
-        existingUsers.forEach(user => user.remove());
-        
-        // Add other connected users
-        users.forEach(user => {
-            if (user.id != currentUserId) {
-                const userElement = this.createUserElement(user);
-                
-                // Restore timer-liked state if it existed before
-                if (existingTimerLikedStates[user.id]) {
-                    userElement.classList.add('timer-liked');
-                }
-                
-                container.appendChild(userElement);
-            }
-        });
-        
-        // After recreating elements, reapply timer like states from heartbeat
-        // This ensures the states are applied to the newly created elements
-        if (this.lastTimerLikeStates) {
-            this.handleTimerLikeStatesFromHeartbeat(this.lastTimerLikeStates);
-        }
-        
-    }
-    
-    createUserElement(user) {
-        const userDiv = document.createElement('div');
-        userDiv.className = 'user-item';
-        userDiv.dataset.userId = user.id;
-        
-        const avatar = user.avatar 
-            ? `<img src="/uploads/avatars/${user.avatar}" alt="${user.firstName}">`
-            : `<div class="avatar-placeholder">${user.firstName.charAt(0).toUpperCase()}</div>`;
-        
-        userDiv.innerHTML = `
-            <div class="user-avatar">
-                ${avatar}
-            </div>
-            <div class="user-info">
-                <div class="user-name">${user.firstName} ${user.lastName}</div>
-                <div class="user-status online">Online</div>
-            </div>
-        `;
-        
-        return userDiv;
     }
     
     async joinRetrospective() {
@@ -1646,7 +1561,9 @@ class RetrospectiveBoard {
         this.hideAddItemForms();
         
         // Clear all timer like states when timer is stopped
-        this.clearAllTimerLikeStates();
+        if (this.connectedUsersManager) {
+            this.connectedUsersManager.clearAllTimerLikeStates();
+        }
         
         // Stop voting if we're in voting phase
         if (this.isInDiscussionStep() && this.votingActive) {
@@ -3554,24 +3471,6 @@ RetrospectiveBoard.prototype.heartbeatConnectedUsers = async function() {
     }
 };
 
-// Add clearAllTimerLikeStates method to RetrospectiveBoard prototype
-RetrospectiveBoard.prototype.clearAllTimerLikeStates = function() {
-    // Remove timer-liked class from all user elements
-    const allLikedElements = document.querySelectorAll('.timer-liked');
-    
-    allLikedElements.forEach(element => {
-        element.classList.remove('timer-liked');
-    });
-    
-    // Reset the like button state
-    const likeBtn = document.getElementById('likeTimerBtn');
-    if (likeBtn) {
-        likeBtn.classList.remove('liked');
-    }
-    
-    // Clear stored timer like states
-    this.lastTimerLikeStates = {};
-};
 
 // Cleanup polling on page unload
 window.addEventListener('beforeunload', function() {

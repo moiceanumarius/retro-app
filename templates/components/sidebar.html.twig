@@ -15,40 +15,15 @@
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
                     </svg>
-                    Connected Users
+                    Users ({{ connectedUsers|length }})
                 </div>
                 <div id="connectedUsers" class="connected-users">
-                    <div class="user-item current-user" data-user-id="{{ app.user.id }}">
-                        <div class="user-avatar">
-                            {% if app.user.avatar %}
-                                <img src="{{ asset('uploads/avatars/' ~ app.user.avatar) }}" alt="{{ app.user.firstName }}">
-                            {% else %}
-                                <div class="avatar-placeholder">{{ app.user.firstName|first|upper }}</div>
-                            {% endif %}
-                        </div>
-                        <div class="user-info">
-                            <div class="user-name">{{ app.user.firstName }} {{ app.user.lastName }}</div>
-                            <div class="user-status online">You</div>
-                        </div>
-                    </div>
-                    <!-- Other connected users will be added here via JavaScript -->
-                    {% for user in connectedUsers %}
-                        {% if user.id != app.user.id %}
-                            <div class="user-item" data-user-id="{{ user.id }}">
-                                <div class="user-avatar">
-                                    {% if user.avatar %}
-                                        <img src="{{ asset('uploads/avatars/' ~ user.avatar) }}" alt="{{ user.firstName }}">
-                                    {% else %}
-                                        <div class="avatar-placeholder">{{ user.firstName|first|upper }}</div>
-                                    {% endif %}
-                                </div>
-                                <div class="user-info">
-                                    <div class="user-name">{{ user.firstName }} {{ user.lastName }}</div>
-                                    <div class="user-status online">Online</div>
-                                </div>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
+                    {# Debug: Show connected users data #}
+                    <!-- DEBUG: Connected users: {{ connectedUsers|json_encode }} -->
+                    <!-- DEBUG: Team owner ID: {{ retrospective.team.owner.id }} -->
+                    <!-- DEBUG: Current user ID: {{ app.user.id }} -->
+                    
+                    {# JavaScript will add all users dynamically in the correct order #}
                 </div>
             </div>
         {% else %}

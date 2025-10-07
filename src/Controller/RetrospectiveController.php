@@ -20,6 +20,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
+use App\Service\ConnectedUsersService;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Psr\Log\LoggerInterface;
@@ -29,7 +30,8 @@ class RetrospectiveController extends AbstractController
     public function __construct(
         private EntityManagerInterface $entityManager,
         private HubInterface $hub,
-        private LoggerInterface $logger
+        private LoggerInterface $logger,
+        private ConnectedUsersService $connectedUsersService
     ) {
     }
 
@@ -180,7 +182,11 @@ class RetrospectiveController extends AbstractController
         }
 
         // Get connected users (simplified - in real app you'd use Redis or similar)
-        $connectedUsers = $this->getConnectedUsers($id);
+        $connectedUsers = $this->connectedUsersService->getConnectedUsers($id);
+        error_log("RetrospectiveController: Connected users sent to template: " . json_encode($connectedUsers));
+
+        // Calculate remaining votes for current user
+        $remainingVotes = $this->calculateRemainingVotes($retrospective, $currentUser);
 
         return $this->render('retrospective/show.html.twig', [
             'retrospective' => $retrospective,
@@ -199,6 +205,7 @@ class RetrospectiveController extends AbstractController
             'sortedItemsWithVotes' => $sortedItemsWithVotes,
             'actions' => $actions,
             'connectedUsers' => $connectedUsers,
+            'remainingVotes' => $remainingVotes,
         ]);
     }
 
@@ -1624,10 +1631,10 @@ class RetrospectiveController extends AbstractController
         // error_log("User joining: " . ($user ? $user->getEmail() : 'null'));
         
         // Store user as connected (in a real app, use Redis or similar)
-        $this->addConnectedUser($id, $user);
+        $this->connectedUsersService->addUser($id, $user);
         
         // Notify all users via Mercure about the new connection
-        $this->publishConnectedUsersUpdate($id);
+        $this->connectedUsersService->publishUpdate($id);
         
         // error_log("User added to connected users for retrospective: $id");
         
@@ -1655,10 +1662,10 @@ class RetrospectiveController extends AbstractController
         $user = $this->getUser();
         
         // Remove user from connected list
-        $this->removeConnectedUser($id, $user);
+        $this->connectedUsersService->removeUser($id, $user);
         
         // Notify all users via Mercure about the user leaving
-        $this->publishConnectedUsersUpdate($id);
+        $this->connectedUsersService->publishUpdate($id);
         
         return $this->json(['success' => true]);
     }
@@ -1685,19 +1692,33 @@ class RetrospectiveController extends AbstractController
         ]);
     }
 
+    #[Route('/retrospectives/{id}/debug-connected-users', name: 'app_retrospectives_debug_connected_users', methods: ['GET'])]
+    public function debugConnectedUsers(int $id): Response
+    {
+        $connectedUsers = $this->connectedUsersService->getConnectedUsers($id);
+        
+        return $this->json([
+            'success' => true,
+            'debug' => true,
+            'users' => $connectedUsers,
+            'count' => count($connectedUsers),
+            'raw_data' => $connectedUsers
+        ]);
+    }
+
     #[Route('/retrospectives/{id}/connected-users', name: 'app_retrospectives_connected_users', methods: ['GET'])]
     public function getConnectedUsersEndpoint(int $id): Response
     {
         // error_log("getConnectedUsersEndpoint() called for retrospective ID: $id");
         
         // Update current user's lastSeen timestamp
-        $this->updateUserLastSeen($id, $this->getUser());
+        $this->connectedUsersService->updateLastSeen($id, $this->getUser());
         
-        $connectedUsers = $this->getConnectedUsers($id);
+        $connectedUsers = $this->connectedUsersService->getConnectedUsers($id);
         // error_log("Found " . count($connectedUsers) . " connected users");
         
         // Publish heartbeat update with timer like states
-        $this->publishConnectedUsersUpdate($id);
+        $this->connectedUsersService->publishUpdate($id);
         
         return $this->json([
             'success' => true,
@@ -1705,93 +1726,9 @@ class RetrospectiveController extends AbstractController
         ]);
     }
 
-    private function getConnectedUsers(int $retrospectiveId): array
-    {
-        // In a real application, you would use Redis or a similar solution
-        // For now, we'll use a simple file-based approach
-        $file = sys_get_temp_dir() . "/retrospective_{$retrospectiveId}_users.json";
-        // error_log("Getting connected users from file: $file");
-        
-        if (!file_exists($file)) {
-            // error_log("File does not exist: $file");
-            return [];
-        }
-        
-        $data = json_decode(file_get_contents($file), true);
-        // error_log("Raw file data: " . json_encode($data));
-        
-        // Filter out users that haven't been active in the last 3 hours
-        $activeUsers = [];
-        $now = time();
-        
-        foreach ($data as $userId => $userData) {
-            $timeDiff = $now - $userData['lastSeen'];
-            // error_log("User {$userId}: lastSeen={$userData['lastSeen']}, now={$now}, diff={$timeDiff}");
-            if ($timeDiff < 10800) { // 3 hours = 10800 seconds
-                $activeUsers[] = $userData;
-                // error_log("User {$userId} is active");
-            } else {
-                // error_log("User {$userId} is inactive (diff={$timeDiff})");
-            }
-        }
-        
-        // error_log("Active users: " . json_encode($activeUsers));
-        return $activeUsers;
-    }
 
-    private function addConnectedUser(int $retrospectiveId, $user): void
-    {
-        $file = sys_get_temp_dir() . "/retrospective_{$retrospectiveId}_users.json";
-        // error_log("Adding user to file: $file");
-        
-        $data = [];
-        if (file_exists($file)) {
-            $data = json_decode(file_get_contents($file), true) ?: [];
-        }
-        
-        $data[$user->getId()] = [
-            'id' => $user->getId(),
-            'firstName' => $user->getFirstName(),
-            'lastName' => $user->getLastName(),
-            'email' => $user->getEmail(),
-            'avatar' => $user->getAvatar(),
-            'lastSeen' => time(),
-        ];
-        
-        $result = file_put_contents($file, json_encode($data));
-        // error_log("File write result: " . ($result !== false ? 'success' : 'failed'));
-        // error_log("File contents: " . json_encode($data));
-    }
 
-    private function updateUserLastSeen(int $retrospectiveId, $user): void
-    {
-        $file = sys_get_temp_dir() . "/retrospective_{$retrospectiveId}_users.json";
-        
-        if (!file_exists($file)) {
-            return;
-        }
-        
-        $data = json_decode(file_get_contents($file), true) ?: [];
-        
-        if (isset($data[$user->getId()])) {
-            $data[$user->getId()]['lastSeen'] = time();
-            file_put_contents($file, json_encode($data));
-        }
-    }
 
-    private function removeConnectedUser(int $retrospectiveId, $user): void
-    {
-        $file = sys_get_temp_dir() . "/retrospective_{$retrospectiveId}_users.json";
-        
-        if (!file_exists($file)) {
-            return;
-        }
-        
-        $data = json_decode(file_get_contents($file), true) ?: [];
-        unset($data[$user->getId()]);
-        
-        file_put_contents($file, json_encode($data));
-    }
 
     #[Route('/retrospectives/{id}/votes', name: 'app_retrospectives_get_votes', methods: ['GET'])]
     public function getVotes(int $id): Response
@@ -1935,69 +1872,19 @@ class RetrospectiveController extends AbstractController
             );
             $this->hub->publish($update);
 
+            // Calculate remaining votes after the vote
+            $remainingVotes = $this->calculateRemainingVotes($retrospective, $user);
+
             return $this->json([
                 'success' => true,
-                'message' => 'Vote saved successfully'
+                'message' => 'Vote saved successfully',
+                'remainingVotes' => $remainingVotes
             ]);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => 'Failed to save vote: ' . $e->getMessage()], 500);
         }
     }
 
-    private function publishConnectedUsersUpdate(int $retrospectiveId): void
-    {
-        try {
-            // Get updated connected users
-            $connectedUsers = $this->getConnectedUsers($retrospectiveId);
-            
-            // Get timer like states for all connected users
-            $timerLikeRepo = $this->entityManager->getRepository(\App\Entity\TimerLike::class);
-            $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($retrospectiveId);
-            
-            if ($retrospective) {
-                $timerLikes = $timerLikeRepo->findByRetrospective($retrospective);
-                $timerLikeStates = [];
-                
-                foreach ($timerLikes as $timerLike) {
-                    if ($timerLike->isLiked()) {
-                        $timerLikeStates[$timerLike->getUser()->getId()] = [
-                            'userId' => $timerLike->getUser()->getId(),
-                            'userName' => $timerLike->getUser()->getFullName(),
-                            'isLiked' => true,
-                            'timestamp' => $timerLike->getUpdatedAt()->getTimestamp()
-                        ];
-                    }
-                }
-            } else {
-                $timerLikeStates = [];
-            }
-            
-            // Publish update to connected-users topic
-            $update = new Update(
-                "retrospective/{$retrospectiveId}/connected-users",
-                json_encode([
-                    'type' => 'connected_users_updated',
-                    'users' => $connectedUsers,
-                    'timerLikeStates' => $timerLikeStates
-                ])
-            );
-            $this->hub->publish($update);
-            
-            // Also broadcast to general retrospective topic
-            $update2 = new Update(
-                "retrospective/{$retrospectiveId}",
-                json_encode([
-                    'type' => 'connected_users_updated',
-                    'users' => $connectedUsers,
-                    'timerLikeStates' => $timerLikeStates
-                ])
-            );
-            $this->hub->publish($update2);
-        } catch (\Exception $e) {
-            // Log error but don't break the main flow
-            error_log('Error publishing connected users update: ' . $e->getMessage());
-        }
-    }
 
     /**
      * Mark an item or group as discussed
@@ -2300,6 +2187,34 @@ class RetrospectiveController extends AbstractController
             $this->logger->error('Error getting all timer like states: ' . $e->getMessage());
             return $this->json(['success' => false, 'message' => 'Internal server error'], 500);
         }
+    }
+
+    /**
+     * Calculate remaining votes for a user in a retrospective
+     */
+    private function calculateRemainingVotes(Retrospective $retrospective, User $user): int
+    {
+        $allowedVotes = $retrospective->getVoteNumbers() ?? 10;
+        
+        // Get all votes by this user for this retrospective
+        $userVotes = $this->entityManager->getRepository(Vote::class)
+            ->createQueryBuilder('v')
+            ->leftJoin('v.retrospectiveItem', 'ri')
+            ->leftJoin('v.retrospectiveGroup', 'rg')
+            ->where('v.user = :user')
+            ->andWhere('(ri.retrospective = :retrospective OR rg.retrospective = :retrospective)')
+            ->setParameter('user', $user)
+            ->setParameter('retrospective', $retrospective)
+            ->getQuery()
+            ->getResult();
+        
+        // Calculate total votes used
+        $totalVotesUsed = 0;
+        foreach ($userVotes as $vote) {
+            $totalVotesUsed += $vote->getVoteCount();
+        }
+        
+        return max(0, $allowedVotes - $totalVotesUsed);
     }
 
     protected function isCsrfTokenValid(string $id, ?string $token): bool

@@ -199,7 +199,7 @@
         <div class="voting-phase">
             <div class="review-header">
                 <h2>Voting Phase</h2>
-                <p>Vote on the most important items to discuss • Allowed number of votes: <strong style="color: black;">{{ retrospective.voteNumbers ?? 10 }}</strong></p>
+                <p>Vote on the most important items to discuss • Allowed number of votes: <strong style="color: black;">{{ retrospective.voteNumbers ?? 10 }}</strong> • Remaining: <strong style="color: #667eea;">{{ remainingVotes }}</strong></p>
             </div>
             
             <div class="feedback-columns readonly">
@@ -778,9 +778,11 @@
     <script>
         // Pass retrospective data to JavaScript
         window.retrospectiveData = {
-            voteNumbers: {{ retrospective.voteNumbers ?? 10 }}
+            voteNumbers: {{ retrospective.voteNumbers ?? 10 }},
+            teamOwnerId: {{ retrospective.team.owner.id }}
         };
     </script>
+    <script src="{{ asset('assets/js/connected-users-manager.js') }}"></script>
     <script src="{{ asset('assets/js/retrospective-board.js') }}"></script>
     <script src="{{ asset('assets/js/voting-system.js') }}"></script>
     

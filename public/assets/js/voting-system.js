@@ -246,13 +246,37 @@ RetrospectiveBoard.prototype.saveVote = async function(targetId, targetType, vot
         });
 
         if (response.ok) {
+            const data = await response.json();
             console.log(`Vote saved: ${targetType} ${targetId} = ${voteCount}`);
+            
+            // Update remaining votes display
+            if (data.remainingVotes !== undefined) {
+                this.updateRemainingVotes(data.remainingVotes);
+            }
         } else {
             console.error('Failed to save vote:', response.status);
         }
     } catch (error) {
         console.error('Error saving vote:', error);
     }
+};
+
+RetrospectiveBoard.prototype.updateRemainingVotes = function(remainingVotes) {
+    // Find the remaining votes element in the voting phase header
+    const votingPhase = document.querySelector('.voting-phase');
+    if (votingPhase) {
+        const header = votingPhase.querySelector('.review-header p');
+        if (header) {
+            // Update the remaining votes while preserving the HTML structure and colors
+            const allowedVotesMatch = header.innerHTML.match(/Allowed number of votes: <strong style="color: black;">(\d+)<\/strong>/);
+            if (allowedVotesMatch) {
+                const allowedVotes = allowedVotesMatch[1];
+                header.innerHTML = `Vote on the most important items to discuss • Allowed number of votes: <strong style="color: black;">${allowedVotes}</strong> • Remaining: <strong style="color: #667eea;">${remainingVotes}</strong>`;
+            }
+        }
+    }
+    
+    console.log(`Updated remaining votes: ${remainingVotes}`);
 };
 
 RetrospectiveBoard.prototype.stopVoting = function() {
