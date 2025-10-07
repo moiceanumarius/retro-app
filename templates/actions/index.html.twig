@@ -1587,9 +1587,9 @@
                 
                 <label class="filter-label">Review Status:</label>
                 <select class="filter-dropdown" id="reviewFilter">
-                    <option value="">All Reviews</option>
-                    <option value="reviewed">Reviewed</option>
-                    <option value="not-reviewed">Not Reviewed</option>
+                    <option value="" {{ filterReview == '' ? 'selected' : '' }}>All Reviews</option>
+                    <option value="reviewed" {{ filterReview == 'reviewed' ? 'selected' : '' }}>Reviewed</option>
+                    <option value="not-reviewed" {{ filterReview == 'not-reviewed' ? 'selected' : '' }}>Not Reviewed</option>
                 </select>
                 
                 <input type="text" class="search-box" id="searchBox" placeholder="Search actions, dates, or assignees...">
@@ -1942,6 +1942,7 @@
     function updateStatusFilter() {
         updateStatusDropdownText();
         filterTable();
+        updateUrlWithFilters();
     }
 
     function updateStatusDropdownText() {
@@ -1956,6 +1957,39 @@
         } else {
             textElement.textContent = `${selectedCheckboxes.length} selected`;
         }
+    }
+
+    // Update URL with current filters
+    function updateUrlWithFilters() {
+        const currentUrl = new URL(window.location);
+        
+        // Get current filter values
+        const statusCheckboxes = document.querySelectorAll('#statusDropdownMenu input[type="checkbox"]');
+        const selectedStatuses = Array.from(statusCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+        
+        const reviewFilter = document.getElementById('reviewFilter');
+        const reviewValue = reviewFilter ? reviewFilter.value : '';
+        
+        // Update URL parameters
+        if (selectedStatuses.length > 0) {
+            currentUrl.searchParams.set('status', selectedStatuses.join(','));
+        } else {
+            currentUrl.searchParams.set('status', 'all');
+        }
+        
+        if (reviewValue) {
+            currentUrl.searchParams.set('review', reviewValue);
+        } else {
+            currentUrl.searchParams.delete('review');
+        }
+        
+        // Reset to first page when filtering
+        currentUrl.searchParams.set('page', '1');
+        
+        // Update URL without page reload
+        window.history.replaceState({}, '', currentUrl.toString());
     }
 
     // Close dropdown when clicking outside
@@ -1976,7 +2010,10 @@
         const searchBox = document.getElementById('searchBox');
         
         if (reviewFilter) {
-            reviewFilter.addEventListener('change', filterTable);
+            reviewFilter.addEventListener('change', function() {
+                filterTable();
+                updateUrlWithFilters();
+            });
         }
         
         if (searchBox) {
