@@ -171,6 +171,47 @@ class ActionController extends AbstractController
         $overdueCount = $qbOverdue->getQuery()->getSingleScalarResult();
         $statusStats['overdue'] = $overdueCount;
 
+        // DEBUG: Check reviewed actions
+        $debugActions = [];
+        foreach ($paginator as $action) {
+            $debugActions[] = [
+                'id' => $action->getId(),
+                'description' => $action->getDescription(),
+                'isReviewed' => $action->getIsReviewed(),
+                'isReviewedType' => gettype($action->getIsReviewed()),
+                'isReviewedVarDump' => var_export($action->getIsReviewed(), true)
+            ];
+        }
+        
+        // Also check all actions in team for reviewed status
+        $allTeamActions = $this->entityManager->createQueryBuilder()
+            ->select('a')
+            ->from(\App\Entity\RetrospectiveAction::class, 'a')
+            ->leftJoin('a.retrospective', 'r')
+            ->where('r.team = :team')
+            ->setParameter('team', $team)
+            ->getQuery()
+            ->getResult();
+            
+        $allReviewedActions = [];
+        foreach ($allTeamActions as $action) {
+            if ($action->getIsReviewed()) {
+                $allReviewedActions[] = [
+                    'id' => $action->getId(),
+                    'description' => $action->getDescription(),
+                    'isReviewed' => $action->getIsReviewed()
+                ];
+            }
+        }
+        
+        dump([
+            'paginated_actions' => $debugActions,
+            'all_reviewed_actions' => $allReviewedActions,
+            'total_actions_in_team' => count($allTeamActions),
+            'total_reviewed_actions' => count($allReviewedActions)
+        ]);
+        die();
+        
         return $this->render('actions/index.html.twig', [
             'actions' => $paginator,
             'team' => $team,
