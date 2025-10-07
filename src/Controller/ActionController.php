@@ -91,6 +91,7 @@ class ActionController extends AbstractController
         }
 
         $filterStatus = $request->query->get('status', 'all');
+        $filterReview = $request->query->get('review', ''); // New review filter
         $page = $request->query->getInt('page', 1);
         $limit = $request->query->getInt('limit', 10); // Default 10 items per page
         $sortField = $request->query->get('sort', 'created_at'); // Default sort by created_at
@@ -131,6 +132,15 @@ class ActionController extends AbstractController
         if ($filterStatus !== 'all') {
             $qb->andWhere('a.status = :status')
                ->setParameter('status', $filterStatus);
+        }
+        
+        // Apply review filter
+        if ($filterReview === 'reviewed') {
+            $qb->andWhere('a.isReviewed = :reviewed')
+               ->setParameter('reviewed', true);
+        } elseif ($filterReview === 'not-reviewed') {
+            $qb->andWhere('a.isReviewed = :notReviewed')
+               ->setParameter('notReviewed', false);
         }
         
         // Apply pagination
@@ -175,6 +185,7 @@ class ActionController extends AbstractController
             'actions' => $paginator,
             'team' => $team,
             'filterStatus' => $filterStatus,
+            'filterReview' => $filterReview,
             'sortField' => $sortField,
             'sortDirection' => $sortDirection,
             'pagination' => [
