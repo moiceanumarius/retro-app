@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/retrospective.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/retrospective-board.css') }}">
     <link rel="stylesheet" href="{{ asset('assets/css/discussion-phase.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/action-dialog.css') }}">
 {% endblock %}
 
 {% block head %}
@@ -416,10 +417,15 @@
                                                     <polyline points="20 6 9 17 4 12"></polyline>
                                                 </svg>
                                             </button>
-                                            <button class="btn-add-action" data-id="{{ item.id }}" data-type="item" title="Add Action">
+                                            <button class="btn-zoom" data-id="{{ item.id }}" data-type="item" title="Zoom">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <circle cx="11" cy="11" r="8"></circle>
                                                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-create-action" data-id="{{ item.id }}" data-type="item" title="Create Action">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M12 5v14M5 12h14"/>
                                                 </svg>
                                             </button>
                                         </div>
@@ -454,10 +460,15 @@
                                                     <polyline points="20 6 9 17 4 12"></polyline>
                                                 </svg>
                                             </button>
-                                            <button class="btn-add-action" data-id="{{ group.id }}" data-type="group" title="Add Action">
+                                            <button class="btn-zoom" data-id="{{ group.id }}" data-type="group" title="Zoom">
                                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                                     <circle cx="11" cy="11" r="8"></circle>
                                                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                                </svg>
+                                            </button>
+                                            <button class="btn-create-action" data-id="{{ group.id }}" data-type="group" title="Create Action">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <path d="M12 5v14M5 12h14"/>
                                                 </svg>
                                             </button>
                                         </div>
@@ -475,39 +486,67 @@
             {% if retrospective.facilitator == app.user or retrospective.team.owner == app.user %}
                 <!-- Add New Action Form (Floating) -->
                 <button type="button" id="showActionFormBtn" class="floating-action-btn">
-                    + Add Action Item
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
+                        <path d="M12 5v14M5 12h14"/>
+                    </svg>
+                    Actions
                 </button>
                 
                 <div id="actionFormContainer" style="display: none;">
-                    <h4 style="margin-bottom: 1rem; color: #333;">New Action Item</h4>
-                    <form id="addActionForm" novalidate>
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label for="actionDescription" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Description</label>
-                            <textarea id="actionDescription" class="form-control" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem;"></textarea>
-                        </div>
-                        
-                        <div class="form-row" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
-                            <div class="form-group" style="flex: 1;">
-                                <label for="actionAssignee" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Assign to (optional)</label>
-                                <select id="actionAssignee" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px;">
-                                    <option value="">Unassigned</option>
-                                    {% for member in retrospective.team.activeMembers %}
-                                        <option value="{{ member.user.id }}">{{ member.user.firstName }} {{ member.user.lastName }}</option>
-                                    {% endfor %}
-                                </select>
+                    <div class="action-accordion">
+                        <!-- Existing Actions Section -->
+                        <div class="accordion-section">
+                            <div class="accordion-header" data-section="existing">
+                                <h4>Existing Actions</h4>
+                                <svg class="accordion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"></polyline>
+                                </svg>
                             </div>
-                            
-                            <div class="form-group" style="flex: 1;">
-                                <label for="actionDueDate" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Due Date</label>
-                                <input type="date" id="actionDueDate" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px;">
+                            <div class="accordion-content" id="existing-actions-content">
+                                <div class="actions-loading">Loading actions...</div>
                             </div>
                         </div>
                         
-                        <div class="form-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
-                            <button type="button" id="cancelActionBtn" class="btn btn-secondary">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Add Action</button>
+                        <!-- Create New Action Section -->
+                        <div class="accordion-section">
+                            <div class="accordion-header active" data-section="create">
+                                <h4>Create New Action</h4>
+                                <svg class="accordion-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="6,9 12,15 18,9"></polyline>
+                                </svg>
+                            </div>
+                            <div class="accordion-content active" id="create-actions-content">
+                                <form id="addActionForm" novalidate>
+                                    <div class="form-group" style="margin-bottom: 1rem;">
+                                        <label for="actionDescription" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Description</label>
+                                        <textarea id="actionDescription" class="form-control" rows="3" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px; font-size: 1rem;"></textarea>
+                                    </div>
+                                    
+                                    <div class="form-row" style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="actionAssignee" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Assign to (optional)</label>
+                                            <select id="actionAssignee" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px;">
+                                                <option value="">Unassigned</option>
+                                                {% for member in retrospective.team.activeMembers %}
+                                                    <option value="{{ member.user.id }}">{{ member.user.firstName }} {{ member.user.lastName }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="form-group" style="flex: 1;">
+                                            <label for="actionDueDate" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Due Date</label>
+                                            <input type="date" id="actionDueDate" class="form-control" style="width: 100%; padding: 0.75rem; border: 1px solid #ced4da; border-radius: 4px;">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-actions" style="display: flex; gap: 0.75rem; justify-content: flex-end;">
+                                        <button type="button" id="cancelActionBtn" class="btn btn-secondary">Cancel</button>
+                                        <button type="submit" class="btn btn-primary">Add Action</button>
+                                    </div>
+                                </form>
+                            </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
             {% endif %}
         </div>
@@ -779,7 +818,17 @@
         // Pass retrospective data to JavaScript
         window.retrospectiveData = {
             voteNumbers: {{ retrospective.voteNumbers ?? 10 }},
-            teamOwnerId: {{ retrospective.team.owner.id }}
+            teamOwnerId: {{ retrospective.team.owner.id }},
+            teamMembers: [
+                {% for member in retrospective.team.activeMembers %}
+                {
+                    id: {{ member.user.id }},
+                    firstName: "{{ member.user.firstName }}",
+                    lastName: "{{ member.user.lastName }}",
+                    email: "{{ member.user.email }}"
+                }{% if not loop.last %},{% endif %}
+                {% endfor %}
+            ]
         };
     </script>
     <script src="{{ asset('assets/js/connected-users-manager.js') }}"></script>

@@ -1,0 +1,484 @@
+/* Action Dialog Styles */
+.action-dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    backdrop-filter: blur(4px);
+}
+
+.action-dialog {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    width: 90%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: dialogSlideIn 0.2s ease-out;
+}
+
+@keyframes dialogSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.95) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.action-dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 1.5rem 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.action-dialog-header h3 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.action-dialog-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #6b7280;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.action-dialog-close:hover {
+    background-color: #f3f4f6;
+    color: #374151;
+}
+
+.action-dialog-body {
+    padding: 1.5rem;
+}
+
+.context-info {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+}
+
+/* Context category colors */
+.context-info.context-wrong {
+    border-left-color: #dc2626;
+}
+
+.context-info.context-good {
+    border-left-color: #16a34a;
+}
+
+.context-info.context-improved {
+    border-left-color: #ea580c;
+}
+
+.context-info.context-random {
+    border-left-color: #9333ea;
+}
+
+.context-info strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.context-text {
+    color: #1f2937;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    font-style: italic;
+    white-space: pre-line;
+}
+
+.context-text .separator {
+    display: block;
+    height: 1px;
+    background: repeating-linear-gradient(
+        to right,
+        #dee2e6 0px,
+        #dee2e6 4px,
+        transparent 4px,
+        transparent 8px
+    );
+    margin: 0.75rem 0;
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.form-group textarea,
+.form-group select,
+.form-group input[type="date"] {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    background-color: white;
+}
+
+.form-group textarea:focus,
+.form-group select:focus,
+.form-group input[type="date"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.form-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-primary {
+    background-color: #3b82f6;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2563eb;
+}
+
+.btn-secondary {
+    background-color: #6b7280;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background-color: #4b5563;
+}
+
+/* Accordion Styles */
+.action-accordion {
+    margin-bottom: 1rem;
+}
+
+.accordion-section {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f9fafb;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.accordion-header:hover {
+    background-color: #f3f4f6;
+}
+
+.accordion-header.active {
+    background-color: #e5e7eb;
+    border-bottom: none;
+}
+
+.accordion-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+.accordion-arrow {
+    transition: transform 0.2s ease;
+    color: #6b7280;
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0 1rem;
+}
+
+.accordion-content.active {
+    max-height: 1000px;
+    padding: 1rem;
+}
+
+/* Specific styles for floating action dialog */
+#actionFormContainer .accordion-section {
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    overflow: hidden;
+}
+
+#actionFormContainer .accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    background-color: #f9fafb;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#actionFormContainer .accordion-header:hover {
+    background-color: #f3f4f6;
+}
+
+#actionFormContainer .accordion-header.active {
+    background-color: #e5e7eb;
+    border-bottom: none;
+}
+
+#actionFormContainer .accordion-header h4 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #374151;
+}
+
+#actionFormContainer .accordion-arrow {
+    transition: transform 0.2s ease;
+    color: #6b7280;
+}
+
+#actionFormContainer .accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+    padding: 0 1rem;
+}
+
+#actionFormContainer .accordion-content.active {
+    max-height: 600px;
+    padding: 1rem;
+    overflow-y: auto;
+}
+
+/* Custom scrollbar for accordion content */
+#actionFormContainer .accordion-content.active::-webkit-scrollbar {
+    width: 6px;
+}
+
+#actionFormContainer .accordion-content.active::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-radius: 3px;
+}
+
+#actionFormContainer .accordion-content.active::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}
+
+#actionFormContainer .accordion-content.active::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Firefox scrollbar styling */
+#actionFormContainer .accordion-content.active {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+/* Existing Actions Styles */
+.existing-action-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    background-color: #fafafa;
+}
+
+/* Editable Fields Styles */
+[data-field] {
+    transition: background-color 0.2s ease;
+}
+
+[data-field]:hover {
+    background-color: rgba(59, 130, 246, 0.05);
+}
+
+.existing-action-item:last-child {
+    margin-bottom: 0;
+}
+
+.existing-action-item .action-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.existing-action-item .action-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.existing-action-item .action-status {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.existing-action-item .action-status.pending {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.existing-action-item .action-status.in_progress {
+    background-color: #dbeafe;
+    color: #1e40af;
+}
+
+.existing-action-item .action-status.completed {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.existing-action-item .action-due-date {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.existing-action-item .action-description {
+    margin-bottom: 0.75rem;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.existing-action-item .action-footer {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #6b7280;
+    width: fit-content;
+}
+
+/* Action Delete Button */
+.action-delete-btn {
+    background: none;
+    border: none;
+    padding: 0.25rem;
+    border-radius: 4px;
+    cursor: pointer;
+    color: #dc2626;
+    opacity: 0;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-delete-btn:hover {
+    background-color: #fef2f2;
+    color: #b91c1c;
+}
+
+.existing-action-item:hover .action-delete-btn {
+    opacity: 1;
+}
+
+.actions-loading,
+.actions-error,
+.no-actions {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+    font-style: italic;
+}
+
+.actions-error {
+    color: #dc2626;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+    .action-dialog {
+        width: 95%;
+        margin: 1rem;
+    }
+    
+    .action-dialog-header,
+    .action-dialog-body {
+        padding: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+    }
+    
+    .existing-action-item .action-footer {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}

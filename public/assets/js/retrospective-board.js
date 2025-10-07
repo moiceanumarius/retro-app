@@ -3185,11 +3185,802 @@ RetrospectiveBoard.prototype.createGroupFromItems = async function(itemIds, cate
     }
 };
 
+// Show Create Action Dialog
+RetrospectiveBoard.prototype.showCreateActionDialog = function(itemId, itemType, cardElement) {
+    // Get card content for context
+    let cardText = '';
+    let cardCategory = '';
+    
+    // Determine card category from CSS classes
+    if (cardElement.classList.contains('wrong')) {
+        cardCategory = 'wrong';
+    } else if (cardElement.classList.contains('good')) {
+        cardCategory = 'good';
+    } else if (cardElement.classList.contains('improved')) {
+        cardCategory = 'improved';
+    } else if (cardElement.classList.contains('random')) {
+        cardCategory = 'random';
+    }
+    
+    if (itemType === 'group') {
+        // For groups, get all item paragraphs and create HTML with separators
+        const itemParagraphs = cardElement.querySelectorAll('.item-paragraph');
+        
+        cardText = Array.from(itemParagraphs).map((paragraph, index) => {
+            let text = paragraph.textContent.trim();
+            // Add separator after each item except the last one
+            if (index < itemParagraphs.length - 1) {
+                text += '\n\n---\n\n';
+            }
+            return text;
+        }).join('');
+    } else {
+        // For single items, get the card text directly
+        cardText = cardElement.querySelector('.card-text').textContent.trim();
+    }
+    
+    // Create dialog HTML
+    const dialogHTML = `
+        <div id="createActionDialog" class="action-dialog-overlay">
+            <div class="action-dialog">
+                <div class="action-dialog-header">
+                    <h3>Create Action Item</h3>
+                    <button class="action-dialog-close">&times;</button>
+                </div>
+                <div class="action-dialog-body">
+                    <div class="context-info context-${cardCategory}">
+                        <strong>Context:</strong>
+                        <div class="context-text">${cardText}</div>
+                    </div>
+                    <form id="createActionForm">
+                        <div class="form-group">
+                            <label for="actionDescription">Action Description</label>
+                            <textarea id="actionDescription" name="description" rows="4" required placeholder="Describe the action to be taken..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="assignedTo">Assign To</label>
+                            <select id="assignedTo" name="assignedTo">
+                                <option value="">Select team member...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="dueDate">Due Date</label>
+                            <input type="date" id="dueDate" name="dueDate">
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn btn-secondary action-dialog-cancel">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Create Action</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    // Add dialog to page
+    document.body.insertAdjacentHTML('beforeend', dialogHTML);
+    
+    const dialog = document.getElementById('createActionDialog');
+    const form = document.getElementById('createActionForm');
+    const closeBtn = dialog.querySelector('.action-dialog-close');
+    const cancelBtn = dialog.querySelector('.action-dialog-cancel');
+    
+    // Populate team members
+    this.populateTeamMembers();
+    
+    // Event listeners
+    closeBtn.addEventListener('click', () => this.closeCreateActionDialog());
+    cancelBtn.addEventListener('click', () => this.closeCreateActionDialog());
+    dialog.addEventListener('click', (e) => {
+        if (e.target === dialog) this.closeCreateActionDialog();
+    });
+    
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.submitCreateAction(itemId, itemType);
+    });
+    
+    // Show dialog
+    dialog.style.display = 'flex';
+    document.getElementById('actionDescription').focus();
+};
+
+// Close Create Action Dialog
+RetrospectiveBoard.prototype.closeCreateActionDialog = function() {
+    const dialog = document.getElementById('createActionDialog');
+    if (dialog) {
+        dialog.remove();
+    }
+};
+
+// Submit Create Action
+RetrospectiveBoard.prototype.submitCreateAction = async function(itemId, itemType) {
+    const form = document.getElementById('createActionForm');
+    const formData = new FormData(form);
+    
+    const actionData = {
+        description: formData.get('description'),
+        assignedToId: formData.get('assignedTo') || null,
+        dueDate: formData.get('dueDate') || null,
+        contextType: itemType,
+        contextId: parseInt(itemId)
+    };
+    
+    try {
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/add-action`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify(actionData)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            this.showMessage('Action item created successfully!', 'success');
+            this.closeCreateActionDialog();
+            // Refresh actions list if needed
+            this.refreshActionsList();
+        } else {
+            const errorText = await response.text();
+            try {
+                const errorData = JSON.parse(errorText);
+                this.showMessage(errorData.message || 'Failed to create action item', 'error');
+            } catch (e) {
+                this.showMessage('Server error - check console for details', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error creating action:', error);
+        this.showMessage('Network error occurred', 'error');
+    }
+};
+
+// Populate Team Members
+RetrospectiveBoard.prototype.populateTeamMembers = function() {
+    const select = document.getElementById('assignedTo');
+    if (!select) return;
+    
+    // Get team members from window data or make API call
+    if (window.retrospectiveData && window.retrospectiveData.teamMembers) {
+        window.retrospectiveData.teamMembers.forEach(member => {
+            const option = document.createElement('option');
+            option.value = member.id;
+            option.textContent = `${member.firstName} ${member.lastName}`;
+            select.appendChild(option);
+        });
+    }
+};
+
+// Initialize Accordion
+RetrospectiveBoard.prototype.initAccordion = function() {
+    const accordionHeaders = document.querySelectorAll('.accordion-header');
+    
+    accordionHeaders.forEach(header => {
+        header.addEventListener('click', () => {
+            const section = header.dataset.section;
+            const content = document.getElementById(`${section}-actions-content`);
+            const arrow = header.querySelector('.accordion-arrow');
+            
+            // Close all other sections
+            accordionHeaders.forEach(otherHeader => {
+                if (otherHeader !== header) {
+                    otherHeader.classList.remove('active');
+                    const otherSection = otherHeader.dataset.section;
+                    const otherContent = document.getElementById(`${otherSection}-actions-content`);
+                    otherContent.classList.remove('active');
+                    const otherArrow = otherHeader.querySelector('.accordion-arrow');
+                    otherArrow.style.transform = 'rotate(0deg)';
+                }
+            });
+            
+            // Toggle current section
+            const isActive = header.classList.contains('active');
+            if (isActive) {
+                header.classList.remove('active');
+                content.classList.remove('active');
+                arrow.style.transform = 'rotate(0deg)';
+            } else {
+                header.classList.add('active');
+                content.classList.add('active');
+                arrow.style.transform = 'rotate(180deg)';
+            }
+        });
+    });
+};
+
+// Load Existing Actions
+RetrospectiveBoard.prototype.loadExistingActions = async function() {
+    const content = document.getElementById('existing-actions-content');
+    
+    try {
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/actions`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const actions = await response.json();
+            this.renderExistingActions(actions);
+        } else {
+            content.innerHTML = '<div class="actions-error">Failed to load actions</div>';
+        }
+    } catch (error) {
+        console.error('Error loading actions:', error);
+        content.innerHTML = '<div class="actions-error">Error loading actions</div>';
+    }
+};
+
+// Render Existing Actions
+RetrospectiveBoard.prototype.renderExistingActions = function(actions) {
+    const content = document.getElementById('existing-actions-content');
+    
+    if (actions.length === 0) {
+        content.innerHTML = '<div class="no-actions">No actions created yet</div>';
+        return;
+    }
+    
+    const actionsHTML = actions.map(action => `
+        <div class="existing-action-item" data-action-id="${action.id}">
+            <div class="action-header">
+                <span class="action-status ${action.status}" data-field="status" data-action-id="${action.id}">${action.status}</span>
+                <div class="action-header-right">
+                    <span class="action-due-date" data-field="dueDate" data-action-id="${action.id}">${action.dueDate ? `Due: ${new Date(action.dueDate).toLocaleDateString()}` : 'Due: Unassigned'}</span>
+                    <button class="action-delete-btn" data-action-id="${action.id}" title="Delete action">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3,6 5,6 21,6"></polyline>
+                            <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="action-description" data-field="description" data-action-id="${action.id}">${action.description}</div>
+            <div class="action-footer">
+                <div class="action-assignee" data-field="assignedTo" data-action-id="${action.id}">
+                    ${action.assignedTo ? `Assigned to: ${action.assignedTo.firstName} ${action.assignedTo.lastName}` : 'Unassigned'}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    content.innerHTML = actionsHTML;
+    
+    // Initialize editable fields
+    this.initEditableActionFields();
+    
+    // Initialize delete buttons
+    this.initDeleteButtons();
+};
+
+// Initialize Floating Accordion
+RetrospectiveBoard.prototype.initFloatingAccordion = function() {
+    const actionFormContainer = document.getElementById('actionFormContainer');
+    
+    // Check if the action form container is visible
+    if (!actionFormContainer || actionFormContainer.style.display === 'none') {
+        console.log('Action form container not visible, skipping accordion initialization');
+        return;
+    }
+    
+    const accordionHeaders = document.querySelectorAll('#actionFormContainer .accordion-header');
+    
+    if (accordionHeaders.length === 0) {
+        console.log('No accordion headers found, skipping initialization');
+        return;
+    }
+    
+    // Only add event listeners if they don't already exist
+    accordionHeaders.forEach(header => {
+        if (!header.hasAttribute('data-accordion-initialized')) {
+            header.addEventListener('click', this.accordionClickHandler.bind(this));
+            header.setAttribute('data-accordion-initialized', 'true');
+        }
+    });
+};
+
+
+// Initialize Delete Buttons
+RetrospectiveBoard.prototype.initDeleteButtons = function() {
+    const deleteButtons = document.querySelectorAll('.action-delete-btn');
+    
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const actionId = button.dataset.actionId;
+            this.confirmDeleteAction(actionId);
+        });
+    });
+};
+
+// Confirm Delete Action
+RetrospectiveBoard.prototype.confirmDeleteAction = function(actionId) {
+    if (confirm('Are you sure you want to delete this action? This action cannot be undone.')) {
+        this.deleteAction(actionId);
+    }
+};
+
+// Delete Action
+RetrospectiveBoard.prototype.deleteAction = async function(actionId) {
+    try {
+        const response = await fetch(`/retrospectives/actions/${actionId}/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        });
+        
+        if (response.ok) {
+            this.showMessage('Action deleted successfully!', 'success');
+            // Reload the actions list
+            this.loadFloatingExistingActions();
+        } else {
+            const errorData = await response.json();
+            this.showMessage(errorData.message || 'Failed to delete action', 'error');
+        }
+    } catch (error) {
+        console.error('Error deleting action:', error);
+        this.showMessage('Error deleting action', 'error');
+    }
+};
+
+// Initialize Editable Action Fields
+RetrospectiveBoard.prototype.initEditableActionFields = function() {
+    const editableFields = document.querySelectorAll('[data-field]');
+    
+    editableFields.forEach(field => {
+        field.addEventListener('click', (e) => {
+            e.preventDefault();
+            
+            // Check if there's already an editable field open
+            const currentEditableField = document.querySelector('[data-field] input, [data-field] select, [data-field] textarea');
+            if (currentEditableField) {
+                // Save the current field first
+                const currentField = currentEditableField.closest('[data-field]');
+                const fieldType = currentField.dataset.field;
+                const actionId = currentField.dataset.actionId;
+                const currentValue = currentEditableField.value;
+                
+                // Save current field (without showing message)
+                this.saveActionField(actionId, fieldType, currentValue, currentField, false);
+            }
+            
+            // Make the clicked field editable
+            this.makeFieldEditable(field);
+        });
+        
+        // Add visual indicator that field is editable
+        field.style.cursor = 'pointer';
+        field.title = 'Click to edit';
+    });
+};
+
+// Make Field Editable
+RetrospectiveBoard.prototype.makeFieldEditable = function(field) {
+    const fieldType = field.dataset.field;
+    const actionId = field.dataset.actionId;
+    const currentValue = field.textContent.trim();
+    
+    let inputElement;
+    
+    switch(fieldType) {
+        case 'description':
+            inputElement = document.createElement('textarea');
+            inputElement.value = currentValue;
+            inputElement.style.width = '100%';
+            inputElement.style.minHeight = '60px';
+            inputElement.style.padding = '0.5rem';
+            inputElement.style.border = '1px solid #3b82f6';
+            inputElement.style.borderRadius = '4px';
+            break;
+            
+        case 'status':
+            inputElement = document.createElement('select');
+            inputElement.innerHTML = `
+                <option value="pending" ${currentValue === 'pending' ? 'selected' : ''}>Pending</option>
+                <option value="in_progress" ${currentValue === 'in_progress' ? 'selected' : ''}>In Progress</option>
+                <option value="completed" ${currentValue === 'completed' ? 'selected' : ''}>Completed</option>
+            `;
+            inputElement.style.padding = '0.25rem 0.5rem';
+            inputElement.style.border = '1px solid #3b82f6';
+            inputElement.style.borderRadius = '4px';
+            break;
+            
+        case 'dueDate':
+            inputElement = document.createElement('input');
+            inputElement.type = 'date';
+            // Extract date from "Due: 15/01/2025" format
+            const dateMatch = currentValue.match(/Due: (.+)/);
+            if (dateMatch && dateMatch[1] !== 'Unassigned') {
+                const date = new Date(dateMatch[1]);
+                inputElement.value = date.toISOString().split('T')[0];
+            }
+            inputElement.style.padding = '0.25rem 0.5rem';
+            inputElement.style.border = '1px solid #3b82f6';
+            inputElement.style.borderRadius = '4px';
+            break;
+            
+        case 'assignedTo':
+            inputElement = document.createElement('select');
+            inputElement.innerHTML = '<option value="">Unassigned</option>';
+            
+            // Add team members
+            if (window.retrospectiveData && window.retrospectiveData.teamMembers) {
+                window.retrospectiveData.teamMembers.forEach(member => {
+                    const isSelected = currentValue.includes(`${member.firstName} ${member.lastName}`);
+                    inputElement.innerHTML += `<option value="${member.id}" ${isSelected ? 'selected' : ''}>${member.firstName} ${member.lastName}</option>`;
+                });
+            }
+            
+            inputElement.style.padding = '0.25rem 0.5rem';
+            inputElement.style.border = '1px solid #3b82f6';
+            inputElement.style.borderRadius = '4px';
+            break;
+    }
+    
+    if (inputElement) {
+        // Replace field content with input
+        field.innerHTML = '';
+        field.appendChild(inputElement);
+        field.style.cursor = 'default';
+        
+        // Prevent click events from bubbling up to the field
+        inputElement.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        inputElement.addEventListener('mousedown', (e) => {
+            e.stopPropagation();
+        });
+        
+        inputElement.addEventListener('mouseup', (e) => {
+            e.stopPropagation();
+        });
+        
+        // Focus the input
+        inputElement.focus();
+        
+        // Handle save on blur or enter
+        let saveTimeout;
+        const saveField = () => {
+            clearTimeout(saveTimeout);
+            this.saveActionField(actionId, fieldType, inputElement.value, field);
+        };
+        
+        inputElement.addEventListener('blur', (e) => {
+            // Add a small delay to allow for dropdown clicks
+            saveTimeout = setTimeout(() => {
+                // Check if the focus moved to another element in the same action item
+                const actionItem = field.closest('.existing-action-item');
+                const focusedElement = document.activeElement;
+                const isFocusWithinAction = actionItem && actionItem.contains(focusedElement);
+                
+                if (!isFocusWithinAction) {
+                    saveField();
+                }
+            }, 150);
+        });
+        
+        inputElement.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && fieldType !== 'description') {
+                e.preventDefault();
+                saveField();
+            }
+        });
+        
+        // For select elements, save on change
+        if (inputElement.tagName === 'SELECT') {
+            inputElement.addEventListener('change', saveField);
+        }
+    }
+};
+
+// Save Action Field
+RetrospectiveBoard.prototype.saveActionField = async function(actionId, fieldType, newValue, fieldElement, showMessage = true) {
+    try {
+        const response = await fetch(`/retrospectives/actions/${actionId}/update`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                field: fieldType,
+                value: newValue
+            })
+        });
+        
+        if (response.ok) {
+            // Update the field display
+            this.updateFieldDisplay(fieldElement, fieldType, newValue);
+            if (showMessage) {
+                this.showMessage('Action updated successfully!', 'success');
+            }
+        } else {
+            if (showMessage) {
+                this.showMessage('Failed to update action', 'error');
+            }
+        }
+    } catch (error) {
+        console.error('Error updating action:', error);
+        if (showMessage) {
+            this.showMessage('Error updating action', 'error');
+        }
+    }
+};
+
+// Update Field Display
+RetrospectiveBoard.prototype.updateFieldDisplay = function(fieldElement, fieldType, newValue) {
+    fieldElement.style.cursor = 'pointer';
+    fieldElement.title = 'Click to edit';
+    
+    switch(fieldType) {
+        case 'description':
+            fieldElement.textContent = newValue;
+            break;
+            
+        case 'status':
+            fieldElement.textContent = newValue;
+            fieldElement.className = `action-status ${newValue}`;
+            break;
+            
+        case 'dueDate':
+            if (newValue) {
+                const date = new Date(newValue);
+                fieldElement.textContent = `Due: ${date.toLocaleDateString()}`;
+            } else {
+                fieldElement.textContent = 'Due: Unassigned';
+            }
+            break;
+            
+        case 'assignedTo':
+            if (newValue) {
+                // Find member name by ID
+                const member = window.retrospectiveData.teamMembers.find(m => m.id == newValue);
+                if (member) {
+                    fieldElement.textContent = `Assigned to: ${member.firstName} ${member.lastName}`;
+                } else {
+                    fieldElement.textContent = 'Unassigned';
+                }
+            } else {
+                fieldElement.textContent = 'Unassigned';
+            }
+            break;
+    }
+};
+
+// Accordion Click Handler
+RetrospectiveBoard.prototype.accordionClickHandler = function(e) {
+    const header = e.currentTarget;
+    const section = header.dataset.section;
+    const content = document.getElementById(`${section}-actions-content`);
+    const arrow = header.querySelector('.accordion-arrow');
+    
+    // Check if elements exist
+    if (!content || !arrow) {
+        console.error('Accordion elements not found');
+        return;
+    }
+    
+    // Get all accordion headers
+    const accordionHeaders = document.querySelectorAll('#actionFormContainer .accordion-header');
+    
+    // Close all other sections
+    accordionHeaders.forEach(otherHeader => {
+        if (otherHeader !== header) {
+            otherHeader.classList.remove('active');
+            const otherSection = otherHeader.dataset.section;
+            const otherContent = document.getElementById(`${otherSection}-actions-content`);
+            const otherArrow = otherHeader.querySelector('.accordion-arrow');
+            
+            if (otherContent) {
+                otherContent.classList.remove('active');
+            }
+            if (otherArrow) {
+                otherArrow.style.transform = 'rotate(0deg)';
+            }
+        }
+    });
+    
+    // Toggle current section
+    const isActive = header.classList.contains('active');
+    if (isActive) {
+        header.classList.remove('active');
+        content.classList.remove('active');
+        arrow.style.transform = 'rotate(0deg)';
+    } else {
+        header.classList.add('active');
+        content.classList.add('active');
+        arrow.style.transform = 'rotate(180deg)';
+    }
+};
+
+// Load Floating Existing Actions
+RetrospectiveBoard.prototype.loadFloatingExistingActions = async function() {
+    const actionFormContainer = document.getElementById('actionFormContainer');
+    
+    // Check if the action form container is visible
+    if (!actionFormContainer || actionFormContainer.style.display === 'none') {
+        console.log('Action form container not visible, skipping actions load');
+        return;
+    }
+    
+    const content = document.getElementById('existing-actions-content');
+    
+    if (!content) {
+        console.log('Existing actions content not found, skipping load');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/actions`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const actions = await response.json();
+            this.renderFloatingExistingActions(actions);
+        } else {
+            content.innerHTML = '<div class="actions-error">Failed to load actions</div>';
+        }
+    } catch (error) {
+        console.error('Error loading actions:', error);
+        content.innerHTML = '<div class="actions-error">Error loading actions</div>';
+    }
+};
+
+// Load Floating Existing Actions and Set Default Section
+RetrospectiveBoard.prototype.loadFloatingExistingActionsAndSetDefault = async function() {
+    const actionFormContainer = document.getElementById('actionFormContainer');
+    
+    // Check if the action form container is visible
+    if (!actionFormContainer || actionFormContainer.style.display === 'none') {
+        console.log('Action form container not visible, skipping actions load');
+        return;
+    }
+    
+    const content = document.getElementById('existing-actions-content');
+    
+    if (!content) {
+        console.log('Existing actions content not found, skipping load');
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/retrospectives/${this.retrospectiveId}/actions`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const actions = await response.json();
+            this.renderFloatingExistingActions(actions);
+            
+            // Set default section based on actions existence
+            this.setDefaultAccordionSection(actions.length > 0);
+        } else {
+            content.innerHTML = '<div class="actions-error">Failed to load actions</div>';
+            // Default to create section if loading fails
+            this.setDefaultAccordionSection(false);
+        }
+    } catch (error) {
+        console.error('Error loading actions:', error);
+        content.innerHTML = '<div class="actions-error">Error loading actions</div>';
+        // Default to create section if error occurs
+        this.setDefaultAccordionSection(false);
+    }
+};
+
+// Render Floating Existing Actions
+RetrospectiveBoard.prototype.renderFloatingExistingActions = function(actions) {
+    const content = document.getElementById('existing-actions-content');
+    
+    if (actions.length === 0) {
+        content.innerHTML = '<div class="no-actions">No actions created yet</div>';
+        return;
+    }
+    
+    const actionsHTML = actions.map(action => `
+        <div class="existing-action-item" data-action-id="${action.id}">
+            <div class="action-header">
+                <span class="action-status ${action.status}" data-field="status" data-action-id="${action.id}">${action.status}</span>
+                <div class="action-header-right">
+                    <span class="action-due-date" data-field="dueDate" data-action-id="${action.id}">${action.dueDate ? `Due: ${new Date(action.dueDate).toLocaleDateString()}` : 'Due: Unassigned'}</span>
+                    <button class="action-delete-btn" data-action-id="${action.id}" title="Delete action">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3,6 5,6 21,6"></polyline>
+                            <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2"></path>
+                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            <div class="action-description" data-field="description" data-action-id="${action.id}">${action.description}</div>
+            <div class="action-footer">
+                <div class="action-assignee" data-field="assignedTo" data-action-id="${action.id}">
+                    ${action.assignedTo ? `Assigned to: ${action.assignedTo.firstName} ${action.assignedTo.lastName}` : 'Unassigned'}
+                </div>
+            </div>
+        </div>
+    `).join('');
+    
+    content.innerHTML = actionsHTML;
+    
+    // Initialize editable fields
+    this.initEditableActionFields();
+    
+    // Initialize delete buttons
+    this.initDeleteButtons();
+};
+
+// Set Default Accordion Section
+RetrospectiveBoard.prototype.setDefaultAccordionSection = function(hasActions) {
+    const existingHeader = document.querySelector('#actionFormContainer .accordion-header[data-section="existing"]');
+    const createHeader = document.querySelector('#actionFormContainer .accordion-header[data-section="create"]');
+    const existingContent = document.getElementById('existing-actions-content');
+    const createContent = document.getElementById('create-actions-content');
+    const existingArrow = existingHeader ? existingHeader.querySelector('.accordion-arrow') : null;
+    const createArrow = createHeader ? createHeader.querySelector('.accordion-arrow') : null;
+    
+    // Close all sections first
+    if (existingHeader) existingHeader.classList.remove('active');
+    if (createHeader) createHeader.classList.remove('active');
+    if (existingContent) existingContent.classList.remove('active');
+    if (createContent) createContent.classList.remove('active');
+    if (existingArrow) existingArrow.style.transform = 'rotate(0deg)';
+    if (createArrow) createArrow.style.transform = 'rotate(0deg)';
+    
+    // Open the appropriate section
+    if (hasActions) {
+        // Open existing actions section
+        if (existingHeader) existingHeader.classList.add('active');
+        if (existingContent) existingContent.classList.add('active');
+        if (existingArrow) existingArrow.style.transform = 'rotate(180deg)';
+    } else {
+        // Open create new action section
+        if (createHeader) createHeader.classList.add('active');
+        if (createContent) createContent.classList.add('active');
+        if (createArrow) createArrow.style.transform = 'rotate(180deg)';
+    }
+};
+
+// Refresh Actions List
+RetrospectiveBoard.prototype.refreshActionsList = function() {
+    // Reload existing actions in both dialogs if they're open
+    const dialog = document.getElementById('createActionDialog');
+    if (dialog && dialog.style.display === 'flex') {
+        this.loadExistingActions();
+    }
+    
+    const floatingContainer = document.getElementById('actionFormContainer');
+    if (floatingContainer && floatingContainer.style.display === 'block') {
+        this.loadFloatingExistingActions();
+    }
+};
+
 
 // Card Zoom Functionality
 RetrospectiveBoard.prototype.initCardZoom = function() {
-    const zoomButtons = document.querySelectorAll('.btn-add-action');
+    const zoomButtons = document.querySelectorAll('.btn-zoom');
     const markDiscussedButtons = document.querySelectorAll('.btn-mark-discussed');
+    const createActionButtons = document.querySelectorAll('.btn-create-action');
     const overlay = document.getElementById('zoomOverlay');
     const zoomedCard = document.getElementById('zoomedCard');
     const closeBtn = document.getElementById('closeZoom');
@@ -3199,6 +3990,17 @@ RetrospectiveBoard.prototype.initCardZoom = function() {
             e.stopPropagation();
             const cardElement = btn.closest('.discussion-card');
             this.zoomCard(cardElement);
+        });
+    });
+
+    createActionButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const cardElement = btn.closest('.discussion-card');
+            const itemId = btn.dataset.id;
+            const itemType = btn.dataset.type;
+            const self = this;
+            self.showCreateActionDialog(itemId, itemType, cardElement);
         });
     });
 
@@ -3372,8 +4174,39 @@ RetrospectiveBoard.prototype.saveDiscussedState = async function(itemId, itemTyp
 
 // Action Item Management
 RetrospectiveBoard.prototype.showActionForm = function() {
-    document.getElementById('actionFormContainer').style.display = 'block';
-    document.getElementById('showActionFormBtn').style.display = 'none';
+    const actionFormContainer = document.getElementById('actionFormContainer');
+    const showActionFormBtn = document.getElementById('showActionFormBtn');
+    
+    // Toggle the form container
+    if (actionFormContainer.style.display === 'none' || actionFormContainer.style.display === '') {
+        // Show the form
+        actionFormContainer.style.display = 'block';
+        showActionFormBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Close
+        `;
+        
+        // Wait a bit for DOM to be ready, then initialize accordion
+        setTimeout(() => {
+            this.initFloatingAccordion();
+            this.loadFloatingExistingActionsAndSetDefault();
+        }, 100);
+    } else {
+        // Hide the form
+        actionFormContainer.style.display = 'none';
+        showActionFormBtn.innerHTML = `
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 0.5rem;">
+                <path d="M12 5v14M5 12h14"/>
+            </svg>
+            Actions
+        `;
+        
+        // Reset the form
+        document.getElementById('addActionForm').reset();
+    }
 };
 
 RetrospectiveBoard.prototype.hideActionForm = function() {

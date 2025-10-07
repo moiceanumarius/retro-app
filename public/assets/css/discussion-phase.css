@@ -101,7 +101,8 @@
 }
 
 .btn-mark-discussed,
-.btn-add-action {
+.btn-zoom,
+.btn-create-action {
     padding: 0.35rem;
     border: none;
     border-radius: 4px;
@@ -120,6 +121,26 @@
 }
 
 .btn-mark-discussed:hover {
+    background-color: #28a745;
+    transform: scale(1.1);
+}
+
+.btn-zoom {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-zoom:hover {
+    background-color: #007bff;
+    transform: scale(1.1);
+}
+
+.btn-create-action {
+    background-color: #6c757d;
+    color: white;
+}
+
+.btn-create-action:hover {
     background-color: #28a745;
     transform: scale(1.1);
 }
@@ -253,26 +274,32 @@
     position: fixed;
     bottom: 2rem;
     right: 2rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: #667eea;
     color: white;
     border: none;
-    border-radius: 50px;
-    padding: 1rem 2rem;
-    font-size: 1rem;
-    font-weight: 600;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
     transition: all 0.3s ease;
     z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.floating-action-btn svg {
+    width: 16px;
+    height: 16px;
 }
 
 .floating-action-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
-}
-
-.floating-action-btn:active {
-    transform: translateY(-1px);
+    background: #5a67d8;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
 }
 
 #actionFormContainer {

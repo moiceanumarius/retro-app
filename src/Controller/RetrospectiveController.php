@@ -354,6 +354,154 @@ class RetrospectiveController extends AbstractController
         ]);
     }
 
+    #[Route('/retrospectives/{id}/actions', name: 'app_retrospectives_actions', methods: ['GET'])]
+    public function getActions(int $id): Response
+    {
+        $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
+        
+        if (!$retrospective) {
+            return $this->json(['error' => 'Retrospective not found'], 404);
+        }
+
+        // Check if user has access to this retrospective
+        if (!$this->hasTeamAccess($retrospective->getTeam())) {
+            return $this->json(['error' => 'Access denied'], 403);
+        }
+
+        $actions = $this->entityManager->getRepository(RetrospectiveAction::class)
+            ->findBy(['retrospective' => $retrospective], ['createdAt' => 'DESC']);
+
+        $actionsData = array_map(function($action) {
+            return [
+                'id' => $action->getId(),
+                'description' => $action->getDescription(),
+                'status' => $action->getStatus(),
+                'dueDate' => $action->getDueDate() ? $action->getDueDate()->format('Y-m-d') : null,
+                'assignedTo' => $action->getAssignedTo() ? [
+                    'id' => $action->getAssignedTo()->getId(),
+                    'firstName' => $action->getAssignedTo()->getFirstName(),
+                    'lastName' => $action->getAssignedTo()->getLastName(),
+                ] : null,
+                'createdBy' => [
+                    'id' => $action->getCreatedBy()->getId(),
+                    'firstName' => $action->getCreatedBy()->getFirstName(),
+                    'lastName' => $action->getCreatedBy()->getLastName(),
+                ],
+                'contextType' => $action->getContextType(),
+                'contextId' => $action->getContextId(),
+            ];
+        }, $actions);
+
+        return $this->json($actionsData);
+    }
+
+    #[Route('/retrospectives/actions/{actionId}/update', name: 'app_retrospectives_update_action', methods: ['POST'])]
+    public function updateAction(Request $request, int $actionId): Response
+    {
+        $action = $this->entityManager->getRepository(RetrospectiveAction::class)->find($actionId);
+        
+        if (!$action) {
+            return $this->json(['success' => false, 'message' => 'Action not found'], 404);
+        }
+
+        // Check if user has access to this retrospective
+        if (!$this->hasTeamAccess($action->getRetrospective()->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // Only facilitator, team owner, or action creator can update actions
+        $user = $this->getUser();
+        if ($action->getRetrospective()->getFacilitator() !== $user && 
+            $action->getRetrospective()->getTeam()->getOwner() !== $user &&
+            $action->getCreatedBy() !== $user) {
+            return $this->json(['success' => false, 'message' => 'You can only update actions you created or if you are the facilitator/owner'], 403);
+        }
+
+        $data = json_decode($request->getContent(), true);
+        $field = $data['field'] ?? null;
+        $value = $data['value'] ?? null;
+
+        if (!$field) {
+            return $this->json(['success' => false, 'message' => 'Field is required'], 400);
+        }
+
+        try {
+            switch ($field) {
+                case 'description':
+                    $action->setDescription($value);
+                    break;
+                    
+                case 'status':
+                    if (!in_array($value, ['pending', 'in_progress', 'completed'])) {
+                        return $this->json(['success' => false, 'message' => 'Invalid status'], 400);
+                    }
+                    $action->setStatus($value);
+                    break;
+                    
+                case 'dueDate':
+                    if ($value) {
+                        $action->setDueDate(new \DateTime($value));
+                    } else {
+                        $action->setDueDate(null);
+                    }
+                    break;
+                    
+                case 'assignedTo':
+                    if ($value) {
+                        $user = $this->entityManager->getRepository(User::class)->find($value);
+                        if (!$user) {
+                            return $this->json(['success' => false, 'message' => 'User not found'], 400);
+                        }
+                        $action->setAssignedTo($user);
+                    } else {
+                        $action->setAssignedTo(null);
+                    }
+                    break;
+                    
+                default:
+                    return $this->json(['success' => false, 'message' => 'Invalid field'], 400);
+            }
+
+            $this->entityManager->flush();
+
+            return $this->json(['success' => true, 'message' => 'Action updated successfully']);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => 'Failed to update action'], 500);
+        }
+    }
+
+    #[Route('/retrospectives/actions/{actionId}/delete', name: 'app_retrospectives_delete_action', methods: ['POST'])]
+    public function deleteAction(Request $request, int $actionId): Response
+    {
+        $action = $this->entityManager->getRepository(RetrospectiveAction::class)->find($actionId);
+        
+        if (!$action) {
+            return $this->json(['success' => false, 'message' => 'Action not found'], 404);
+        }
+
+        // Check if user has access to this retrospective
+        if (!$this->hasTeamAccess($action->getRetrospective()->getTeam())) {
+            return $this->json(['success' => false, 'message' => 'Access denied'], 403);
+        }
+
+        // Only facilitator, team owner, or action creator can delete actions
+        $user = $this->getUser();
+        if ($action->getRetrospective()->getFacilitator() !== $user && 
+            $action->getRetrospective()->getTeam()->getOwner() !== $user &&
+            $action->getCreatedBy() !== $user) {
+            return $this->json(['success' => false, 'message' => 'You can only delete actions you created or if you are the facilitator/owner'], 403);
+        }
+
+        try {
+            $this->entityManager->remove($action);
+            $this->entityManager->flush();
+
+            return $this->json(['success' => true, 'message' => 'Action deleted successfully']);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => 'Failed to delete action'], 500);
+        }
+    }
+
     #[Route('/retrospectives/{id}/add-action', name: 'app_retrospectives_add_action', methods: ['POST', 'GET'])]
     public function addAction(Request $request, int $id): Response
     {
