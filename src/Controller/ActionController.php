@@ -342,8 +342,15 @@ class ActionController extends AbstractController
             throw $this->createAccessDeniedException('You do not have access to this action');
         }
 
+        // Load context data if available
+        $contextData = null;
+        if ($action->getContextType() && $action->getContextId()) {
+            $contextData = $this->loadContextData($action->getContextType(), $action->getContextId());
+        }
+
         $html = $this->renderView('actions/detail_popup.html.twig', [
             'action' => $action,
+            'contextData' => $contextData,
         ]);
 
         return $this->json([
@@ -584,6 +591,174 @@ class ActionController extends AbstractController
                 'success' => false,
                 'message' => 'Error updating assignee: ' . $e->getMessage()
             ]);
+        }
+    }
+
+    private function loadContextData(string $contextType, int $contextId): ?array
+    {
+        try {
+            switch ($contextType) {
+                case 'item':
+                    $item = $this->entityManager->find(\App\Entity\RetrospectiveItem::class, $contextId);
+                    if ($item) {
+                        return [
+                            'type' => 'item',
+                            'data' => [
+                                'id' => $item->getId(),
+                                'content' => $item->getContent(),
+                                'category' => $item->getCategory(),
+                                'createdBy' => $item->getAuthor() ? $item->getAuthor()->getEmail() : 'Unknown'
+                            ]
+                        ];
+                    }
+                    break;
+                    
+                case 'group':
+                    $group = $this->entityManager->find(\App\Entity\RetrospectiveGroup::class, $contextId);
+                    if ($group) {
+                        $items = [];
+                        foreach ($group->getItems() as $item) {
+                            $items[] = [
+                                'id' => $item->getId(),
+                                'content' => $item->getContent(),
+                                'category' => $item->getCategory(),
+                                'createdBy' => $item->getAuthor() ? $item->getAuthor()->getEmail() : 'Unknown'
+                            ];
+                        }
+                        return [
+                            'type' => 'group',
+                            'data' => [
+                                'id' => $group->getId(),
+                                'items' => $items,
+                                'category' => $items[0]['category'] ?? 'unknown'
+                            ]
+                        ];
+                    }
+                    break;
+            }
+        } catch (\Exception $e) {
+            error_log('Error loading context data: ' . $e->getMessage());
+        }
+        
+        return null;
+    }
+
+    #[Route('/{id}/mark-reviewed', name: 'app_actions_mark_reviewed', methods: ['POST'])]
+    public function markAsReviewed(Request $request, int $id): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['success' => false, 'message' => 'You must be logged in to mark actions as reviewed']);
+        }
+
+        $action = $this->entityManager->find(\App\Entity\RetrospectiveAction::class, $id);
+        if (!$action) {
+            return $this->json(['success' => false, 'message' => 'Action not found']);
+        }
+
+        // Check if user has permission to mark as reviewed
+        $hasPermission = $action->getAssignedTo() === $user ||
+                        $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
+                        $this->isGranted('ROLE_ADMIN') ||
+                        $this->isGranted('ROLE_SUPERVISOR') ||
+                        $this->isGranted('ROLE_FACILITATOR');
+
+        if (!$hasPermission) {
+            return $this->json(['success' => false, 'message' => 'You do not have permission to mark this action as reviewed']);
+        }
+
+        try {
+            $action->setIsReviewed(true);
+            $action->setUpdatedAt(new \DateTime());
+            $this->entityManager->flush();
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Action marked as reviewed successfully'
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error marking action as reviewed: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    #[Route('/reset-reviewed', name: 'app_actions_reset_reviewed', methods: ['POST'])]
+    public function resetReviewedActions(Request $request): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['success' => false, 'message' => 'You must be logged in to reset reviewed actions']);
+        }
+
+        // Check if user has permission to reset reviewed actions
+        if (!$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_SUPERVISOR')) {
+            return $this->json(['success' => false, 'message' => 'You do not have permission to reset reviewed actions']);
+        }
+
+        try {
+            // Reset all reviewed actions
+            $qb = $this->entityManager->createQueryBuilder();
+            $qb->update(\App\Entity\RetrospectiveAction::class, 'ra')
+               ->set('ra.isReviewed', 'false')
+               ->set('ra.updatedAt', ':now')
+               ->where('ra.isReviewed = true')
+               ->setParameter('now', new \DateTime());
+
+            $updatedCount = $qb->getQuery()->execute();
+
+            return $this->json([
+                'success' => true,
+                'message' => "Successfully reset {$updatedCount} reviewed actions"
+            ]);
+        } catch (\Exception $e) {
+            return $this->json([
+                'success' => false,
+                'message' => 'Error resetting reviewed actions: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    #[Route('/{id}/delete', name: 'app_actions_delete', methods: ['POST'])]
+    public function deleteAction(int $id): Response
+    {
+        $user = $this->getUser();
+        if (!$user) {
+            return $this->json(['success' => false, 'message' => 'User not authenticated'], 401);
+        }
+
+        try {
+            $action = $this->actionRepository->find($id);
+            if (!$action) {
+                return $this->json(['success' => false, 'message' => 'Action not found'], 404);
+            }
+
+            // Check permissions (action creator, team owner, admin, supervisor, facilitator)
+            $hasAccess = false;
+            if ($action->getCreatedBy() === $user) {
+                $hasAccess = true;
+            } elseif ($action->getAssignedTo()) {
+                $team = $action->getAssignedTo()->getTeams()->first();
+                if ($team && $team->getOwner() === $user) {
+                    $hasAccess = true;
+                }
+            }
+            
+            if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERVISOR') || $this->isGranted('ROLE_FACILITATOR')) {
+                $hasAccess = true;
+            }
+
+            if (!$hasAccess) {
+                return $this->json(['success' => false, 'message' => 'You do not have permission to delete this action'], 403);
+            }
+
+            $this->entityManager->remove($action);
+            $this->entityManager->flush();
+
+            return $this->json(['success' => true, 'message' => 'Action deleted successfully']);
+        } catch (\Exception $e) {
+            return $this->json(['success' => false, 'message' => 'Error deleting action: ' . $e->getMessage()], 500);
         }
     }
 }

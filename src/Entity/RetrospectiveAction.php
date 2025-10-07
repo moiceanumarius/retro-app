@@ -57,6 +57,9 @@ class RetrospectiveAction
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $updatedAt = null;
 
+    #[ORM\Column(type: Types::BOOLEAN, options: ['default' => false])]
+    private ?bool $isReviewed = false;
+
     public function __construct()
     {
         $this->createdAt = new \DateTime();
@@ -234,6 +237,17 @@ class RetrospectiveAction
     public function setContextId(?int $contextId): static
     {
         $this->contextId = $contextId;
+        return $this;
+    }
+
+    public function getIsReviewed(): ?bool
+    {
+        return $this->isReviewed;
+    }
+
+    public function setIsReviewed(?bool $isReviewed): static
+    {
+        $this->isReviewed = $isReviewed;
         return $this;
     }
 }

@@ -48,6 +48,88 @@
             text-decoration: none;
         }
 
+        /* Actions Dropdown Styles */
+        .actions-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .actions-dropdown-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .actions-dropdown-toggle:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .dropdown-arrow {
+            transition: transform 0.2s ease;
+        }
+
+        .actions-dropdown-toggle.active .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .actions-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            min-width: 200px;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+        }
+
+        .actions-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .dropdown-item:last-child {
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background: #f9fafb;
+            color: #1f2937;
+        }
+
+        .dropdown-item svg {
+            width: 16px;
+            height: 16px;
+            color: #6b7280;
+        }
+
         .page-content {
             padding: 0;
         }
@@ -62,7 +144,7 @@
 
         .filters-grid {
             display: grid;
-            grid-template-columns: auto auto 2fr auto;
+            grid-template-columns: auto auto auto auto 2fr auto;
             gap: 1rem;
             align-items: center;
         }
@@ -83,6 +165,116 @@
             background: white;
             cursor: pointer;
             transition: all 0.3s ease;
+        }
+
+        /* Custom Dropdown with Checkboxes */
+        .custom-dropdown {
+            position: relative;
+            display: inline-block;
+            min-width: 140px;
+            max-width: 180px;
+        }
+
+        .custom-dropdown-toggle {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .custom-dropdown-toggle:hover {
+            border-color: #667eea;
+        }
+
+        .custom-dropdown-toggle.active {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .custom-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.2s ease;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .custom-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            border-bottom: 1px solid #f3f4f6;
+        }
+
+        .checkbox-item:last-child {
+            border-bottom: none;
+        }
+
+        .checkbox-item:hover {
+            background: #f9fafb;
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            display: none;
+        }
+
+        .checkmark {
+            width: 18px;
+            height: 18px;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            margin-right: 0.75rem;
+            position: relative;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked + .checkmark {
+            background: #667eea;
+            border-color: #667eea;
+        }
+
+        .checkbox-item input[type="checkbox"]:checked + .checkmark::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 2px;
+            width: 4px;
+            height: 8px;
+            border: solid white;
+            border-width: 0 2px 2px 0;
+            transform: rotate(45deg);
+        }
+
+        .checkbox-text {
+            font-size: 0.875rem;
+            color: #374151;
+            flex: 1;
         }
 
         .filter-dropdown:focus {
@@ -180,58 +372,51 @@
             text-align: center !important;
         }
 
-        .actions-table th:not(:last-child) {
-            border-right: none !important;
+        .actions-table th:first-child {
+            border-left: none !important;
         }
 
-        .actions-table th:not(:first-child) {
-            border-left: none !important;
+        .actions-table th:last-child {
+            border-right: none !important;
         }
 
         /* Override any Bootstrap table styling */
         table.actions-table th,
         table.actions-table td {
-            border-left: none !important;
-            border-right: none !important;
+            /* Allow vertical borders for column separation */
         }
 
         .actions-table thead tr th {
             border: none !important;
             border-bottom: 2px solid #e9ecef !important;
+            border-left: 1px solid #e5e7eb !important;
+            border-right: 1px solid #e5e7eb !important;
         }
 
         .actions-table td {
             padding: 1rem;
-            border-bottom: 1px solid #f1f5f9 !important;
-            border-left: none !important;
-            border-right: none !important;
+            border-bottom: 1px solid #d1d5db !important;
+            border-left: 1px solid #e5e7eb !important;
+            border-right: 1px solid #e5e7eb !important;
             border-top: none !important;
             vertical-align: top;
             outline: none !important;
             box-shadow: none !important;
         }
 
-        .actions-table td:not(:last-child) {
-            border-right: none !important;
+        .actions-table td:first-child {
+            border-left: none !important;
         }
 
-        .actions-table td:not(:first-child) {
-            border-left: none !important;
+        .actions-table td:last-child {
+            border-right: none !important;
         }
 
         /* Additional aggressive border removal */
         .actions-table thead tr,
         .actions-table thead tr td,
         .actions-table thead tr th {
-            border-left: none !important;
-            border-right: none !important;
             border-collapse: collapse !important;
-        }
-
-        /* Remove any visual separators */
-        .actions-table th + th,
-        .actions-table td + td {
-            border-left: none !important;
         }
 
         .actions-table tbody tr {
@@ -240,6 +425,15 @@
 
         .actions-table tbody tr:hover {
             background: #f8fafc;
+        }
+
+        /* Reviewed actions background */
+        .actions-table tbody tr.reviewed {
+            background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+        }
+
+        .actions-table tbody tr.reviewed:hover {
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
         }
 
         .actions-table tbody tr:last-child td {
@@ -255,6 +449,7 @@
         .action-description {
             color: #2d3748;
             font-weight: 500;
+            font-size: 0.875rem;
             line-height: 1.6;
             max-width: 300px;
             cursor: pointer;
@@ -262,10 +457,7 @@
         }
 
         .action-description:hover {
-            background-color: #f8fafc;
-            border-radius: 6px;
-            padding: 0.5rem;
-            border: 1px dashed #cbd5e0;
+            border: 1px dashed #d1d5db;
         }
 
         .action-description-container {
@@ -280,7 +472,6 @@
         .action-edit-textarea {
             width: 100%;
             min-width: 300px;
-            max-width: 500px;
             padding: 0.75rem;
             border: 2px solid #667eea;
             border-radius: 8px;
@@ -288,6 +479,7 @@
             font-family: inherit;
             resize: vertical;
             transition: all 0.3s ease;
+            box-sizing: border-box;
         }
 
         .action-edit-textarea:focus {
@@ -371,6 +563,7 @@
 
         .action-actions {
             display: flex;
+            flex-direction: column;
             gap: 0.5rem;
             align-items: center;
         }
@@ -424,6 +617,125 @@
             box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
         }
 
+        .action-delete-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-delete-btn:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+        }
+
+        /* Confirmation Modal Styles */
+        .confirm-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .confirm-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .confirm-modal-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            max-width: 400px;
+            width: 90%;
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .confirm-modal.active .confirm-modal-content {
+            transform: scale(1);
+        }
+
+        .confirm-modal-header {
+            display: flex;
+            align-items: center;
+            padding: 1.5rem 1.5rem 1rem 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .confirm-modal-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fef3cd;
+            color: #856404;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+
+        .confirm-modal-title {
+            margin: 0;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #111827;
+        }
+
+        .confirm-modal-body {
+            padding: 1rem 1.5rem;
+            color: #6b7280;
+            line-height: 1.5;
+        }
+
+        .confirm-modal-footer {
+            padding: 1rem 1.5rem 1.5rem 1.5rem;
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .confirm-modal-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+        }
+
+        .confirm-modal-btn-cancel {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .confirm-modal-btn-cancel:hover {
+            background: #e5e7eb;
+        }
+
+        .confirm-modal-btn-confirm {
+            background: #ef4444;
+            color: white;
+        }
+
+        .confirm-modal-btn-confirm:hover {
+            background: #dc2626;
+        }
+
         /* Action Details Modal */
         .action-modal-overlay {
             position: fixed;
@@ -450,7 +762,7 @@
             background: white;
             border-radius: 12px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-            max-width: 600px;
+            max-width: 750px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
@@ -538,20 +850,6 @@
             border-color: #667eea;
         }
 
-        .action-description-view::after {
-            content: 'Click to edit';
-            position: absolute;
-            top: 0.5rem;
-            right: 0.5rem;
-            font-size: 0.75rem;
-            color: #6b7280;
-            opacity: 0;
-            transition: opacity 0.2s ease;
-        }
-
-        .action-description-view:hover::after {
-            opacity: 1;
-        }
 
         .action-description-edit {
             margin-top: 0.5rem;
@@ -880,7 +1178,6 @@
             background: #f9fafb;
             border-radius: 8px;
             padding: 1rem;
-            border-left: 4px solid #667eea;
             font-style: italic;
             margin-bottom: 1rem;
         }
@@ -1045,8 +1342,8 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
-        .stat-card.open .stat-icon {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+        .stat-card.pending .stat-icon {
+            background: linear-gradient(135deg, #64748b 0%, #475569 100%);
         }
 
         .stat-card.in-progress .stat-icon {
@@ -1059,6 +1356,10 @@
 
         .stat-card.overdue .stat-icon {
             background: linear-gradient(135deg, #e53e3e 0%, #c53030 100%);
+        }
+
+        .stat-card.reviewed .stat-icon {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
 
         .stat-content h3 {
@@ -1081,10 +1382,16 @@
                 gap: 0.75rem;
             }
 
+            .filter-label,
             .filter-dropdown,
             .search-box,
             .clear-filters-btn {
                 width: 100%;
+            }
+
+            .custom-dropdown {
+                min-width: 100%;
+                max-width: 100%;
             }
 
             .actions-table {
@@ -1122,21 +1429,40 @@
             <p>Track and manage action items from retrospectives{% if team %} for {{ team.name }}{% endif %}</p>
         </div>
         <div class="header-actions">
-            {% if team %}
-                <a href="{{ path('app_actions_team_selection') }}" class="btn btn-secondary">
+            <div class="actions-dropdown">
+                <button class="btn btn-secondary actions-dropdown-toggle" onclick="toggleActionsDropdown()">
                     <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M3 7a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 11a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM14 15a1 1 0 00-1-1H4a1 1 0 00-1 1v1a1 1 0 001 1h10a1 1 0 001-1v-1z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"></path>
                     </svg>
-                    Switch Team
-                </a>
-            {% else %}
-                <a href="{{ path('app_actions_team_selection') }}" class="btn btn-secondary">
-                    <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                    Actions
+                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20" class="dropdown-arrow">
+                        <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                     </svg>
-                    Select Team
-                </a>
-            {% endif %}
+                </button>
+                <div class="actions-dropdown-menu" id="actionsDropdown">
+                    <a href="#" onclick="resetReviewedActions(); return false;" class="dropdown-item">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                        </svg>
+                        Reset Reviewed Actions
+                    </a>
+                    {% if team %}
+                        <a href="{{ path('app_actions_team_selection') }}" class="dropdown-item">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 7a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 11a1 1 0 011-1h6a1 1 0 110 2H4a1 1 0 01-1-1zM14 15a1 1 0 00-1-1H4a1 1 0 00-1 1v1a1 1 0 001 1h10a1 1 0 001-1v-1z" clip-rule="evenodd"></path>
+                            </svg>
+                            Switch Team
+                        </a>
+                    {% else %}
+                        <a href="{{ path('app_actions_team_selection') }}" class="dropdown-item">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z"></path>
+                            </svg>
+                            Select Team
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1145,8 +1471,8 @@
     {% if actions|length > 0 %}
         <!-- Stats Overview -->
         <div class = "stats-row">
-            {% set totalActions = (statusStats['pending'] ?? 0) + (statusStats['open'] ?? 0) + (statusStats['in-progress'] ?? 0) + (statusStats['completed'] ?? 0) + (statusStats['cancelled'] ?? 0) %}
-            {% set openActions = (statusStats['pending'] ?? 0) + (statusStats['open'] ?? 0) %}
+            {% set totalActions = (statusStats['pending'] ?? 0) + (statusStats['in-progress'] ?? 0) + (statusStats['completed'] ?? 0) + (statusStats['cancelled'] ?? 0) %}
+            {% set pendingActions = statusStats['pending'] ?? 0 %}
             {% set inProgressActions = statusStats['in-progress'] ?? 0 %}
             {% set completedActions = statusStats['completed'] ?? 0 %}
             {% set overdueActions = statusStats['overdue'] ?? 0 %}
@@ -1163,15 +1489,15 @@
                 </div>
             </div>
 
-            <div class="stat-card open">
+            <div class="stat-card pending">
                 <div class="stat-icon">
                     <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
                     </svg>
                 </div>
                 <div class="stat-content">
-                    <h3>{{ openActions }}</h3>
-                    <p>Open Actions</p>
+                    <h3>{{ pendingActions }}</h3>
+                    <p>Pending</p>
                 </div>
             </div>
 
@@ -1210,19 +1536,60 @@
                     <p>Overdue</p>
                 </div>
             </div>
+
+            <div class="stat-card reviewed">
+                <div class="stat-icon">
+                    <svg width="24" height="24" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                    </svg>
+                </div>
+                <div class="stat-content">
+                    <h3>{{ actions|filter(action => action.isReviewed)|length }}</h3>
+                    <p>Reviewed</p>
+                </div>
+            </div>
         </div>
 
         <!-- Filters Section -->
         <div class="filters-section">
             <div class="filters-grid">
                 <label class="filter-label">Status:</label>
-                <select class="filter-dropdown" id="statusFilter">
-                    <option value="">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="open">Open</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
+                <div class="custom-dropdown" id="statusDropdown">
+                    <button class="custom-dropdown-toggle" id="statusDropdownToggle" onclick="toggleStatusDropdown()">
+                        <span id="statusDropdownText">All Status</span>
+                        <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20" class="dropdown-arrow">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                    <div class="custom-dropdown-menu" id="statusDropdownMenu">
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="pending" onchange="updateStatusFilter()">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-text">Pending</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="in-progress" onchange="updateStatusFilter()">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-text">In Progress</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="completed" onchange="updateStatusFilter()">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-text">Completed</span>
+                        </label>
+                        <label class="checkbox-item">
+                            <input type="checkbox" value="cancelled" onchange="updateStatusFilter()">
+                            <span class="checkmark"></span>
+                            <span class="checkbox-text">Cancelled</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <label class="filter-label">Review Status:</label>
+                <select class="filter-dropdown" id="reviewFilter">
+                    <option value="">All Reviews</option>
+                    <option value="reviewed">Reviewed</option>
+                    <option value="not-reviewed">Not Reviewed</option>
                 </select>
                 
                 <input type="text" class="search-box" id="searchBox" placeholder="Search actions, dates, or assignees...">
@@ -1277,7 +1644,9 @@
                         data-description="{{ action.description|lower }}" 
                         data-created-at="{{ action.createdAt|date('Y-m-d') }}"
                         data-assignee="{{ action.assignedTo ? action.assignedTo.email|lower : '' }}"
-                        data-action-id="{{ action.id }}">
+                        data-review="{{ action.isReviewed ? 'reviewed' : 'not-reviewed' }}"
+                        data-action-id="{{ action.id }}"
+                        {% if action.isReviewed %}class="reviewed"{% endif %}>
                         <td>
                             <span class="action-id">#{{ action.id }}</span>
                         </td>
@@ -1344,6 +1713,14 @@
                                         <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
                                     </svg>
                                     Details
+                                </button>
+                                <button class="btn btn-sm btn-danger action-delete-btn" 
+                                        onclick="confirmDeleteAction({{ action.id }})"
+                                        style="padding: 0.375rem 0.75rem; border-radius: 6px; font-size: 0.75rem; display: flex; align-items: center; gap: 0.25rem;">
+                                    <svg width="14" height="14" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                    </svg>
+                                    Delete
                                 </button>
                             </div>
                         </td>
@@ -1465,26 +1842,55 @@
     </div> <!-- End page-content -->
 </div>
 
+<!-- Confirmation Modal -->
+<div id="confirmModal" class="confirm-modal">
+    <div class="confirm-modal-content">
+        <div class="confirm-modal-header">
+            <div class="confirm-modal-icon">!</div>
+            <h3 class="confirm-modal-title" id="confirmModalTitle">Delete Action</h3>
+        </div>
+        <div class="confirm-modal-body" id="confirmModalBody">
+            Are you sure you want to delete this action? This action cannot be undone.
+        </div>
+        <div class="confirm-modal-footer">
+            <button class="confirm-modal-btn confirm-modal-btn-cancel" id="confirmModalCancel">Cancel</button>
+            <button class="confirm-modal-btn confirm-modal-btn-confirm" id="confirmModalConfirm">Delete</button>
+        </div>
+    </div>
+</div>
+
 <script>
     // Filter functions
     function filterTable() {
-        const statusFilter = document.getElementById('statusFilter');
+        const statusCheckboxes = document.querySelectorAll('#statusDropdownMenu input[type="checkbox"]');
+        const reviewFilter = document.getElementById('reviewFilter');
         const searchBox = document.getElementById('searchBox');
         const tableRows = document.querySelectorAll('#actionsTableBody tr');
         
-        const statusValue = statusFilter ? statusFilter.value : '';
+        // Get selected status values from checkboxes
+        const selectedStatuses = Array.from(statusCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+        
+        const reviewValue = reviewFilter ? reviewFilter.value : '';
         const searchValue = searchBox ? searchBox.value.toLowerCase().trim() : '';
         
         tableRows.forEach(row => {
             const status = row.getAttribute('data-status');
+            const review = row.getAttribute('data-review');
             const description = row.getAttribute('data-description');
             const createdAt = row.getAttribute('data-created-at');
             const assignee = row.getAttribute('data-assignee');
             
             let showRow = true;
             
-            // Filter by status
-            if (statusValue && status !== statusValue) {
+            // Filter by status (checkboxes)
+            if (selectedStatuses.length > 0 && !selectedStatuses.includes(status)) {
+                showRow = false;
+            }
+            
+            // Filter by review status
+            if (reviewValue && review !== reviewValue) {
                 showRow = false;
             }
             
@@ -1503,22 +1909,74 @@
     }
 
     function clearFilters() {
-        const statusFilter = document.getElementById('statusFilter');
+        const statusCheckboxes = document.querySelectorAll('#statusDropdownMenu input[type="checkbox"]');
+        const reviewFilter = document.getElementById('reviewFilter');
         const searchBox = document.getElementById('searchBox');
         
-        if (statusFilter) statusFilter.value = '';
+        // Clear all checkboxes
+        statusCheckboxes.forEach(checkbox => checkbox.checked = false);
+        
+        // Update dropdown text
+        updateStatusDropdownText();
+        
+        if (reviewFilter) reviewFilter.value = '';
         if (searchBox) searchBox.value = '';
         
         filterTable();
     }
 
+    // Custom dropdown functions
+    function toggleStatusDropdown() {
+        const dropdown = document.getElementById('statusDropdownMenu');
+        const toggle = document.getElementById('statusDropdownToggle');
+        
+        if (dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
+            toggle.classList.remove('active');
+        } else {
+            dropdown.classList.add('show');
+            toggle.classList.add('active');
+        }
+    }
+
+    function updateStatusFilter() {
+        updateStatusDropdownText();
+        filterTable();
+    }
+
+    function updateStatusDropdownText() {
+        const checkboxes = document.querySelectorAll('#statusDropdownMenu input[type="checkbox"]');
+        const selectedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked);
+        const textElement = document.getElementById('statusDropdownText');
+        
+        if (selectedCheckboxes.length === 0) {
+            textElement.textContent = 'All Status';
+        } else if (selectedCheckboxes.length === 1) {
+            textElement.textContent = selectedCheckboxes[0].nextElementSibling.nextElementSibling.textContent;
+        } else {
+            textElement.textContent = `${selectedCheckboxes.length} selected`;
+        }
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const statusDropdown = document.getElementById('statusDropdown');
+        
+        if (!event.target.closest('#statusDropdown')) {
+            const dropdown = document.getElementById('statusDropdownMenu');
+            const toggle = document.getElementById('statusDropdownToggle');
+            dropdown.classList.remove('show');
+            toggle.classList.remove('active');
+        }
+    });
+
     // Initialize filters
     document.addEventListener('DOMContentLoaded', function() {
-        const statusFilter = document.getElementById('statusFilter');
+        const reviewFilter = document.getElementById('reviewFilter');
         const searchBox = document.getElementById('searchBox');
         
-        if (statusFilter) {
-            statusFilter.addEventListener('change', filterTable);
+        if (reviewFilter) {
+            reviewFilter.addEventListener('change', filterTable);
         }
         
         if (searchBox) {
@@ -2224,5 +2682,255 @@
             }
         });
     });
+
+    // Actions dropdown functions
+    function toggleActionsDropdown() {
+        const dropdown = document.getElementById('actionsDropdown');
+        const toggle = document.querySelector('.actions-dropdown-toggle');
+        
+        if (dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
+            toggle.classList.remove('active');
+        } else {
+            dropdown.classList.add('show');
+            toggle.classList.add('active');
+        }
+    }
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', function(event) {
+        const dropdown = document.getElementById('actionsDropdown');
+        const toggle = document.querySelector('.actions-dropdown-toggle');
+        
+        if (!event.target.closest('.actions-dropdown')) {
+            dropdown.classList.remove('show');
+            toggle.classList.remove('active');
+        }
+    });
+
+    // Reset reviewed actions function
+    function resetReviewedActions() {
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmModalTitle');
+        const bodyEl = document.getElementById('confirmModalBody');
+        const cancelBtn = document.getElementById('confirmModalCancel');
+        const confirmBtn = document.getElementById('confirmModalConfirm');
+        
+        // Set modal content
+        titleEl.textContent = 'Reset Reviewed Actions';
+        bodyEl.innerHTML = 'Are you sure you want to reset all reviewed actions?';
+        
+        // Show modal
+        modal.classList.add('active');
+        
+        // Remove existing event listeners
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        // Add new event listeners
+        newCancelBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+        });
+        
+        newConfirmBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+            performResetReviewedActions();
+        });
+    }
+
+    function performResetReviewedActions() {
+        // Close dropdown
+        const dropdown = document.getElementById('actionsDropdown');
+        const toggle = document.querySelector('.actions-dropdown-toggle');
+        dropdown.classList.remove('show');
+        toggle.classList.remove('active');
+
+        // Show loading message
+        showMessage('Resetting reviewed actions...', 'info');
+
+        fetch('/actions/reset-reviewed', {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message || 'All reviewed actions have been reset successfully', 'success');
+                
+                // Update the table - remove reviewed class and update data-review attribute
+                const reviewedRows = document.querySelectorAll('tr.reviewed');
+                reviewedRows.forEach(row => {
+                    row.classList.remove('reviewed');
+                    row.setAttribute('data-review', 'not-reviewed');
+                    
+                    // Update any "Reviewed" status in footer to show "Mark as Reviewed" button
+                    const reviewedStatus = row.querySelector('.reviewed-status');
+                    if (reviewedStatus) {
+                        const actionId = row.getAttribute('data-action-id');
+                        reviewedStatus.outerHTML = `
+                            <button class="btn btn-primary mark-reviewed-btn" onclick="markAsReviewed(${actionId})">
+                                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                </svg>
+                                Mark as Reviewed
+                            </button>
+                        `;
+                    }
+                });
+                
+                // Refresh the page to update stats and ensure consistency
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showMessage(data.message || 'Error resetting reviewed actions', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error resetting reviewed actions:', error);
+            showMessage('Error resetting reviewed actions. Please try again.', 'error');
+        });
+    }
+
+    // Delete action functions
+    function confirmDeleteAction(actionId) {
+        const modal = document.getElementById('confirmModal');
+        const titleEl = document.getElementById('confirmModalTitle');
+        const bodyEl = document.getElementById('confirmModalBody');
+        const cancelBtn = document.getElementById('confirmModalCancel');
+        const confirmBtn = document.getElementById('confirmModalConfirm');
+        
+        // Set modal content
+        titleEl.textContent = 'Delete Action';
+        bodyEl.innerHTML = 'Are you sure you want to delete this action? This action cannot be undone.';
+        
+        // Show modal
+        modal.classList.add('active');
+        
+        // Remove existing event listeners
+        const newCancelBtn = cancelBtn.cloneNode(true);
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+        
+        // Add new event listeners
+        newCancelBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+        });
+        
+        newConfirmBtn.addEventListener('click', function() {
+            modal.classList.remove('active');
+            deleteAction(actionId);
+        });
+    }
+
+    function deleteAction(actionId) {
+        const deleteBtn = document.querySelector(`[onclick="confirmDeleteAction(${actionId})"]`);
+        const originalText = deleteBtn.innerHTML;
+        
+        // Disable button and show loading state
+        deleteBtn.disabled = true;
+        deleteBtn.innerHTML = `
+            <div style="width: 14px; height: 14px; border: 2px solid #ffffff40; border-top: 2px solid #ffffff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            Deleting...
+        `;
+        
+        fetch(`/actions/${actionId}/delete`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message || 'Action deleted successfully', 'success');
+                
+                // Remove the table row
+                const tableRow = document.querySelector(`tr[data-action-id="${actionId}"]`);
+                if (tableRow) {
+                    tableRow.remove();
+                }
+                
+                // Refresh the page to update stats
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                showMessage(data.message || 'Error deleting action', 'error');
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting action:', error);
+            showMessage('Error deleting action. Please try again.', 'error');
+            deleteBtn.disabled = false;
+            deleteBtn.innerHTML = originalText;
+        });
+    }
+
+    // Mark as reviewed function
+    function markAsReviewed(actionId) {
+        const button = document.querySelector(`[onclick="markAsReviewed(${actionId})"]`);
+        const originalText = button.innerHTML;
+        
+        // Disable button and show loading state
+        button.disabled = true;
+        button.innerHTML = `
+            <div style="width: 16px; height: 16px; border: 2px solid #ffffff40; border-top: 2px solid #ffffff; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            Marking...
+        `;
+        
+        fetch(`/actions/${actionId}/mark-reviewed`, {
+            method: 'POST',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage(data.message || 'Action marked as reviewed successfully', 'success');
+                
+                // Replace button with reviewed status
+                button.outerHTML = `
+                    <div class="reviewed-status">
+                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="color: #10b981;">
+                            <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                        </svg>
+                        Reviewed
+                    </div>
+                `;
+                
+                // Add reviewed class and update data-review attribute to the table row
+                const tableRow = document.querySelector(`tr[data-action-id="${actionId}"]`);
+                if (tableRow) {
+                    tableRow.classList.add('reviewed');
+                    tableRow.setAttribute('data-review', 'reviewed');
+                }
+            } else {
+                showMessage(data.message || 'Error marking action as reviewed', 'error');
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        })
+        .catch(error => {
+            console.error('Error marking action as reviewed:', error);
+            showMessage('Error marking action as reviewed. Please try again.', 'error');
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    }
 </script>
 {% endblock %}

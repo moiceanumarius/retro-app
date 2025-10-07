@@ -85,6 +85,31 @@
     </div>
 </div>
 
+<!-- Context Information -->
+{% if contextData %}
+<div class="action-detail-group">
+    <label class="action-detail-label">Context</label>
+    <div class="context-info context-{{ contextData.data.category }}">
+        {% if contextData.type == 'item' %}
+            <div class="context-card">
+                <div class="context-content">{{ contextData.data.content }}</div>
+            </div>
+        {% elseif contextData.type == 'group' %}
+            <div class="context-group">
+                <div class="context-items">
+                    {% for item in contextData.data.items %}
+                        <div class="context-item">
+                            <div class="context-content">{{ item.content }}</div>
+                        </div>
+                        {% if not loop.last %}<div class="context-separator">---</div>{% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 <!-- Action Metadata -->
 <div class="action-metadata">
     <div class="action-metadata-item">
@@ -148,15 +173,6 @@
         </div>
     </div>
 
-    <div class="action-metadata-item">
-        <div class="label">Created By</div>
-        <div class="value">{{ action.createdBy.email }}</div>
-    </div>
-
-    <div class="action-metadata-item">
-        <div class="label">Created At</div>
-        <div class="value">{{ action.createdAt|date('M d, Y H:i') }}</div>
-    </div>
 
     <div class="action-metadata-item">
         <div class="label">From Retrospective</div>
@@ -177,6 +193,25 @@
         <div class="label">Completed At</div>
         <div class="value">{{ action.completedAt|date('M d, Y H:i') }}</div>
     </div>
+    {% endif %}
+</div>
+
+<!-- Modal Footer -->
+<div class="action-modal-footer">
+    {% if not action.isReviewed %}
+        <button class="btn btn-primary mark-reviewed-btn" onclick="markAsReviewed({{ action.id }})">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            Mark as Reviewed
+        </button>
+    {% else %}
+        <div class="reviewed-status">
+            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20" style="color: #10b981;">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+            </svg>
+            Reviewed
+        </div>
     {% endif %}
 </div>
 
@@ -236,5 +271,170 @@
 
 .retrospective-link:hover svg {
     transform: translateX(2px);
+}
+
+/* Context Styles */
+.context-info {
+    background: #f9fafb;
+    border-radius: 8px;
+    padding: 1rem;
+    border-left: 4px solid #e5e7eb;
+    margin-top: 0.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.context-info.context-wrong {
+    border-left-color: #ef4444;
+    background: #fef2f2;
+}
+
+.context-info.context-good {
+    border-left-color: #10b981;
+    background: #f0fdf4;
+}
+
+.context-info.context-improved {
+    border-left-color: #f59e0b;
+    background: #fffbeb;
+}
+
+.context-info.context-random {
+    border-left-color: #8b5cf6;
+    background: #faf5ff;
+}
+
+.context-card {
+    margin-bottom: 0;
+}
+
+.context-content {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #374151;
+    margin-bottom: 0.75rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+}
+
+.context-meta {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.context-category {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.context-author {
+    font-style: italic;
+}
+
+.context-group-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.context-count {
+    font-size: 0.75rem;
+    color: #6b7280;
+    background: #e5e7eb;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+}
+
+.context-items {
+    /* space-y handled by individual item margins */
+}
+
+.context-item {
+    margin-bottom: 1rem;
+}
+
+.context-item:last-child {
+    margin-bottom: 0;
+}
+
+.context-separator {
+    text-align: center;
+    color: #9ca3af;
+    font-weight: 600;
+    margin: 0.75rem 0;
+    font-size: 0.875rem;
+    position: relative;
+    z-index: 1;
+}
+
+/* Prevent any floating text */
+.context-info * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Ensure no text appears outside the container */
+.context-info::before,
+.context-info::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* Modal Footer Styles */
+.action-modal-footer {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.mark-reviewed-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: #667eea;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.mark-reviewed-btn:hover {
+    background: #5a67d8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.reviewed-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: #f0fdf4;
+    color: #10b981;
+    border: 1px solid #bbf7d0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
 }
 </style>
