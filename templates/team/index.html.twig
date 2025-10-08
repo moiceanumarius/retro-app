@@ -169,11 +169,12 @@
                         <a href="{{ path('app_teams_show', {'id': team.id}) }}" class="btn btn-sm btn-primary">
                             View Team
                         </a>
-                        <a href="{{ path('app_teams_leave', {'id': team.id}) }}" 
-                           class="btn btn-sm btn-danger"
-                           onclick="return confirm('Are you sure you want to leave this team?')">
-                            Leave
-                        </a>
+                        <form method="post" action="{{ path('app_teams_leave', {'id': team.id}) }}" style="display: inline;">
+                            <input type="hidden" name="_token" value="{{ csrf_token('leave_team') }}">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to leave this team?')">
+                                Leave
+                            </button>
+                        </form>
                     </div>
                 </div>
                 {% endfor %}

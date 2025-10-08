@@ -56,14 +56,15 @@
                         Add Member
                     </a>
                 {% else %}
-                    <a href="{{ path('app_teams_leave', {'id': team.id}) }}" 
-                       class="btn btn-danger"
-                       onclick="return confirm('Are you sure you want to leave this team?')">
-                        <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path>
-                        </svg>
-                        Leave Team
-                    </a>
+                    <form method="post" action="{{ path('app_teams_leave', {'id': team.id}) }}" style="display: inline;">
+                        <input type="hidden" name="_token" value="{{ csrf_token('leave_team') }}">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to leave this team?')">
+                            <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path>
+                            </svg>
+                            Leave Team
+                        </button>
+                    </form>
                 {% endif %}
             </div>
         </div>
