@@ -4,9 +4,10 @@ namespace App\Controller;
 
 use App\Entity\RetrospectiveAction;
 use App\Entity\User;
-use App\Repository\RetrospectiveActionRepository;
+use App\Service\ActionService;
+use App\Service\ActionFilterService;
+use App\Service\TeamAccessService;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\Tools\Pagination\Paginator;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +18,9 @@ class ActionController extends AbstractController
 {
     public function __construct(
         private EntityManagerInterface $entityManager,
-        private RetrospectiveActionRepository $actionRepository
+        private ActionService $actionService,
+        private ActionFilterService $actionFilterService,
+        private TeamAccessService $teamAccessService
     )
     {
     }
@@ -30,34 +33,8 @@ class ActionController extends AbstractController
             return $this->redirectToRoute('app_login');
         }
 
-        // Get teams where user is owner or member
-        $userTeams = [];
-        
-        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERVISOR') || $this->isGranted('ROLE_FACILITATOR')) {
-            // For admins, supervisors and facilitators, show all teams
-            $userTeams = $this->entityManager->createQueryBuilder()
-                ->select('t')
-                ->from(\App\Entity\Team::class, 't')
-                ->leftJoin('t.teamMembers', 'tm')
-                ->leftJoin('tm.user', 'u')
-                ->where('t.owner = :user OR u = :user')
-                ->setParameter('user', $user)
-                ->orderBy('t.name', 'ASC')
-                ->getQuery()
-                ->getResult();
-        } else {
-            // For regular users, only show teams they're members of
-            $userTeams = $this->entityManager->createQueryBuilder()
-                ->select('t')
-                ->from(\App\Entity\Team::class, 't')
-                ->leftJoin('t.teamMembers', 'tm')
-                ->leftJoin('tm.user', 'u')
-                ->where('u = :user')
-                ->setParameter('user', $user)
-                ->orderBy('t.name', 'ASC')
-                ->getQuery()
-                ->getResult();
-        }
+        // Use TeamAccessService to get user teams
+        $userTeams = $this->teamAccessService->getUserTeamsByRole($user);
 
         return $this->render('actions/team_selection.html.twig', [
             'teams' => $userTeams,
@@ -77,134 +54,41 @@ class ActionController extends AbstractController
             throw $this->createNotFoundException('Team not found');
         }
 
-        // Check if user has access to this team
-        $hasAccess = false;
-        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERVISOR') || $this->isGranted('ROLE_FACILITATOR')) {
-            $hasAccess = true;
-        } else {
-            $hasAccess = $team->getOwner()->getId() === $user->getId() || 
-                        $team->getTeamMembers()->exists(fn($tm) => $tm->getUser()->getId() === $user->getId());
-        }
-
-        if (!$hasAccess) {
+        // Check if user has access to this team using TeamAccessService
+        if (!$this->teamAccessService->hasAccessToTeam($user, $teamId)) {
             throw $this->createAccessDeniedException('You do not have access to this team');
         }
 
+        // Get filter and pagination parameters
         $filterStatus = $request->query->get('status', 'all');
-        $filterReview = $request->query->get('review', ''); // New review filter
+        $filterReview = $request->query->get('review', '');
         $page = $request->query->getInt('page', 1);
-        $limit = $request->query->getInt('limit', 10); // Default 10 items per page
-        $sortField = $request->query->get('sort', 'created_at'); // Default sort by created_at
-        $sortDirection = $request->query->get('direction', 'desc'); // Default desc
+        $limit = $request->query->getInt('limit', 10);
+        $sortField = $request->query->get('sort', 'created_at');
+        $sortDirection = $request->query->get('direction', 'desc');
         
-        // Create query builder for pagination
-        $qb = $this->entityManager->createQueryBuilder();
-        $qb->select('a')
-           ->from(\App\Entity\RetrospectiveAction::class, 'a')
-           ->leftJoin('a.retrospective', 'r')
-           ->where('r.team = :team')
-           ->setParameter('team', $team);
+        // Use ActionFilterService to get paginated actions
+        $result = $this->actionFilterService->getPaginatedActionsForTeam(
+            $team,
+            $filterStatus,
+            $filterReview,
+            $page,
+            $limit,
+            $sortField,
+            $sortDirection
+        );
         
-        // Apply sorting
-        $allowedSortFields = ['created_at', 'due_date', 'status'];
-        $allowedDirections = ['asc', 'desc'];
-        
-        if (in_array($sortField, $allowedSortFields) && in_array($sortDirection, $allowedDirections)) {
-            $fieldMapping = [
-                'created_at' => 'a.createdAt',
-                'due_date' => 'a.dueDate',
-                'status' => 'a.status'
-            ];
-            
-            // For due_date, handle null values properly
-            if ($sortField === 'due_date') {
-                $qb->orderBy('CASE WHEN a.dueDate IS NULL THEN 1 ELSE 0 END', 'ASC') // NULLs last
-                   ->addOrderBy('a.dueDate', strtoupper($sortDirection));
-            } else {
-                $qb->orderBy($fieldMapping[$sortField], strtoupper($sortDirection));
-            }
-        } else {
-            // Default sorting
-            $qb->orderBy('a.createdAt', 'DESC');
-        }
-        
-        // Apply status filter if not 'all'
-        if ($filterStatus !== 'all') {
-            // Check if multiple statuses are provided (comma-separated)
-            if (strpos($filterStatus, ',') !== false) {
-                $statuses = explode(',', $filterStatus);
-                $qb->andWhere('a.status IN (:statuses)')
-                   ->setParameter('statuses', $statuses);
-            } else {
-                $qb->andWhere('a.status = :status')
-                   ->setParameter('status', $filterStatus);
-            }
-        }
-        
-        // Apply review filter
-        if ($filterReview === 'reviewed') {
-            $qb->andWhere('a.isReviewed = :reviewed')
-               ->setParameter('reviewed', true);
-        } elseif ($filterReview === 'not-reviewed') {
-            $qb->andWhere('a.isReviewed = :notReviewed')
-               ->setParameter('notReviewed', false);
-        }
-        
-        // Apply pagination
-        $offset = ($page - 1) * $limit;
-        $qb->setFirstResult($offset)
-           ->setMaxResults($limit);
-        
-        $paginator = new Paginator($qb);
-        $totalItems = count($paginator);
-        $totalPages = ceil($totalItems / $limit);
-        
-        // Get all actions for statistics (unfiltered)
-        $qbStats = $this->entityManager->createQueryBuilder();
-        $qbStats->select('a.status, COUNT(a) as count')
-                ->from(\App\Entity\RetrospectiveAction::class, 'a')
-                ->leftJoin('a.retrospective', 'r')
-                ->where('r.team = :team')
-                ->setParameter('team', $team)
-                ->groupBy('a.status');
-        
-        $statusStats = [];
-        foreach ($qbStats->getQuery()->getResult() as $stat) {
-            $statusStats[$stat['status']] = $stat['count'];
-        }
-        
-        // Calculate overdue actions
-        $qbOverdue = $this->entityManager->createQueryBuilder();
-        $qbOverdue->select('COUNT(a) as count')
-                  ->from(\App\Entity\RetrospectiveAction::class, 'a')
-                  ->leftJoin('a.retrospective', 'r')
-                  ->where('r.team = :team')
-                  ->andWhere('a.dueDate < :currentDate')
-                  ->andWhere('a.status NOT IN (:completedStatuses)')
-                  ->setParameter('team', $team)
-                  ->setParameter('currentDate', new \DateTime())
-                  ->setParameter('completedStatuses', ['completed', 'cancelled']);
-        
-        $overdueCount = $qbOverdue->getQuery()->getSingleScalarResult();
-        $statusStats['overdue'] = $overdueCount;
+        // Get status statistics using ActionFilterService
+        $statusStats = $this->actionFilterService->getStatusStatisticsForTeam($team);
 
         return $this->render('actions/index.html.twig', [
-            'actions' => $paginator,
+            'actions' => $result['actions'],
             'team' => $team,
             'filterStatus' => $filterStatus,
             'filterReview' => $filterReview,
             'sortField' => $sortField,
             'sortDirection' => $sortDirection,
-            'pagination' => [
-                'current_page' => $page,
-                'total_pages' => $totalPages,
-                'total_items' => $totalItems,
-                'items_per_page' => $limit,
-                'has_previous' => $page > 1,
-                'has_next' => $page < $totalPages,
-                'sort' => $sortField,
-                'direction' => $sortDirection,
-            ],
+            'pagination' => $result['pagination'],
             'statusStats' => $statusStats,
         ]);
     }
@@ -214,27 +98,11 @@ class ActionController extends AbstractController
     {
         $user = $this->getUser();
         
-        // Get actions based on user role and permissions
-        $actions = [];
-        
-        if ($user->hasRole('ROLE_ADMIN')) {
-            // Admin sees all actions
-            $actions = $this->actionRepository->findAll();
-        } elseif ($user->hasAnyRole(['ROLE_SUPERVISOR', 'ROLE_FACILITATOR'])) {
-            // Supervisors and facilitators see actions from their teams
-            $actions = $this->actionRepository->findBySupervisorOrFacilitator($user);
-        } else {
-            // Regular users see actions assigned to them
-            $actions = $this->actionRepository->findBy(['assignedTo' => $user]);
-        }
+        // Use ActionService to get actions based on user role
+        $actions = $this->actionService->getActionsForUser($user);
 
-        // Group actions by status
-        $groupedActions = [
-            'pending' => array_filter($actions, fn($action) => $action->getStatus() === 'pending'),
-            'in_progress' => array_filter($actions, fn($action) => $action->getStatus() === 'in_progress'),
-            'completed' => array_filter($actions, fn($action) => $action->getStatus() === 'completed'),
-            'cancelled' => array_filter($actions, fn($action) => $action->getStatus() === 'cancelled'),
-        ];
+        // Use ActionService to group actions by status
+        $groupedActions = $this->actionService->groupActionsByStatus($actions);
 
         return $this->render('actions/index.html.twig', [
             'actions' => $actions,
@@ -306,15 +174,8 @@ class ActionController extends AbstractController
     {
         $user = $this->getUser();
         
-        // Get user's actions for stats
-        $actions = [];
-        if ($user->hasRole('ROLE_ADMIN')) {
-            $actions = $this->actionRepository->findAll();
-        } elseif ($user->hasAnyRole(['ROLE_SUPERVISOR', 'ROLE_FACILITATOR'])) {
-            $actions = $this->actionRepository->findBySupervisorOrFacilitator($user);
-        } else {
-            $actions = $this->actionRepository->findBy(['assignedTo' => $user]);
-        }
+        // Use ActionService to get user's actions
+        $actions = $this->actionService->getActionsForUser($user);
 
         $stats = [
             'total' => count($actions),
@@ -322,11 +183,7 @@ class ActionController extends AbstractController
             'in_progress' => count(array_filter($actions, fn($a) => $a->getStatus() === 'in_progress')),
             'completed' => count(array_filter($actions, fn($a) => $a->getStatus() === 'completed')),
             'cancelled' => count(array_filter($actions, fn($a) => $a->getStatus() === 'cancelled')),
-            'overdue' => count(array_filter($actions, function($action) {
-                return $action->getDueDate() && 
-                       $action->getDueDate() < new \DateTime() && 
-                       !in_array($action->getStatus(), ['completed', 'cancelled']);
-            }))
+            'overdue' => count(array_filter($actions, fn($a) => $this->actionService->isActionOverdue($a)))
         ];
 
         return $this->json($stats);
@@ -669,26 +526,13 @@ class ActionController extends AbstractController
             return $this->json(['success' => false, 'message' => 'You must be logged in to mark actions as reviewed']);
         }
 
-        $action = $this->entityManager->find(\App\Entity\RetrospectiveAction::class, $id);
+        $action = $this->actionService->getActionWithAccessCheck($id, $user);
         if (!$action) {
-            return $this->json(['success' => false, 'message' => 'Action not found']);
-        }
-
-        // Check if user has permission to mark as reviewed
-        $hasPermission = $action->getAssignedTo() === $user ||
-                        $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
-                        $this->isGranted('ROLE_ADMIN') ||
-                        $this->isGranted('ROLE_SUPERVISOR') ||
-                        $this->isGranted('ROLE_FACILITATOR');
-
-        if (!$hasPermission) {
-            return $this->json(['success' => false, 'message' => 'You do not have permission to mark this action as reviewed']);
+            return $this->json(['success' => false, 'message' => 'Action not found or access denied']);
         }
 
         try {
-            $action->setIsReviewed(true);
-            $action->setUpdatedAt(new \DateTime());
-            $this->entityManager->flush();
+            $this->actionService->markAsReviewed($action);
 
             return $this->json([
                 'success' => true,
@@ -716,15 +560,16 @@ class ActionController extends AbstractController
         }
 
         try {
-            // Reset all reviewed actions
-            $qb = $this->entityManager->createQueryBuilder();
-            $qb->update(\App\Entity\RetrospectiveAction::class, 'ra')
-               ->set('ra.isReviewed', 'false')
-               ->set('ra.updatedAt', ':now')
-               ->where('ra.isReviewed = true')
-               ->setParameter('now', new \DateTime());
+            // Get team ID from request
+            $data = json_decode($request->getContent(), true);
+            $teamId = $data['teamId'] ?? null;
 
-            $updatedCount = $qb->getQuery()->execute();
+            if (!$teamId) {
+                return $this->json(['success' => false, 'message' => 'Team ID is required']);
+            }
+
+            // Use ActionService to reset reviewed actions for team
+            $updatedCount = $this->actionService->resetReviewedActionsForTeam($teamId);
 
             return $this->json([
                 'success' => true,
