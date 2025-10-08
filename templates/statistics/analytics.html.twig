@@ -10,14 +10,24 @@
             <h1>📊 Analytics Dashboard</h1>
             <p>Detailed insights and statistics for your teams</p>
         </div>
-        <div class="header-actions">
-            <button class="btn btn-secondary" id="refreshAllBtn">
-                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
-                </svg>
-                Refresh All
-            </button>
-        </div>
+           <div class="header-actions">
+               <select class="team-filter-select" id="teamFilter">
+                   <option value="">All Teams</option>
+                   {# Teams will be loaded via JavaScript from user context #}
+               </select>
+               <select class="period-filter-select" id="periodFilter">
+                   <option value="1month">1 Month</option>
+                   <option value="3months">3 Months</option>
+                   <option value="6months" selected>6 Months</option>
+                   <option value="1year">1 Year</option>
+               </select>
+               <button class="btn btn-secondary" id="refreshAllBtn">
+                   <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
+                       <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                   </svg>
+                   Refresh All
+               </button>
+           </div>
     </div>
 
     <!-- Loading State -->
@@ -111,6 +121,11 @@
                 </div>
                 
                 <div class="chart-container">
+                    <h3>Action Category Distribution</h3>
+                    <canvas id="categoryDistributionChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
                     <h3>Team Performance</h3>
                     <canvas id="teamPerformanceChart"></canvas>
                 </div>
@@ -118,6 +133,11 @@
                 <div class="chart-container">
                     <h3>Monthly Activity</h3>
                     <canvas id="monthlyActivityChart"></canvas>
+                </div>
+                
+                <div class="chart-container">
+                    <h3>Category Trend Over Time</h3>
+                    <canvas id="categoryTrendChart"></canvas>
                 </div>
             </div>
         </div>
@@ -238,6 +258,55 @@
 .header-actions {
     display: flex;
     gap: 1rem;
+    align-items: center;
+}
+
+.team-filter-select {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 200px;
+    font-weight: 500;
+}
+
+.team-filter-select:hover {
+    border-color: #cbd5e1;
+    background: #f9fafb;
+}
+
+.team-filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.period-filter-select {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.625rem 1rem;
+    font-size: 0.875rem;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 150px;
+    font-weight: 500;
+}
+
+.period-filter-select:hover {
+    border-color: #cbd5e1;
+    background: #f9fafb;
+}
+
+.period-filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 /* Loading State */
@@ -405,7 +474,7 @@
 
 .chart-container canvas {
     width: 100% !important;
-    height: 300px !important;
+    height: 400px !important;
 }
 
 /* Detailed Statistics */
@@ -516,6 +585,7 @@
 let charts = {};
 
 document.addEventListener('DOMContentLoaded', function() {
+    loadUserTeams();
     loadAnalytics();
     
     // Tab switching
@@ -530,12 +600,49 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('refreshAllBtn').addEventListener('click', function() {
         loadAnalytics(true);
     });
+    
+    // Team filter change
+    const teamFilter = document.getElementById('teamFilter');
+    if (teamFilter) {
+        teamFilter.addEventListener('change', function() {
+            loadAnalytics(true);
+        });
+    }
+    
+    // Period filter change
+    const periodFilter = document.getElementById('periodFilter');
+    if (periodFilter) {
+        periodFilter.addEventListener('change', function() {
+            loadAnalytics(true);
+        });
+    }
 });
+
+function loadUserTeams() {
+    // Fetch user's teams to populate dropdown
+    fetch('/statistics/teams', { credentials: 'include' })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success && data.data && Array.isArray(data.data)) {
+            const teamFilter = document.getElementById('teamFilter');
+            data.data.forEach(team => {
+                const option = document.createElement('option');
+                option.value = team.team_id;
+                option.textContent = team.team_name;
+                teamFilter.appendChild(option);
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error loading teams:', error);
+    });
+}
 
 function loadAnalytics(showLoading = false) {
     const loadingState = document.getElementById('loadingState');
     const errorState = document.getElementById('errorState');
     const analyticsContent = document.getElementById('analyticsContent');
+    const teamFilter = document.getElementById('teamFilter');
     
     if (showLoading) {
         loadingState.style.display = 'block';
@@ -543,20 +650,33 @@ function loadAnalytics(showLoading = false) {
         analyticsContent.style.display = 'none';
     }
     
+    // Get selected team ID and period
+    const teamId = teamFilter ? teamFilter.value : '';
+    const period = periodFilter ? periodFilter.value : '6months';
+    
+    // Build query parameters
+    const params = new URLSearchParams();
+    if (teamId) params.append('teamId', teamId);
+    params.append('period', period);
+    const queryString = params.toString();
+    const paramString = queryString ? `?${queryString}` : '';
+    
     // Load all analytics data
     Promise.all([
-        fetch('/statistics/retrospectives', { credentials: 'include' }).then(r => r.json()),
-        fetch('/statistics/actions', { credentials: 'include' }).then(r => r.json()),
-        fetch('/statistics/teams', { credentials: 'include' }).then(r => r.json()),
-        fetch('/statistics/completion-trend', { credentials: 'include' }).then(r => r.json()),
-        fetch('/statistics/monthly-activity', { credentials: 'include' }).then(r => r.json())
+        fetch(`/statistics/retrospectives${paramString}`, { credentials: 'include' }).then(r => r.json()),
+        fetch(`/statistics/actions${paramString}`, { credentials: 'include' }).then(r => r.json()),
+        fetch(`/statistics/teams${paramString}`, { credentials: 'include' }).then(r => r.json()),
+        fetch(`/statistics/completion-trend${paramString}`, { credentials: 'include' }).then(r => r.json()),
+        fetch(`/statistics/monthly-activity${paramString}`, { credentials: 'include' }).then(r => r.json()),
+        fetch(`/statistics/category-distribution${paramString}`, { credentials: 'include' }).then(r => r.json()),
+        fetch(`/statistics/category-trend${paramString}`, { credentials: 'include' }).then(r => r.json())
     ])
-    .then(([retrospectivesData, actionsData, teamsData, trendData, activityData]) => {
+    .then(([retrospectivesData, actionsData, teamsData, trendData, activityData, categoryData, categoryTrendData]) => {
         // Check if all responses are successful
-        if (retrospectivesData.success && actionsData.success && teamsData.success && trendData.success && activityData.success) {
+        if (retrospectivesData.success && actionsData.success && teamsData.success && trendData.success && activityData.success && categoryData.success && categoryTrendData.success) {
             updateOverviewCards(retrospectivesData.data, actionsData.data);
             updateDetailedTables(retrospectivesData.data, actionsData.data, teamsData.data);
-            initializeCharts(retrospectivesData.data, actionsData.data, teamsData.data, trendData.data, activityData.data);
+            initializeCharts(retrospectivesData.data, actionsData.data, teamsData.data, trendData.data, activityData.data, categoryData.data, categoryTrendData.data);
             
             loadingState.style.display = 'none';
             errorState.style.display = 'none';
@@ -649,12 +769,14 @@ function updateDetailedTables(retrospectivesData, actionsData, teamsData) {
     `;
 }
 
-function initializeCharts(retrospectivesData, actionsData, teamsData, trendData, activityData) {
+function initializeCharts(retrospectivesData, actionsData, teamsData, trendData, activityData, categoryData, categoryTrendData) {
     // Initialize Chart.js charts
     initializeCompletionTrendChart(trendData);
     initializeActionStatusChart(actionsData);
+    initializeCategoryDistributionChart(categoryData);
     initializeTeamPerformanceChart(teamsData);
     initializeMonthlyActivityChart(activityData);
+    initializeCategoryTrendChart(categoryTrendData);
 }
 
 function initializeCompletionTrendChart(data) {
@@ -744,6 +866,56 @@ function initializeActionStatusChart(data) {
     });
 }
 
+function initializeCategoryDistributionChart(data) {
+    const ctx = document.getElementById('categoryDistributionChart').getContext('2d');
+    
+    if (charts.categoryDistribution) {
+        charts.categoryDistribution.destroy();
+    }
+    
+    // Extract labels and values from category data
+    const categoryLabels = Object.keys(data || {});
+    const categoryValues = Object.values(data || {});
+    
+    charts.categoryDistribution = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: categoryLabels.length > 0 ? categoryLabels : ['No Data'],
+            datasets: [{
+                data: categoryValues.length > 0 ? categoryValues : [1],
+                backgroundColor: [
+                    '#f87171', // More vibrant red - What went wrong
+                    '#4ade80', // More vibrant green - What went good  
+                    '#fbbf24', // More vibrant yellow - What can be improved
+                    '#a78bfa', // More vibrant purple - Random feedback
+                    '#8b5cf6', // Purple - Extra
+                    '#ec4899'  // Pink - Extra
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                            return `${label}: ${value} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
 function initializeTeamPerformanceChart(data) {
     const ctx = document.getElementById('teamPerformanceChart').getContext('2d');
     
@@ -826,6 +998,79 @@ function initializeMonthlyActivityChart(data) {
                 y: {
                     beginAtZero: true
                 }
+            }
+        }
+    });
+}
+
+function initializeCategoryTrendChart(data) {
+    const ctx = document.getElementById('categoryTrendChart').getContext('2d');
+    
+    if (charts.categoryTrend) {
+        charts.categoryTrend.destroy();
+    }
+    
+    const months = data?.months || [];
+    const categories = data?.categories || {};
+    
+    // Prepare datasets for each category
+    const datasets = [];
+    const colors = [
+        { border: '#f87171', background: 'rgba(248, 113, 113, 0.1)' }, // Red - What went wrong
+        { border: '#4ade80', background: 'rgba(74, 222, 128, 0.1)' }, // Green - What went good
+        { border: '#fbbf24', background: 'rgba(251, 191, 36, 0.1)' }, // Yellow - What can be improved
+        { border: '#a78bfa', background: 'rgba(167, 139, 250, 0.1)' }  // Purple - Random feedback
+    ];
+    
+    let colorIndex = 0;
+    for (const [categoryName, categoryData] of Object.entries(categories)) {
+        const values = months.map(month => categoryData[month] || 0);
+        const color = colors[colorIndex % colors.length];
+        
+        datasets.push({
+            label: categoryName,
+            data: values,
+            borderColor: color.border,
+            backgroundColor: color.background,
+            tension: 0.4,
+            fill: false
+        });
+        
+        colorIndex++;
+    }
+    
+    charts.categoryTrend = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Items'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
             }
         }
     });

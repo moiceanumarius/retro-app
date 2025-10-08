@@ -9,6 +9,7 @@ use App\Repository\RetrospectiveActionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -46,11 +47,11 @@ class StatisticsController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/completion-trend', name: 'app_statistics_completion_trend', methods: ['GET'])]
-    public function getCompletionTrend(): JsonResponse
+    public function getCompletionTrend(Request $request): JsonResponse
     {
         $this->ensureAuthenticated();
         $user = $this->getUser();
-        $teamIds = $this->getUserTeamIds($user);
+        $teamIds = $this->getFilteredTeamIds($user, $request);
 
         $trendData = $this->retrospectiveStatsRepository->getCompletionTrendData($teamIds);
 
@@ -66,11 +67,11 @@ class StatisticsController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/monthly-activity', name: 'app_statistics_monthly_activity', methods: ['GET'])]
-    public function getMonthlyActivity(): JsonResponse
+    public function getMonthlyActivity(Request $request): JsonResponse
     {
         $this->ensureAuthenticated();
         $user = $this->getUser();
-        $teamIds = $this->getUserTeamIds($user);
+        $teamIds = $this->getFilteredTeamIds($user, $request);
 
         $activityData = $this->actionStatsRepository->getMonthlyActivityData($teamIds);
 
@@ -115,11 +116,11 @@ class StatisticsController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/retrospectives', name: 'app_statistics_retrospectives', methods: ['GET'])]
-    public function getRetrospectiveStatistics(): JsonResponse
+    public function getRetrospectiveStatistics(Request $request): JsonResponse
     {
         $this->ensureAuthenticated();
         $user = $this->getUser();
-        $teamIds = $this->getUserTeamIds($user);
+        $teamIds = $this->getFilteredTeamIds($user, $request);
 
         $basicStats = $this->retrospectiveStatsRepository->getBasicStatistics($teamIds);
         $participationStats = $this->retrospectiveStatsRepository->getParticipationStatistics($teamIds);
@@ -141,11 +142,11 @@ class StatisticsController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/actions', name: 'app_statistics_actions', methods: ['GET'])]
-    public function getActionStatistics(): JsonResponse
+    public function getActionStatistics(Request $request): JsonResponse
     {
         $this->ensureAuthenticated();
         $user = $this->getUser();
-        $teamIds = $this->getUserTeamIds($user);
+        $teamIds = $this->getFilteredTeamIds($user, $request);
 
         $actionStats = $this->actionStatsRepository->getActionStatistics($teamIds);
         $productivityStats = $this->actionStatsRepository->getProductivityStatistics($teamIds);
@@ -167,11 +168,23 @@ class StatisticsController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/dashboard', name: 'app_statistics_dashboard', methods: ['GET'])]
-    public function getDashboardStatistics(): JsonResponse
+    public function getDashboardStatistics(Request $request): JsonResponse
     {
         $this->ensureAuthenticated();
         $user = $this->getUser();
-        $teamIds = $this->getUserTeamIds($user);
+        
+        // Get team ID from query parameter (optional)
+        $teamId = $request->query->get('teamId');
+        
+        // Get user's team IDs
+        $userTeamIds = $this->getUserTeamIds($user);
+        
+        // Filter by specific team if provided and user has access to it
+        if ($teamId && in_array((int)$teamId, $userTeamIds)) {
+            $teamIds = [(int)$teamId];
+        } else {
+            $teamIds = $userTeamIds;
+        }
 
         $retrospectiveStats = $this->retrospectiveStatsRepository->getBasicStatistics($teamIds);
         $actionStats = $this->actionStatsRepository->getActionStatistics($teamIds);
@@ -199,11 +212,11 @@ class StatisticsController extends AbstractController
      * @return JsonResponse
      */
     #[Route('/teams', name: 'app_statistics_teams', methods: ['GET'])]
-    public function getTeamStatistics(): JsonResponse
+    public function getTeamStatistics(Request $request): JsonResponse
     {
         $this->ensureAuthenticated();
         $user = $this->getUser();
-        $teamIds = $this->getUserTeamIds($user);
+        $teamIds = $this->getFilteredTeamIds($user, $request);
 
         $teamStats = [];
 
@@ -230,6 +243,169 @@ class StatisticsController extends AbstractController
     }
 
     /**
+     * Endpoint pentru evoluția categoriilor în timp
+     * 
+     * @return JsonResponse
+     */
+    #[Route('/category-trend', name: 'app_statistics_category_trend', methods: ['GET'])]
+    public function getCategoryTrend(Request $request): JsonResponse
+    {
+        $this->ensureAuthenticated();
+        $user = $this->getUser();
+        $teamIds = $this->getFilteredTeamIds($user, $request);
+        
+        // Get period parameter (default: 6 months)
+        $period = $request->query->get('period', '6months');
+        $startDate = $this->getStartDateForPeriod($period);
+
+        // Get category trend over time using raw SQL
+        $sql = "
+            SELECT ri.category, 
+                   DATE_FORMAT(r.created_at, '%Y-%m') as month, 
+                   COUNT(ri.id) as count
+            FROM retrospective_item ri 
+            JOIN retrospective r ON ri.retrospective_id = r.id 
+            WHERE r.team_id IN (:teams) 
+            AND r.created_at >= :startDate
+            GROUP BY ri.category, month 
+            ORDER BY month ASC
+        ";
+        
+        // Convert team IDs to comma-separated string for IN clause
+        $teamIdsString = implode(',', array_map('intval', $teamIds));
+        
+        $sql = "
+            SELECT ri.category, 
+                   DATE_FORMAT(r.created_at, '%Y-%m') as month, 
+                   COUNT(ri.id) as count
+            FROM retrospective_item ri 
+            JOIN retrospective r ON ri.retrospective_id = r.id 
+            WHERE r.team_id IN ($teamIdsString) 
+            AND r.created_at >= :startDate
+            GROUP BY ri.category, month 
+            ORDER BY month ASC
+        ";
+        
+        $stmt = $this->entityManager->getConnection()->prepare($sql);
+        $stmt->bindValue('startDate', $startDate->format('Y-m-d H:i:s'));
+        $result = $stmt->executeQuery();
+        $results = $result->fetchAllAssociative();
+
+        // Process results from raw SQL
+        $categoryLabels = [
+            'wrong' => 'What went wrong',
+            'good' => 'What went good', 
+            'improved' => 'What can be improved',
+            'random' => 'Random feedback'
+        ];
+        
+        $trendData = [];
+        $months = [];
+        
+        // Initialize all categories
+        foreach ($categoryLabels as $key => $label) {
+            $trendData[$label] = [];
+        }
+        
+        // Process results
+        foreach ($results as $result) {
+            $category = $result['category'];
+            $month = $result['month'];
+            $count = $result['count'];
+            
+            $label = $categoryLabels[$category] ?? ucfirst($category);
+            if (!isset($trendData[$label])) {
+                $trendData[$label] = [];
+            }
+            $trendData[$label][$month] = $count;
+            
+            if (!in_array($month, $months)) {
+                $months[] = $month;
+            }
+        }
+        
+        // Fill missing months with 0
+        sort($months);
+        foreach ($trendData as $category => $data) {
+            foreach ($months as $month) {
+                if (!isset($data[$month])) {
+                    $trendData[$category][$month] = 0;
+                }
+            }
+            // Sort by month
+            ksort($trendData[$category]);
+        }
+
+        return $this->json([
+            'success' => true,
+            'data' => [
+                'months' => $months,
+                'categories' => $trendData
+            ]
+        ]);
+    }
+    
+    /**
+     * Get start date based on period parameter
+     */
+    private function getStartDateForPeriod(string $period): \DateTime
+    {
+        switch ($period) {
+            case '1month':
+                return new \DateTime('-1 month');
+            case '3months':
+                return new \DateTime('-3 months');
+            case '6months':
+                return new \DateTime('-6 months');
+            case '1year':
+                return new \DateTime('-1 year');
+            default:
+                return new \DateTime('-6 months'); // Default to 6 months
+        }
+    }
+
+    /**
+     * Endpoint pentru distribuția categoriilor de retrospective items
+     * 
+     * @return JsonResponse
+     */
+    #[Route('/category-distribution', name: 'app_statistics_category_distribution', methods: ['GET'])]
+    public function getCategoryDistribution(Request $request): JsonResponse
+    {
+        $this->ensureAuthenticated();
+        $user = $this->getUser();
+        $teamIds = $this->getFilteredTeamIds($user, $request);
+
+        // Get category distribution for retrospective items
+        $qb = $this->entityManager->createQueryBuilder();
+        $qb->select('ri.category, COUNT(ri) as count')
+           ->from(\App\Entity\RetrospectiveItem::class, 'ri')
+           ->join('ri.retrospective', 'r')
+           ->where('r.team IN (:teams)')
+           ->setParameter('teams', $teamIds)
+           ->groupBy('ri.category');
+
+        $categoryData = [];
+        $categoryLabels = [
+            'wrong' => 'What went wrong',
+            'good' => 'What went good', 
+            'improved' => 'What can be improved',
+            'random' => 'Random feedback'
+        ];
+
+        foreach ($qb->getQuery()->getResult() as $stat) {
+            $category = $stat['category'];
+            $label = $categoryLabels[$category] ?? ucfirst($category);
+            $categoryData[$label] = $stat['count'];
+        }
+
+        return $this->json([
+            'success' => true,
+            'data' => $categoryData
+        ]);
+    }
+
+    /**
      * Pagina de statistici (pentru Faza 2)
      * 
      * @return Response
@@ -249,6 +425,29 @@ class StatisticsController extends AbstractController
             'page_title' => 'Analytics Dashboard',
             'user' => $user
         ]);
+    }
+
+    /**
+     * Obține ID-urile echipelor filtrate pe baza request-ului
+     * 
+     * @param mixed $user
+     * @param Request $request
+     * @return array
+     */
+    private function getFilteredTeamIds($user, Request $request): array
+    {
+        // Get team ID from query parameter (optional)
+        $teamId = $request->query->get('teamId');
+        
+        // Get user's team IDs
+        $userTeamIds = $this->getUserTeamIds($user);
+        
+        // Filter by specific team if provided and user has access to it
+        if ($teamId && in_array((int)$teamId, $userTeamIds)) {
+            return [(int)$teamId];
+        }
+        
+        return $userTeamIds;
     }
 
     /**

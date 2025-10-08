@@ -3,6 +3,12 @@
     <div class="widget-header">
         <h3>📊 Team Statistics</h3>
         <div class="widget-controls">
+            <select class="team-filter-dropdown" id="teamFilterDropdown" title="Filter by Team">
+                <option value="">All Teams</option>
+                {% for team in user_teams %}
+                    <option value="{{ team.id }}">{{ team.name }}</option>
+                {% endfor %}
+            </select>
             <button class="refresh-btn" id="refreshStatsBtn" title="Refresh Statistics">
                 <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20">
                     <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
@@ -117,6 +123,30 @@
 .widget-controls {
     display: flex;
     gap: 0.5rem;
+    align-items: center;
+}
+
+.team-filter-dropdown {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: #4a5568;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 150px;
+}
+
+.team-filter-dropdown:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.team-filter-dropdown:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .refresh-btn {
@@ -270,6 +300,7 @@
 document.addEventListener('DOMContentLoaded', function() {
     const widget = document.getElementById('statisticsWidget');
     const refreshBtn = document.getElementById('refreshStatsBtn');
+    const teamFilterDropdown = document.getElementById('teamFilterDropdown');
     
     // Load statistics on page load
     loadStatistics();
@@ -278,6 +309,13 @@ document.addEventListener('DOMContentLoaded', function() {
     refreshBtn.addEventListener('click', function() {
         loadStatistics(true);
     });
+    
+    // Team filter change handler
+    if (teamFilterDropdown) {
+        teamFilterDropdown.addEventListener('change', function() {
+            loadStatistics(true);
+        });
+    }
     
     // Auto-refresh every 5 minutes
     setInterval(() => {
@@ -289,7 +327,11 @@ document.addEventListener('DOMContentLoaded', function() {
             widget.classList.add('loading');
         }
         
-        fetch('/statistics/dashboard', {
+        // Get selected team ID
+        const teamId = teamFilterDropdown ? teamFilterDropdown.value : '';
+        const url = teamId ? `/statistics/dashboard?teamId=${teamId}` : '/statistics/dashboard';
+        
+        fetch(url, {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
