@@ -695,53 +695,51 @@ function loadAnalytics(showLoading = false) {
 }
 
 function updateOverviewCards(retrospectivesData, actionsData) {
-    // Update overview cards with data - with defensive checks
-    const retroBasic = retrospectivesData?.basic || {};
-    const actionBasic = actionsData?.basic || {};
-    const actionProductivity = actionsData?.productivity || {};
+    // Update overview cards with data - data comes directly
+    const retroData = retrospectivesData || {};
+    const actionData = actionsData || {};
     
-    document.getElementById('totalRetrospectives').textContent = retroBasic.total_retrospectives || 0;
+    document.getElementById('totalRetrospectives').textContent = retroData.total_retrospectives || 0;
     document.getElementById('retrospectiveDetails').textContent = 
-        `${retroBasic.active_retrospectives || 0} active, ${retroBasic.completed_retrospectives || 0} completed`;
+        `${retroData.active_retrospectives || 0} active, ${retroData.completed_retrospectives || 0} completed`;
     
-    document.getElementById('totalActions').textContent = actionBasic.total_actions || 0;
+    document.getElementById('totalActions').textContent = actionData.total_actions || 0;
     document.getElementById('actionDetails').textContent = 
-        `${actionBasic.pending_actions || 0} pending, ${actionBasic.completed_actions || 0} completed`;
+        `${actionData.pending_actions || 0} pending, ${actionData.completed_actions || 0} completed`;
     
-    document.getElementById('completionRate').textContent = (retroBasic.completion_rate || 0) + '%';
+    document.getElementById('completionRate').textContent = (retroData.completion_rate || 0) + '%';
     document.getElementById('completionDetails').textContent = 
-        `Avg duration: ${retroBasic.average_duration_formatted || 'N/A'}`;
+        `Avg duration: ${retroData.average_duration_formatted || 'N/A'}`;
     
-    document.getElementById('productivityScore').textContent = (actionProductivity.velocity_actions_per_week || 0) + '/week';
+    document.getElementById('productivityScore').textContent = (actionData.velocity_actions_per_week || 0) + '/week';
     document.getElementById('productivityDetails').textContent = 
-        `${actionProductivity.actions_completed_last_30_days || 0} completed last 30 days`;
+        `${actionData.actions_completed_last_30_days || 0} completed last 30 days`;
 }
 
 function updateDetailedTables(retrospectivesData, actionsData, teamsData) {
-    // Update retrospectives table - with defensive checks
-    const retroBasic = retrospectivesData?.basic || {};
-    const actionBasic = actionsData?.basic || {};
-    const actionProductivity = actionsData?.productivity || {};
+    // Update retrospectives table - data comes directly
+    const retroData = retrospectivesData || {};
+    const actionData = actionsData || {};
     
     const retroTbody = document.getElementById('retrospectivesTableBody');
     retroTbody.innerHTML = `
-        <tr><td>Total Retrospectives</td><td>${retroBasic.total_retrospectives || 0}</td><td>-</td></tr>
-        <tr><td>Completed</td><td>${retroBasic.completed_retrospectives || 0}</td><td>-</td></tr>
-        <tr><td>Active</td><td>${retroBasic.active_retrospectives || 0}</td><td>-</td></tr>
-        <tr><td>Planned</td><td>${retroBasic.planned_retrospectives || 0}</td><td>-</td></tr>
-        <tr><td>Completion Rate</td><td>${retroBasic.completion_rate || 0}%</td><td>-</td></tr>
-        <tr><td>Average Duration</td><td>${retroBasic.average_duration_formatted || 'N/A'}</td><td>-</td></tr>
+        <tr><td>Total Retrospectives</td><td>${retroData.total_retrospectives || 0}</td><td>-</td></tr>
+        <tr><td>Completed</td><td>${retroData.completed_retrospectives || 0}</td><td>-</td></tr>
+        <tr><td>Active</td><td>${retroData.active_retrospectives || 0}</td><td>-</td></tr>
+        <tr><td>Planned</td><td>${retroData.planned_retrospectives || 0}</td><td>-</td></tr>
+        <tr><td>Completion Rate</td><td>${retroData.completion_rate || 0}%</td><td>-</td></tr>
+        <tr><td>Average Duration</td><td>${retroData.average_duration_formatted || 'N/A'}</td><td>-</td></tr>
     `;
     
     // Update actions table
     const actionsTbody = document.getElementById('actionsTableBody');
     actionsTbody.innerHTML = `
-        <tr><td>Total Actions</td><td>${actionBasic.total_actions || 0}</td><td>-</td></tr>
-        <tr><td>Pending</td><td>${actionBasic.pending_actions || 0}</td><td>-</td></tr>
-        <tr><td>In Progress</td><td>${actionBasic.in_progress_actions || 0}</td><td>-</td></tr>
-        <tr><td>Completed</td><td>${actionBasic.completed_actions || 0}</td><td>-</td></tr>
-        <tr><td>Overdue</td><td>${actionBasic.overdue_actions || 0}</td><td>-</td></tr>
-        <tr><td>Completion Rate</td><td>${actionBasic.completion_rate || 0}%</td><td>-</td></tr>
+        <tr><td>Total Actions</td><td>${actionData.total_actions || 0}</td><td>-</td></tr>
+        <tr><td>Pending</td><td>${actionData.pending_actions || 0}</td><td>-</td></tr>
+        <tr><td>In Progress</td><td>${actionData.in_progress_actions || 0}</td><td>-</td></tr>
+        <tr><td>Completed</td><td>${actionData.completed_actions || 0}</td><td>-</td></tr>
+        <tr><td>Overdue</td><td>${actionData.overdue_actions || 0}</td><td>-</td></tr>
+        <tr><td>Completion Rate</td><td>${actionData.completion_rate || 0}%</td><td>-</td></tr>
     `;
     
     // Update teams table
@@ -750,9 +748,9 @@ function updateDetailedTables(retrospectivesData, actionsData, teamsData) {
         teamsTbody.innerHTML = teamsData.data.map(team => `
             <tr>
                 <td>${team.team_name}</td>
-                <td>${team.retrospectives.total_retrospectives || 0}</td>
-                <td>${team.actions.total_actions || 0}</td>
-                <td>${team.retrospectives.completion_rate || 0}%</td>
+                <td>${team.retrospectives?.total || 0}</td>
+                <td>-</td>
+                <td>${team.retrospectives?.completion_rate || 0}%</td>
             </tr>
         `).join('');
     } else {
@@ -762,10 +760,10 @@ function updateDetailedTables(retrospectivesData, actionsData, teamsData) {
     // Update productivity table
     const productivityTbody = document.getElementById('productivityTableBody');
     productivityTbody.innerHTML = `
-        <tr><td>Actions Created (30 days)</td><td>${actionProductivity.actions_created_last_30_days || 0}</td><td>Last 30 days</td></tr>
-        <tr><td>Actions Completed (30 days)</td><td>${actionProductivity.actions_completed_last_30_days || 0}</td><td>Last 30 days</td></tr>
-        <tr><td>Velocity</td><td>${actionProductivity.velocity_actions_per_week || 0} actions/week</td><td>Current</td></tr>
-        <tr><td>Productivity Trend</td><td>${actionProductivity.productivity_trend || 'stable'}</td><td>vs Previous</td></tr>
+        <tr><td>Actions Created (30 days)</td><td>${actionData.actions_created_last_30_days || 0}</td><td>Last 30 days</td></tr>
+        <tr><td>Actions Completed (30 days)</td><td>${actionData.actions_completed_last_30_days || 0}</td><td>Last 30 days</td></tr>
+        <tr><td>Velocity</td><td>${actionData.velocity_actions_per_week || 0} actions/week</td><td>Current</td></tr>
+        <tr><td>Productivity Trend</td><td>${actionData.productivity_trend || 'stable'}</td><td>vs Previous</td></tr>
     `;
 }
 
@@ -833,7 +831,8 @@ function initializeActionStatusChart(data) {
         charts.actionStatus.destroy();
     }
     
-    const actionBasic = data?.basic || {};
+    // Data comes directly, not nested in 'basic'
+    const actionData = data || {};
     
     charts.actionStatus = new Chart(ctx, {
         type: 'doughnut',
@@ -841,10 +840,10 @@ function initializeActionStatusChart(data) {
             labels: ['Completed', 'Pending', 'In Progress', 'Overdue'],
             datasets: [{
                 data: [
-                    actionBasic.completed_actions || 0,
-                    actionBasic.pending_actions || 0,
-                    actionBasic.in_progress_actions || 0,
-                    actionBasic.overdue_actions || 0
+                    actionData.completed_actions || 0,
+                    actionData.pending_actions || 0,
+                    actionData.in_progress_actions || 0,
+                    actionData.overdue_actions || 0
                 ],
                 backgroundColor: [
                     '#10b981',
