@@ -73,17 +73,31 @@ class ActionService
      */
     public function resetReviewedActionsForTeam(int $teamId): int
     {
+        // First, get all action IDs for the team
         $qb = $this->entityManager->createQueryBuilder();
-        $qb->update(\App\Entity\RetrospectiveAction::class, 'a')
-           ->set('a.isReviewed', ':reviewed')
+        $qb->select('a.id')
+           ->from(\App\Entity\RetrospectiveAction::class, 'a')
            ->leftJoin('a.retrospective', 'r')
            ->where('r.team = :teamId')
            ->andWhere('a.isReviewed = :currentReviewed')
-           ->setParameter('reviewed', false)
            ->setParameter('teamId', $teamId)
            ->setParameter('currentReviewed', true);
 
-        return $qb->getQuery()->execute();
+        $actionIds = array_column($qb->getQuery()->getResult(), 'id');
+
+        if (empty($actionIds)) {
+            return 0;
+        }
+
+        // Now update those actions
+        $qbUpdate = $this->entityManager->createQueryBuilder();
+        $qbUpdate->update(\App\Entity\RetrospectiveAction::class, 'a')
+           ->set('a.isReviewed', ':reviewed')
+           ->where('a.id IN (:actionIds)')
+           ->setParameter('reviewed', false)
+           ->setParameter('actionIds', $actionIds);
+
+        return $qbUpdate->getQuery()->execute();
     }
 
     /**

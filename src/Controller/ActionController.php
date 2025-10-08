@@ -592,32 +592,14 @@ class ActionController extends AbstractController
         }
 
         try {
-            $action = $this->actionRepository->find($id);
+            // Use ActionService to get action with access check
+            $action = $this->actionService->getActionWithAccessCheck($id, $user);
             if (!$action) {
-                return $this->json(['success' => false, 'message' => 'Action not found'], 404);
+                return $this->json(['success' => false, 'message' => 'Action not found or access denied'], 404);
             }
 
-            // Check permissions (action creator, team owner, admin, supervisor, facilitator)
-            $hasAccess = false;
-            if ($action->getCreatedBy() === $user) {
-                $hasAccess = true;
-            } elseif ($action->getAssignedTo()) {
-                $team = $action->getAssignedTo()->getTeams()->first();
-                if ($team && $team->getOwner() === $user) {
-                    $hasAccess = true;
-                }
-            }
-            
-            if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_SUPERVISOR') || $this->isGranted('ROLE_FACILITATOR')) {
-                $hasAccess = true;
-            }
-
-            if (!$hasAccess) {
-                return $this->json(['success' => false, 'message' => 'You do not have permission to delete this action'], 403);
-            }
-
-            $this->entityManager->remove($action);
-            $this->entityManager->flush();
+            // Use ActionService to delete action
+            $this->actionService->deleteAction($action);
 
             return $this->json(['success' => true, 'message' => 'Action deleted successfully']);
         } catch (\Exception $e) {

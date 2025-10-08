@@ -21,6 +21,12 @@ use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Http\Attribute\IsCsrfTokenValid;
 use App\Service\ConnectedUsersService;
+use App\Service\RetrospectiveService;
+use App\Service\RetrospectiveItemService;
+use App\Service\RetrospectiveGroupService;
+use App\Service\VotingService;
+use App\Service\TeamService;
+use App\Service\OrganizationService;
 use Symfony\Component\Mercure\HubInterface;
 use Symfony\Component\Mercure\Update;
 use Psr\Log\LoggerInterface;
@@ -31,7 +37,13 @@ class RetrospectiveController extends AbstractController
         private EntityManagerInterface $entityManager,
         private HubInterface $hub,
         private LoggerInterface $logger,
-        private ConnectedUsersService $connectedUsersService
+        private ConnectedUsersService $connectedUsersService,
+        private RetrospectiveService $retrospectiveService,
+        private RetrospectiveItemService $itemService,
+        private RetrospectiveGroupService $groupService,
+        private VotingService $votingService,
+        private TeamService $teamService,
+        private OrganizationService $organizationService
     ) {
     }
 
@@ -40,18 +52,8 @@ class RetrospectiveController extends AbstractController
     {
         $user = $this->getUser();
         
-        // Get retrospectives where user is facilitator or active team member
-        $retrospectives = $this->entityManager->getRepository(Retrospective::class)
-            ->createQueryBuilder('r')
-            ->join('r.team', 't')
-            ->leftJoin('t.teamMembers', 'tm')
-            ->where('r.facilitator = :user OR (tm.user = :user AND tm.isActive = :active)')
-            ->andWhere('t.isActive = :active')
-            ->setParameter('user', $user)
-            ->setParameter('active', true)
-            ->orderBy('r.createdAt', 'DESC')
-            ->getQuery()
-            ->getResult();
+        // Use RetrospectiveService to get retrospectives
+        $retrospectives = $this->retrospectiveService->getRetrospectivesForUser($user);
 
         return $this->render('retrospective/index.html.twig', [
             'retrospectives' => $retrospectives,
@@ -61,19 +63,15 @@ class RetrospectiveController extends AbstractController
     #[Route('/teams/{id}/retrospectives', name: 'app_team_retrospectives')]
     public function teamRetrospectives(int $id): Response
     {
-        $team = $this->entityManager->getRepository(Team::class)->find($id);
+        $user = $this->getUser();
+        $team = $this->teamService->getTeamWithAccessCheck($id, $user);
         
         if (!$team) {
-            throw $this->createNotFoundException('Team not found');
+            throw $this->createNotFoundException('Team not found or access denied');
         }
 
-        // Check if user has access to this team
-        if (!$this->hasTeamAccess($team)) {
-            throw $this->createAccessDeniedException('You do not have access to this team');
-        }
-
-        $retrospectives = $this->entityManager->getRepository(Retrospective::class)
-            ->findBy(['team' => $team], ['createdAt' => 'DESC']);
+        // Use RetrospectiveService to get retrospectives for team
+        $retrospectives = $this->retrospectiveService->getRetrospectivesForTeam($team);
 
         return $this->render('retrospective/team.html.twig', [
             'team' => $team,
@@ -86,13 +84,13 @@ class RetrospectiveController extends AbstractController
     {
         $user = $this->getUser();
         
-        // Only Facilitator, Supervisor, and Administrator can create retrospectives
-        if (!$user->hasRole('ROLE_ADMIN') && !$user->hasRole('ROLE_SUPERVISOR') && !$user->hasRole('ROLE_FACILITATOR')) {
+        // Use RetrospectiveService to check permissions
+        if (!$this->retrospectiveService->canCreateRetrospectives($user)) {
             throw $this->createAccessDeniedException('Only Administrators, Supervisors, and Facilitators can create retrospectives');
         }
 
-        // Check if user has any teams available
-        $availableTeams = $this->getUserTeams($user);
+        // Use OrganizationService to get user teams
+        $availableTeams = $this->organizationService->getUserTeamsInOrganization($user);
         
         if (empty($availableTeams)) {
             $this->addFlash('error', 'You must be part of a team to create retrospectives.');
@@ -106,8 +104,8 @@ class RetrospectiveController extends AbstractController
         $form->handleRequest($request);
         
         if ($form->isSubmitted() && $form->isValid()) {
-            $this->entityManager->persist($retrospective);
-            $this->entityManager->flush();
+            // Use RetrospectiveService to create retrospective
+            $this->retrospectiveService->createRetrospective($retrospective);
             
             $this->addFlash('success', '✅ Retrospective created successfully!');
             
@@ -134,27 +132,15 @@ class RetrospectiveController extends AbstractController
             throw $this->createAccessDeniedException('You do not have access to this retrospective');
         }
 
-        // Get items grouped by category
+        // Use ItemService to get items
         $currentUser = $this->getUser();
-        
-        // In feedback step, users only see their own posts
-        if ($retrospective->isInStep('feedback')) {
-            $items = $this->entityManager->getRepository(RetrospectiveItem::class)
-                ->findBy([
-                    'retrospective' => $retrospective,
-                    'author' => $currentUser
-                ], ['createdAt' => 'ASC']);
-        } else {
-            // In other steps, users see all posts
-            $items = $this->entityManager->getRepository(RetrospectiveItem::class)
-                ->findBy(['retrospective' => $retrospective], ['createdAt' => 'ASC']);
-        }
+        $items = $this->itemService->getItemsForRetrospective($retrospective, $currentUser);
 
-        // Filter items that are not in groups
-        $wrongItems = array_filter($items, fn($item) => $item->isWrong() && !$item->getGroup());
-        $goodItems = array_filter($items, fn($item) => $item->isGood() && !$item->getGroup());
-        $improvedItems = array_filter($items, fn($item) => $item->isImproved() && !$item->getGroup());
-        $randomItems = array_filter($items, fn($item) => $item->isRandom() && !$item->getGroup());
+        // Filter items by category (not in groups)
+        $wrongItems = $this->itemService->filterItemsByCategory($items, 'wrong');
+        $goodItems = $this->itemService->filterItemsByCategory($items, 'good');
+        $improvedItems = $this->itemService->filterItemsByCategory($items, 'improved');
+        $randomItems = $this->itemService->filterItemsByCategory($items, 'random');
 
         // Get groups
         $groups = $this->entityManager->getRepository(RetrospectiveGroup::class)
@@ -165,28 +151,27 @@ class RetrospectiveController extends AbstractController
         $improvedGroups = array_filter($groups, fn($group) => $group->getPositionX() == 2);
         $randomGroups = array_filter($groups, fn($group) => $group->getPositionX() == 3);
 
-        // Combine and sort items and groups by positionY for each category
-        $wrongCombined = $this->combineAndSortByPosition($wrongItems, $wrongGroups);
-        $goodCombined = $this->combineAndSortByPosition($goodItems, $goodGroups);
-        $improvedCombined = $this->combineAndSortByPosition($improvedItems, $improvedGroups);
-        $randomCombined = $this->combineAndSortByPosition($randomItems, $randomGroups);
+        // Use GroupService to combine and sort items and groups
+        $wrongCombined = $this->groupService->combineAndSortByPosition($wrongItems, $wrongGroups);
+        $goodCombined = $this->groupService->combineAndSortByPosition($goodItems, $goodGroups);
+        $improvedCombined = $this->groupService->combineAndSortByPosition($improvedItems, $improvedGroups);
+        $randomCombined = $this->groupService->combineAndSortByPosition($randomItems, $randomGroups);
 
         // Get actions
         $actions = $this->entityManager->getRepository(RetrospectiveAction::class)
             ->findBy(['retrospective' => $retrospective], ['createdAt' => 'ASC']);
 
-        // Prepare sorted items with aggregated votes for actions and completed phases
+        // Use VotingService to get items with aggregated votes
         $sortedItemsWithVotes = [];
         if ($retrospective->isInStep('actions') || $retrospective->isCompleted()) {
-            $sortedItemsWithVotes = $this->getItemsWithAggregatedVotes($items, $groups);
+            $sortedItemsWithVotes = $this->votingService->getItemsWithAggregatedVotes($items, $groups);
         }
 
-        // Get connected users (simplified - in real app you'd use Redis or similar)
+        // Get connected users
         $connectedUsers = $this->connectedUsersService->getConnectedUsers($id);
-        error_log("RetrospectiveController: Connected users sent to template: " . json_encode($connectedUsers));
 
-        // Calculate remaining votes for current user
-        $remainingVotes = $this->calculateRemainingVotes($retrospective, $currentUser);
+        // Use VotingService to calculate remaining votes
+        $remainingVotes = $this->votingService->calculateRemainingVotes($retrospective, $currentUser);
 
         return $this->render('retrospective/show.html.twig', [
             'retrospective' => $retrospective,
@@ -218,8 +203,10 @@ class RetrospectiveController extends AbstractController
             throw $this->createNotFoundException('Retrospective not found');
         }
 
-        // Only facilitator or team owner can edit
-        if ($retrospective->getFacilitator() !== $this->getUser() && $retrospective->getTeam()->getOwner() !== $this->getUser()) {
+        $user = $this->getUser();
+        
+        // Use RetrospectiveService to check permissions
+        if (!$this->retrospectiveService->canManageRetrospective($retrospective, $user)) {
             throw $this->createAccessDeniedException('Only the facilitator or team owner can edit this retrospective');
         }
 
@@ -227,8 +214,8 @@ class RetrospectiveController extends AbstractController
         $form->handleRequest($request);
         
         if ($form->isSubmitted() && $form->isValid()) {
-            $retrospective->setUpdatedAt(new \DateTime());
-            $this->entityManager->flush();
+            // Use RetrospectiveService to update
+            $this->retrospectiveService->updateRetrospective($retrospective);
             
             $this->addFlash('success', '✅ Retrospective updated successfully!');
             
@@ -250,17 +237,15 @@ class RetrospectiveController extends AbstractController
             throw $this->createNotFoundException('Retrospective not found');
         }
 
-        // Only facilitator can start
-        if ($retrospective->getFacilitator() !== $this->getUser()) {
+        $user = $this->getUser();
+        
+        // Use RetrospectiveService to check if user is facilitator
+        if (!$this->retrospectiveService->isFacilitator($retrospective, $user)) {
             throw $this->createAccessDeniedException('Only the facilitator can start this retrospective');
         }
 
-        $retrospective->setStatus('active');
-        $retrospective->setStartedAt(new \DateTime());
-        $retrospective->setCurrentStep('feedback');
-        $retrospective->setUpdatedAt(new \DateTime());
-        
-        $this->entityManager->flush();
+        // Use RetrospectiveService to start retrospective
+        $this->retrospectiveService->startRetrospective($retrospective);
         
         $this->addFlash('success', '✅ Retrospective started!');
         
@@ -276,28 +261,15 @@ class RetrospectiveController extends AbstractController
             throw $this->createNotFoundException('Retrospective not found');
         }
 
-        // Only facilitator can complete
-        if ($retrospective->getFacilitator() !== $this->getUser()) {
+        $user = $this->getUser();
+        
+        // Use RetrospectiveService to check if user is facilitator
+        if (!$this->retrospectiveService->isFacilitator($retrospective, $user)) {
             throw $this->createAccessDeniedException('Only the facilitator can complete this retrospective');
         }
 
-        $retrospective->setStatus('completed');
-        $retrospective->setCurrentStep('completed');
-        $retrospective->setCompletedAt(new \DateTime());
-        $retrospective->setUpdatedAt(new \DateTime());
-        
-        $this->entityManager->flush();
-        
-        // Broadcast step change to all connected clients
-        $update = new Update(
-            "retrospective/{$id}/step",
-            json_encode([
-                'type' => 'step_changed',
-                'nextStep' => 'completed',
-                'message' => 'Retrospective completed successfully!'
-            ])
-        );
-        $this->hub->publish($update);
+        // Use RetrospectiveService to complete retrospective
+        $this->retrospectiveService->completeRetrospective($retrospective);
         
         // Check if this is an AJAX request
         if ($request->isXmlHttpRequest()) {
@@ -638,48 +610,24 @@ class RetrospectiveController extends AbstractController
     #[Route('/retrospectives/{id}/start-timer', name: 'app_retrospectives_start_timer', methods: ['POST'])]
     public function startTimer(Request $request, int $id): Response
     {
-        
         $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
         
         if (!$retrospective) {
-            // error_log("Retrospective not found for ID: $id");
             throw $this->createNotFoundException('Retrospective not found');
         }
 
         $user = $this->getUser();
-        // error_log("Current user: " . ($user ? $user->getEmail() : 'null'));
-        // error_log("Facilitator: " . $retrospective->getFacilitator()->getEmail());
 
-        // Only facilitator can start timer
-        if ($retrospective->getFacilitator() !== $user) {
-            // error_log("Access denied: user is not facilitator");
+        // Use RetrospectiveService to check if user is facilitator
+        if (!$this->retrospectiveService->isFacilitator($retrospective, $user)) {
             throw $this->createAccessDeniedException('Only the facilitator can start the timer');
         }
 
         $data = json_decode($request->getContent(), true);
-        $duration = $data['duration'] ?? 10; // default 10 minutes
+        $duration = $data['duration'] ?? 10;
         
-        // error_log("Duration: $duration");
-        
-        $retrospective->setTimerDuration((int)$duration);
-        $retrospective->setTimerStartedAt(new \DateTime());
-        $retrospective->setUpdatedAt(new \DateTime());
-        
-        $this->entityManager->flush();
-        
-        // Broadcast timer start to all connected clients
-        $update = new Update(
-            "retrospective/{$id}/timer",
-            json_encode([
-                'type' => 'timer_started',
-                'duration' => $duration,
-                'remainingSeconds' => $duration * 60,
-                'startedAt' => $retrospective->getTimerStartedAt()->format('Y-m-d H:i:s')
-            ])
-        );
-        $this->hub->publish($update);
-        
-        // error_log("Timer started successfully");
+        // Use RetrospectiveService to start timer
+        $this->retrospectiveService->startTimer($retrospective, (int)$duration);
         
         return $this->json([
             'success' => true,
@@ -691,52 +639,21 @@ class RetrospectiveController extends AbstractController
     #[Route('/retrospectives/{id}/stop-timer', name: 'app_retrospectives_stop_timer', methods: ['POST'])]
     public function stopTimer(Request $request, int $id): Response
     {
-        // error_log("stopTimer called for retrospective ID: $id");
-        
         $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
         
         if (!$retrospective) {
-            // error_log("Retrospective not found for ID: $id");
             throw $this->createNotFoundException('Retrospective not found');
         }
 
         $user = $this->getUser();
-        // error_log("Current user: " . ($user ? $user->getEmail() : 'null'));
-        // error_log("Facilitator: " . $retrospective->getFacilitator()->getEmail());
 
-        // Only facilitator can stop timer
-        if ($retrospective->getFacilitator() !== $user) {
-            // error_log("Access denied: user is not facilitator");
+        // Use RetrospectiveService to check if user is facilitator
+        if (!$this->retrospectiveService->isFacilitator($retrospective, $user)) {
             throw $this->createAccessDeniedException('Only the facilitator can stop the timer');
         }
 
-        // Clear timer data
-        $retrospective->setTimerDuration(null);
-        $retrospective->setTimerStartedAt(null);
-        $retrospective->setUpdatedAt(new \DateTime());
-        
-        // Clear all timer like states for this retrospective
-        $timerLikeRepository = $this->entityManager->getRepository(\App\Entity\TimerLike::class);
-        $timerLikes = $timerLikeRepository->findBy(['retrospective' => $retrospective]);
-        
-        foreach ($timerLikes as $timerLike) {
-            $this->entityManager->remove($timerLike);
-        }
-        
-        $this->entityManager->flush();
-        
-        // Broadcast timer stop to all connected clients
-        $update = new Update(
-            "retrospective/{$id}/timer",
-            json_encode([
-                'type' => 'timer_stopped',
-                'message' => 'Timer stopped by facilitator',
-                'timerLikeStatesCleared' => true
-            ])
-        );
-        $this->hub->publish($update);
-        
-        // error_log("Timer stopped successfully");
+        // Use RetrospectiveService to stop timer
+        $this->retrospectiveService->stopTimer($retrospective);
         
         return $this->json([
             'success' => true,
@@ -753,43 +670,15 @@ class RetrospectiveController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
         }
 
-        // Only facilitator can move to next step
-        if ($retrospective->getFacilitator() !== $this->getUser()) {
+        $user = $this->getUser();
+        
+        // Use RetrospectiveService to check if user is facilitator
+        if (!$this->retrospectiveService->isFacilitator($retrospective, $user)) {
             return $this->json(['success' => false, 'message' => 'Only the facilitator can move to the next step'], 403);
         }
 
-        // Define step progression
-        $stepProgression = [
-            'feedback' => 'review',
-            'review' => 'voting',
-            'voting' => 'actions',
-            'actions' => 'completed'
-        ];
-
-        $currentStep = $retrospective->getCurrentStep();
-        $nextStep = $stepProgression[$currentStep] ?? 'completed';
-
-        $retrospective->setCurrentStep($nextStep);
-        $retrospective->setUpdatedAt(new \DateTime());
-
-        // If moving to completed, mark retrospective as completed
-        if ($nextStep === 'completed') {
-            $retrospective->setStatus('completed');
-            $retrospective->setCompletedAt(new \DateTime());
-        }
-        
-        $this->entityManager->flush();
-        
-        // Broadcast step change to all connected clients
-        $update = new Update(
-            "retrospective/{$id}/step",
-            json_encode([
-                'type' => 'step_changed',
-                'nextStep' => $nextStep,
-                'message' => 'Moved to next step: ' . ucfirst($nextStep)
-            ])
-        );
-        $this->hub->publish($update);
+        // Use RetrospectiveService to move to next step
+        $nextStep = $this->retrospectiveService->moveToNextStep($retrospective);
         
         return $this->json([
             'success' => true,
@@ -801,24 +690,19 @@ class RetrospectiveController extends AbstractController
     #[Route('/retrospectives/{id}/add-item-ajax', name: 'app_retrospectives_add_item_ajax', methods: ['POST'])]
     public function addItemAjax(Request $request, int $id): Response
     {
-        // error_log("addItemAjax called for retrospective ID: $id");
-        
         $retrospective = $this->entityManager->getRepository(Retrospective::class)->find($id);
         
         if (!$retrospective) {
-            // error_log("Retrospective not found: $id");
             return $this->json(['success' => false, 'message' => 'Retrospective not found'], 404);
         }
 
         // Check access
         if (!$this->hasTeamAccess($retrospective->getTeam())) {
-            // error_log("Access denied for retrospective: $id");
             return $this->json(['success' => false, 'message' => 'Access denied'], 403);
         }
 
         // Only active retrospectives in feedback step can have items added
         if (!$retrospective->isActive() || !$retrospective->isInStep('feedback')) {
-            // error_log("Retrospective not active or not in feedback step. Active: " . ($retrospective->isActive() ? 'yes' : 'no') . ", Step: " . $retrospective->getCurrentStep());
             return $this->json(['success' => false, 'message' => 'Items can only be added during the feedback phase'], 400);
         }
 
@@ -826,87 +710,30 @@ class RetrospectiveController extends AbstractController
         $content = $data['content'] ?? null;
         $category = $data['category'] ?? null;
 
-        // error_log("Request data: " . json_encode($data));
-        // error_log("Content: $content, Category: $category");
-
         if (!$content || !$category) {
-            // error_log("Missing content or category");
             return $this->json(['success' => false, 'message' => 'Content and category are required'], 400);
         }
 
-        $item = new RetrospectiveItem();
-        $item->setRetrospective($retrospective);
-        $item->setAuthor($this->getUser());
-        $item->setContent($content);
-        $item->setCategory($category);
-        
-        // Set position to the end of the column
-        $existingItems = $this->entityManager->getRepository(RetrospectiveItem::class)
-            ->findBy(['retrospective' => $retrospective, 'category' => $category], ['position' => 'DESC'], 1);
-        $item->setPosition($existingItems ? $existingItems[0]->getPosition() + 1 : 0);
-        
-        // error_log("Creating item with content: $content, category: $category");
-        
         try {
-            $this->entityManager->persist($item);
-            $this->entityManager->flush();
-            // error_log("Item created successfully with ID: " . $item->getId());
+            // Use ItemService to create item
+            $item = $this->itemService->createItem($retrospective, $this->getUser(), $content, $category);
+            
+            return $this->json([
+                'success' => true,
+                'item' => [
+                    'id' => $item->getId(),
+                    'content' => $item->getContent(),
+                    'category' => $item->getCategory(),
+                    'author' => [
+                        'firstName' => $item->getAuthor()->getFirstName(),
+                        'lastName' => $item->getAuthor()->getLastName()
+                    ],
+                    'createdAt' => $item->getCreatedAt()->format('H:i')
+                ]
+            ]);
         } catch (\Exception $e) {
-            // error_log("Error creating item: " . $e->getMessage());
             return $this->json(['success' => false, 'message' => 'Failed to create item'], 500);
         }
-        
-        // Broadcast new item to all connected clients
-        $update = new Update(
-            "retrospective/{$id}/items",
-            json_encode([
-                'type' => 'item_added',
-                'item' => [
-                    'id' => $item->getId(),
-                    'content' => $item->getContent(),
-                    'category' => $item->getCategory(),
-                    'author' => [
-                        'firstName' => $item->getAuthor()->getFirstName(),
-                        'lastName' => $item->getAuthor()->getLastName()
-                    ],
-                    'createdAt' => $item->getCreatedAt()->format('H:i')
-                ]
-            ])
-        );
-        $this->hub->publish($update);
-        
-        // Also broadcast to general retrospective topic
-        $update2 = new Update(
-            "retrospective/{$id}",
-            json_encode([
-                'type' => 'item_added',
-                'item' => [
-                    'id' => $item->getId(),
-                    'content' => $item->getContent(),
-                    'category' => $item->getCategory(),
-                    'author' => [
-                        'firstName' => $item->getAuthor()->getFirstName(),
-                        'lastName' => $item->getAuthor()->getLastName()
-                    ],
-                    'createdAt' => $item->getCreatedAt()->format('H:i')
-                ]
-            ])
-        );
-        $this->hub->publish($update2);
-        
-        return $this->json([
-            'success' => true,
-            'item' => [
-                'id' => $item->getId(),
-                'content' => $item->getContent(),
-                'category' => $item->getCategory(),
-                'author' => [
-                    'firstName' => $item->getAuthor()->getFirstName(),
-                    'lastName' => $item->getAuthor()->getLastName()
-                ],
-                'createdAt' => $item->getCreatedAt()->format('H:i')
-            ]
-        ]);
     }
 
     #[Route('/retrospectives/{id}/update-item-ajax', name: 'app_retrospectives_update_item_ajax', methods: ['POST'])]
@@ -937,22 +764,15 @@ class RetrospectiveController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Item not found'], 404);
         }
 
-        // Only the author can edit their item
         $currentUser = $this->getUser();
-        $itemAuthor = $item->getAuthor();
         
-        // error_log("Update item - Current user ID: " . ($currentUser ? $currentUser->getId() : 'null'));
-        // error_log("Update item - Item author ID: " . ($itemAuthor ? $itemAuthor->getId() : 'null'));
-        // error_log("Update item - Users match: " . ($currentUser && $itemAuthor && $currentUser->getId() === $itemAuthor->getId() ? 'yes' : 'no'));
-        
-        if (!$currentUser || !$itemAuthor || $currentUser->getId() !== $itemAuthor->getId()) {
+        // Use ItemService to check if user can edit
+        if (!$this->itemService->canEditItem($item, $currentUser)) {
             return $this->json(['success' => false, 'message' => 'You can only edit your own items'], 403);
         }
 
-        $item->setContent($content);
-        $item->setUpdatedAt(new \DateTime());
-        
-        $this->entityManager->flush();
+        // Use ItemService to update item
+        $this->itemService->updateItem($item, $content);
         
         return $this->json([
             'success' => true,
@@ -987,20 +807,15 @@ class RetrospectiveController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Item not found'], 404);
         }
 
-        // Only the author can delete their item
         $currentUser = $this->getUser();
-        $itemAuthor = $item->getAuthor();
         
-        // error_log("Delete item - Current user ID: " . ($currentUser ? $currentUser->getId() : 'null'));
-        // error_log("Delete item - Item author ID: " . ($itemAuthor ? $itemAuthor->getId() : 'null'));
-        // error_log("Delete item - Users match: " . ($currentUser && $itemAuthor && $currentUser->getId() === $itemAuthor->getId() ? 'yes' : 'no'));
-        
-        if (!$currentUser || !$itemAuthor || $currentUser->getId() !== $itemAuthor->getId()) {
+        // Use ItemService to check if user can edit (same as delete permission)
+        if (!$this->itemService->canEditItem($item, $currentUser)) {
             return $this->json(['success' => false, 'message' => 'You can only delete your own items'], 403);
         }
 
-        $this->entityManager->remove($item);
-        $this->entityManager->flush();
+        // Use ItemService to delete item
+        $this->itemService->deleteItem($item);
         
         return $this->json([
             'success' => true,
@@ -1537,224 +1352,9 @@ class RetrospectiveController extends AbstractController
         ]);
     }
 
-    private function combineAndSortByPosition(array $items, array $groups): array
-    {
-        $combined = [];
-        
-        // Add items with their position
-        foreach ($items as $item) {
-            $combined[] = [
-                'type' => 'item',
-                'entity' => $item,
-                'position' => $item->getPosition()
-            ];
-        }
-        
-        // Add groups with their position
-        foreach ($groups as $group) {
-            $combined[] = [
-                'type' => 'group',
-                'entity' => $group,
-                'position' => $group->getPositionY()
-            ];
-        }
-        
-        // Sort by position
-        usort($combined, fn($a, $b) => $a['position'] <=> $b['position']);
-        
-        return $combined;
-    }
-
-    private function getItemsWithAggregatedVotes(array $items, array $groups): array
-    {
-        $combined = [];
-        
-        // Process individual items (not in groups)
-        foreach ($items as $item) {
-            if (!$item->getGroup()) {
-                // Get total votes for this item
-                $voteQueryResult = $this->entityManager
-                    ->getRepository(\App\Entity\Vote::class)
-                    ->createQueryBuilder('v')
-                    ->select('SUM(v.voteCount)')
-                    ->where('v.retrospectiveItem = :item')
-                    ->setParameter('item', $item)
-                    ->getQuery()
-                    ->getSingleScalarResult();
-                
-                $totalVotes = (int)($voteQueryResult ?? 0);
-                
-                $combined[] = [
-                    'type' => 'item',
-                    'entity' => $item,
-                    'totalVotes' => (int)$totalVotes,
-                    'category' => $this->getItemCategory($item)
-                ];
-            }
-        }
-        
-        // Process groups
-        foreach ($groups as $group) {
-            // Sum votes for all items in the group
-            $totalVotes = 0;
-            foreach ($group->getItems() as $groupItem) {
-                $itemVotesResult = $this->entityManager
-                    ->getRepository(\App\Entity\Vote::class)
-                    ->createQueryBuilder('v')
-                    ->select('SUM(v.voteCount)')
-                    ->where('v.retrospectiveItem = :item')
-                    ->setParameter('item', $groupItem)
-                    ->getQuery()
-                    ->getSingleScalarResult();
-                
-                $itemVotes = (int)($itemVotesResult ?? 0);
-                $totalVotes += $itemVotes;
-            }
-            
-            // Add votes directly on the group
-            $groupVotesResult = $this->entityManager
-                ->getRepository(\App\Entity\Vote::class)
-                ->createQueryBuilder('v')
-                ->select('SUM(v.voteCount)')
-                ->where('v.retrospectiveGroup = :group')
-                ->setParameter('group', $group)
-                ->getQuery()
-                ->getSingleScalarResult();
-            
-            $groupVotes = (int)($groupVotesResult ?? 0);
-            $totalVotes += $groupVotes;
-            
-            $combined[] = [
-                'type' => 'group',
-                'entity' => $group,
-                'totalVotes' => $totalVotes,
-                'category' => $this->getGroupCategory($group)
-            ];
-        }
-        
-        // Sort: first non-discussed (by votes desc), then discussed (by votes desc)
-        usort($combined, function($a, $b) {
-            $aEntity = $a['entity'];
-            $bEntity = $b['entity'];
-            
-            // Check if items are discussed
-            $aDiscussed = ($aEntity instanceof \App\Entity\RetrospectiveItem) ? $aEntity->isDiscussed() : 
-                         (method_exists($aEntity, 'isDiscussed') ? $aEntity->isDiscussed() : false);
-            $bDiscussed = ($bEntity instanceof \App\Entity\RetrospectiveItem) ? $bEntity->isDiscussed() : 
-                         (method_exists($bEntity, 'isDiscussed') ? $bEntity->isDiscussed() : false);
-            
-            // If both have same discussion status, sort by votes
-            if ($aDiscussed === $bDiscussed) {
-                return $b['totalVotes'] <=> $a['totalVotes'];
-            }
-            
-            // Non-discussed items come first
-            return $aDiscussed ? 1 : -1;
-        });
-        
-        return $combined;
-    }
-
-    private function getItemCategory($item): string
-    {
-        if ($item->isWrong()) return 'wrong';
-        if ($item->isGood()) return 'good';
-        if ($item->isImproved()) return 'improved';
-        if ($item->isRandom()) return 'random';
-        return 'unknown';
-    }
-
-    private function getGroupCategory($group): string
-    {
-        $positionX = $group->getPositionX();
-        return match($positionX) {
-            0 => 'wrong',
-            1 => 'good',
-            2 => 'improved',
-            3 => 'random',
-            default => 'unknown'
-        };
-    }
-
     private function hasTeamAccess(Team $team): bool
     {
-        $user = $this->getUser();
-        
-        // Team owner has access
-        if ($team->getOwner()->getId() === $user->getId()) {
-            return true;
-        }
-        
-        // Team members have access
-        return $team->hasMember($user);
-    }
-
-    private function getUserTeams($user): array
-    {
-        // Get user's organization (either as member or as owner)
-        $userOrganization = null;
-        
-        // First check if user is a member of any organization
-        foreach ($user->getOrganizationMemberships() as $membership) {
-            if ($membership->isActive() && $membership->getLeftAt() === null) {
-                $userOrganization = $membership->getOrganization();
-                break;
-            }
-        }
-        
-        // If not a member, check if user owns any organization
-        if (!$userOrganization) {
-            $ownedOrganizations = $user->getOwnedOrganizations();
-            if (!$ownedOrganizations->isEmpty()) {
-                $userOrganization = $ownedOrganizations->first();
-            }
-        }
-
-        // If user has no organization, return empty array
-        if (!$userOrganization) {
-            return [];
-        }
-
-        $qb = $this->entityManager->createQueryBuilder();
-        $qb->select('t')
-           ->from(\App\Entity\Team::class, 't')
-           ->leftJoin('t.teamMembers', 'tm')
-           ->leftJoin('tm.user', 'u')
-           ->where('(t.owner = :user OR u = :user)')
-           ->andWhere('t.organization = :organization')
-           ->andWhere('t.isActive = :active')
-           ->setParameter('user', $user)
-           ->setParameter('organization', $userOrganization)
-           ->setParameter('active', true)
-           ->orderBy('t.name', 'ASC');
-
-        return $qb->getQuery()->getResult();
-    }
-
-    private function generateMercureToken(int $retrospectiveId): string
-    {
-        $payload = [
-            'mercure' => [
-                'subscribe' => [
-                    "retrospective/{$retrospectiveId}",
-                    "retrospective/{$retrospectiveId}/timer",
-                    "retrospective/{$retrospectiveId}/review",
-                    "retrospective/{$retrospectiveId}/connected-users"
-                ]
-            ]
-        ];
-
-        // Simple JWT encoding using Mercure secret
-        $header = json_encode(['typ' => 'JWT', 'alg' => 'HS256']);
-        $payloadJson = json_encode($payload);
-        
-        $base64Header = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
-        $base64Payload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($payloadJson));
-        
-        $signature = hash_hmac('sha256', $base64Header . "." . $base64Payload, $_ENV['MERCURE_JWT_SECRET'], true);
-        $base64Signature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
-        
-        return $base64Header . "." . $base64Payload . "." . $base64Signature;
+        return $this->teamService->hasTeamAccess($team, $this->getUser());
     }
 
     #[Route('/retrospectives/{id}/join', name: 'app_retrospectives_join', methods: ['POST'])]
@@ -1831,8 +1431,8 @@ class RetrospectiveController extends AbstractController
             return $this->json(['success' => false, 'message' => 'Access denied'], 403);
         }
 
-        // Generate JWT token for Mercure
-        $token = $this->generateMercureToken($id);
+        // Use RetrospectiveService to generate Mercure token
+        $token = $this->retrospectiveService->generateMercureToken($id);
         
         return $this->json([
             'success' => true,
@@ -1892,26 +1492,9 @@ class RetrospectiveController extends AbstractController
             return $this->json(['success' => false, 'message' => 'You are not a participant'], 403);
         }
 
-        // Get all votes for this user in this retrospective
-        $votes = $this->entityManager->getRepository(Vote::class)->findByUserAndRetrospective($user, $retrospective);
-        
-        $votesData = [];
-        $totalVotes = 0;
-        
-        foreach ($votes as $vote) {
-            $voteData = ['voteCount' => $vote->getVoteCount()];
-            
-            if ($vote->getRetrospectiveItem()) {
-                $voteData['targetType'] = 'item';
-                $voteData['targetId'] = $vote->getRetrospectiveItem()->getId();
-            } elseif ($vote->getRetrospectiveGroup()) {
-                $voteData['targetType'] = 'group';
-                $voteData['targetId'] = $vote->getRetrospectiveGroup()->getId();
-            }
-            
-            $votesData[] = $voteData;
-            $totalVotes += $vote->getVoteCount();
-        }
+        // Use VotingService to get votes for user
+        $votesData = $this->votingService->getVotesForUser($retrospective, $user);
+        $totalVotes = array_sum(array_column($votesData, 'voteCount'));
 
         return $this->json([
             'success' => true,
@@ -1937,97 +1520,30 @@ class RetrospectiveController extends AbstractController
 
         $data = json_decode($request->getContent(), true);
         $targetId = $data['targetId'] ?? null;
-        $targetType = $data['targetType'] ?? null; // 'item' or 'group'
+        $targetType = $data['targetType'] ?? null;
         $voteCount = $data['voteCount'] ?? 0;
 
         if (!$targetId || !$targetType || !in_array($targetType, ['item', 'group'])) {
             return $this->json(['success' => false, 'message' => 'Invalid vote data'], 400);
         }
 
-        // Validate vote count (0-2 per item/group)
-        if ($voteCount < 0 || $voteCount > 2) {
-            return $this->json(['success' => false, 'message' => 'Vote count must be between 0 and 2'], 400);
-        }
-
         try {
-            if ($targetType === 'item') {
-                $item = $this->entityManager->getRepository(RetrospectiveItem::class)->find($targetId);
-                if (!$item || $item->getRetrospective() !== $retrospective) {
-                    return $this->json(['success' => false, 'message' => 'Item not found'], 404);
-                }
-                
-                // Find or create vote record for this user and item
-                $vote = $this->entityManager->getRepository(Vote::class)->findOneBy([
-                    'user' => $user,
-                    'retrospectiveItem' => $item
-                ]);
-                
-                if (!$vote) {
-                    $vote = new Vote();
-                    $vote->setUser($user);
-                    $vote->setRetrospectiveItem($item);
-                    $this->entityManager->persist($vote);
-                }
-                
-                // Update vote count (0 means removing the vote)
-                if ($voteCount === 0 && $vote->getId()) {
-                    $this->entityManager->remove($vote);
-                } else {
-                    $vote->setVoteCount($voteCount);
-                }
-                
-                $this->entityManager->flush();
-            } else {
-                // Group voting
-                $group = $this->entityManager->getRepository(RetrospectiveGroup::class)->find($targetId);
-                if (!$group || $group->getRetrospective() !== $retrospective) {
-                    return $this->json(['success' => false, 'message' => 'Group not found'], 404);
-                }
-                
-                // Find or create vote record for this user and group
-                $vote = $this->entityManager->getRepository(Vote::class)->findOneBy([
-                    'user' => $user,
-                    'retrospectiveGroup' => $group
-                ]);
-                
-                if (!$vote) {
-                    $vote = new Vote();
-                    $vote->setUser($user);
-                    $vote->setRetrospectiveGroup($group);
-                    $this->entityManager->persist($vote);
-                }
-                
-                // Update vote count (0 means removing the vote)
-                if ($voteCount === 0 && $vote->getId()) {
-                    $this->entityManager->remove($vote);
-                } else {
-                    $vote->setVoteCount($voteCount);
-                }
-                
-                $this->entityManager->flush();
-            }
-
-            // Broadcast vote update to all participants
-            $update = new Update(
-                "retrospective/{$id}",
-                json_encode([
-                    'type' => 'vote_updated',
-                    'targetType' => $targetType,
-                    'targetId' => $targetId,
-                    'userId' => $user->getId(),
-                    'voteCount' => $voteCount
-                ])
+            // Use VotingService to submit vote
+            $remainingVotes = $this->votingService->submitVote(
+                $retrospective,
+                $user,
+                $targetType,
+                $targetId,
+                $voteCount
             );
-            $this->hub->publish($update);
-
-            // Calculate remaining votes after the vote
-            $remainingVotes = $this->calculateRemainingVotes($retrospective, $user);
 
             return $this->json([
                 'success' => true,
                 'message' => 'Vote saved successfully',
                 'remainingVotes' => $remainingVotes
             ]);
+        } catch (\InvalidArgumentException $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()], 400);
         } catch (\Exception $e) {
             return $this->json(['success' => false, 'message' => 'Failed to save vote: ' . $e->getMessage()], 500);
         }
@@ -2337,33 +1853,6 @@ class RetrospectiveController extends AbstractController
         }
     }
 
-    /**
-     * Calculate remaining votes for a user in a retrospective
-     */
-    private function calculateRemainingVotes(Retrospective $retrospective, User $user): int
-    {
-        $allowedVotes = $retrospective->getVoteNumbers() ?? 10;
-        
-        // Get all votes by this user for this retrospective
-        $userVotes = $this->entityManager->getRepository(Vote::class)
-            ->createQueryBuilder('v')
-            ->leftJoin('v.retrospectiveItem', 'ri')
-            ->leftJoin('v.retrospectiveGroup', 'rg')
-            ->where('v.user = :user')
-            ->andWhere('(ri.retrospective = :retrospective OR rg.retrospective = :retrospective)')
-            ->setParameter('user', $user)
-            ->setParameter('retrospective', $retrospective)
-            ->getQuery()
-            ->getResult();
-        
-        // Calculate total votes used
-        $totalVotesUsed = 0;
-        foreach ($userVotes as $vote) {
-            $totalVotesUsed += $vote->getVoteCount();
-        }
-        
-        return max(0, $allowedVotes - $totalVotesUsed);
-    }
 
     protected function isCsrfTokenValid(string $id, ?string $token): bool
     {

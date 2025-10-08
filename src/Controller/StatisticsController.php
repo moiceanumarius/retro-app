@@ -147,6 +147,38 @@ class StatisticsController extends AbstractController
     }
 
     /**
+     * Endpoint for dashboard statistics widget
+     * 
+     * @return JsonResponse
+     */
+    #[Route('/dashboard', name: 'app_statistics_dashboard', methods: ['GET'])]
+    public function getDashboardStatistics(Request $request): JsonResponse
+    {
+        $this->ensureAuthenticated();
+        $user = $this->getUser();
+        $teamIds = $this->teamAccessService->getFilteredTeamIds($user, $request);
+
+        $retrospectiveStats = $this->statisticsService->getBasicRetrospectiveStatistics($teamIds);
+        $actionStats = $this->statisticsService->getActionStatistics($teamIds);
+
+        // Merge all stats into a flat structure for the widget
+        return $this->json([
+            'success' => true,
+            'data' => [
+                'total_retrospectives' => $retrospectiveStats['total_retrospectives'] ?? 0,
+                'active_retrospectives' => $retrospectiveStats['active_retrospectives'] ?? 0,
+                'completed_retrospectives' => $retrospectiveStats['completed_retrospectives'] ?? 0,
+                'completion_rate' => $retrospectiveStats['completion_rate'] ?? 0,
+                'total_actions' => $actionStats['total_actions'] ?? 0,
+                'pending_actions' => $actionStats['pending_actions'] ?? 0,
+                'completed_actions' => $actionStats['completed_actions'] ?? 0,
+                'action_completion_rate' => $actionStats['completion_rate'] ?? 0,
+                'overdue_actions' => $actionStats['overdue_actions'] ?? 0,
+            ]
+        ]);
+    }
+
+    /**
      * Endpoint pentru statistici echipe
      * 
      * @return JsonResponse

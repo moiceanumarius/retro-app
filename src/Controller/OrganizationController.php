@@ -14,6 +14,8 @@ use App\Form\OrganizationMemberType;
 use App\Repository\OrganizationRepository;
 use App\Repository\OrganizationMemberRepository;
 use App\Repository\UserRepository;
+use App\Service\OrganizationService;
+use App\Service\OrganizationMemberService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,20 +26,20 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * OrganizationController
  * 
- * Controller pentru gestionarea organizațiilor în sistemul RetroApp.
- * Accesibil EXCLUSIV pentru utilizatorii cu rolul ROLE_ADMIN.
+ * Controller for managing organizations in RetroApp system
+ * Accessible ONLY for users with ROLE_ADMIN role
  * 
- * Funcționalități principale:
- * - Listarea organizațiilor (active și inactive pentru admin)
- * - Crearea de organizații noi
- * - Editarea organizațiilor existente
- * - Ștergerea organizațiilor (logical delete)
- * - Gestionarea membrilor organizațiilor
- * - Activat/deactivarea organizațiilor
+ * Main functionalities:
+ * - List organizations (active and inactive for admin)
+ * - Create new organizations
+ * - Edit existing organizations
+ * - Delete organizations (logical delete)
+ * - Manage organization members
+ * - Activate/deactivate organizations
  * 
- * Permisiuni:
- * - Toate metodele verifică dacă utilizatorul are ROLE_ADMIN
- * - Dacă nu are privilegii, se aruncă AccessDeniedException
+ * Permissions:
+ * - All methods check if user has ROLE_ADMIN
+ * - If no privileges, AccessDeniedException is thrown
  */
 #[Route('/organizations')]
 final class OrganizationController extends AbstractController
@@ -46,49 +48,39 @@ final class OrganizationController extends AbstractController
         private EntityManagerInterface $entityManager,
         private OrganizationRepository $organizationRepository,
         private OrganizationMemberRepository $organizationMemberRepository,
-        private UserRepository $userRepository
+        private UserRepository $userRepository,
+        private OrganizationService $organizationService,
+        private OrganizationMemberService $organizationMemberService
     ) {
     }
 
     /**
-     * Lista organizațiilor din sistem
-     * Afișează toate organizațiile pentru admin cu opțiuni de management
+     * List of organizations in system
+     * Displays all organizations for admin with management options
      * 
-     * @return Response Pagina cu lista organizațiilor
+     * @return Response Page with list of organizations
      */
     #[Route('', name: 'app_organizations')]
     public function index(): Response
     {
-        // Verificarea permisirii - doar ADMIN
+        // Permission check - ADMIN only
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
 
-        // Obținerea organizației utilizatorului curent pentru dropdown-ul "Add User to Organization"
         $currentUser = $this->getUser();
-        $userOrganization = null;
         
-        // Găsește organizația activă a utilizatorului curent
-        foreach ($currentUser->getOrganizationMemberships() as $membership) {
-            if ($membership->isActive() && $membership->getLeftAt() === null) {
-                $userOrganization = $membership->getOrganization();
-                break;
-            }
-        }
+        // Use OrganizationService to get user's organization
+        $userOrganization = $this->organizationService->getUserOrganization($currentUser);
         
-        // Statistici pentru organizația utilizatorului curent
+        // Statistics for user's organization
         $statistics = $this->organizationRepository->getStatistics($userOrganization);
         
-        // Obținerea organizațiilor din care utilizatorul curent face parte
-        $organizations = [];
-        foreach ($currentUser->getOrganizationMemberships() as $membership) {
-            if ($membership->getOrganization()) {
-                $organizations[] = $membership->getOrganization();
-            }
-        }
+        // Use OrganizationService to get user's organizations
+        $organizations = $this->organizationService->getUserOrganizations($currentUser);
         
-        // Organizațiile recent create pentru sidebar
+        // Recent organizations for sidebar
         $recentOrganizations = $this->organizationRepository->findRecent(5);
         
-        // Organizațiile cu cei mai mulți membri
+        // Most popular organizations
         $popularOrganizations = $this->organizationRepository->findMostPopular(5);
 
         return $this->render('organization/index.html.twig', [
@@ -143,15 +135,15 @@ final class OrganizationController extends AbstractController
     }
 
     /**
-     * Vizualizarea detaliată a unei organizații
+     * Detailed view of an organization
      * 
-     * @param int $id ID-ul organizației
-     * @return Response Pagina cu detaliile organizației
+     * @param int $id Organization ID
+     * @return Response Page with organization details
      */
     #[Route('/{id}', name: 'app_organizations_show', requirements: ['id' => '\d+'])]
     public function show(int $id): Response
     {
-        // Verificarea permisirii - doar ADMIN
+        // Permission check - ADMIN only
         $this->denyAccessUnlessGranted('ROLE_ADMIN');
         
         $organization = $this->organizationRepository->find($id);
@@ -160,13 +152,13 @@ final class OrganizationController extends AbstractController
             throw $this->createNotFoundException('Organization not found');
         }
         
-        // Membrii activi ai organizației
-        $members = $this->organizationMemberRepository->findActiveByOrganization($organization);
+        // Use OrganizationMemberService to get active members
+        $members = $this->organizationMemberService->getActiveMembers($organization);
         
-        // Statistici specifice organizației
-        $memberStats = $this->organizationMemberRepository->getOrganizationStatistics($organization);
+        // Use OrganizationMemberService to get statistics
+        $memberStats = $this->organizationMemberService->getOrganizationStatistics($organization);
         
-        // Echipele care aparțin organizației
+        // Teams belonging to organization
         $teams = $organization->getTeams();
         
         return $this->render('organization/show.html.twig', [
@@ -331,63 +323,23 @@ final class OrganizationController extends AbstractController
                     ], 404);
                 }
                 
-                // Check if user is an admin and already has an organization
-                if ($user->hasRole('ROLE_ADMIN')) {
-                    $userOrganizations = $this->organizationMemberRepository->findByUser($user);
-                    if (count($userOrganizations) > 0) {
-                        return $this->json([
-                            'success' => false,
-                            'message' => 'Admin users can only belong to one organization'
-                        ], 400);
-                    }
+                // Use OrganizationMemberService to check if user can be added
+                $canAdd = $this->organizationMemberService->canAddUserToOrganization($user, $organization);
+                
+                if (!$canAdd['allowed']) {
+                    return $this->json([
+                        'success' => false,
+                        'message' => $canAdd['reason']
+                    ], 400);
                 }
                 
-                // Check if user is already a member or was a member before
-                $existingMember = $this->organizationMemberRepository->findOneBy([
-                    'user' => $user,
-                    'organization' => $organization
-                ]);
-                
-                if ($existingMember) {
-                    // If user was a member before (active or inactive)
-                    if ($existingMember->isActive() && $existingMember->getLeftAt() === null) {
-                        return $this->json([
-                            'success' => false,
-                            'message' => 'User is already a member of this organization'
-                        ], 400);
-                    } else {
-                        // Reactivate former member
-                        $existingMember->setIsActive(true);
-                        $existingMember->setLeftAt(null);
-                        $existingMember->setRole($role);
-                        $existingMember->setJoinedAt(new \DateTimeImmutable()); // Update join date to reflect reactivation
-                        $existingMember->setInvitedBy($this->getUser());
-                        
-                        $this->entityManager->persist($existingMember);
-                        $this->entityManager->flush();
-                        
-                        return $this->json([
-                            'success' => true,
-                            'message' => 'User successfully readded to organization',
-                            'user' => [
-                                'id' => $user->getId(),
-                                'name' => $user->getFirstName() . ' ' . $user->getLastName(),
-                                'email' => $user->getEmail(),
-                                'role' => $role
-                            ]
-                        ]);
-                    }
-                }
-                
-                // Create new organization member (first time)
-                $organizationMember->setUser($user);
-                $organizationMember->setRole($role);
-                $organizationMember->setInvitedBy($this->getUser());
-                $organizationMember->setJoinedAt(new \DateTimeImmutable());
-                $organizationMember->setIsActive(true);
-                
-                $this->entityManager->persist($organizationMember);
-                $this->entityManager->flush();
+                // Use OrganizationMemberService to add member
+                $member = $this->organizationMemberService->addMemberToOrganization(
+                    $user,
+                    $organization,
+                    $role,
+                    $this->getUser()
+                );
                 
                 return $this->json([
                     'success' => true,
@@ -415,29 +367,24 @@ final class OrganizationController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $userToAdd = $organizationMember->getUser();
             
-            // Check if user is an admin and already has an organization
-            if ($userToAdd->hasRole('ROLE_ADMIN')) {
-                $userOrganizations = $this->organizationMemberRepository->findByUser($userToAdd);
-                if (count($userOrganizations) > 0) {
-                    $this->addFlash('error', '❌ Admin users can only belong to one organization');
-                    return $this->render('organization/add_member.html.twig', [
-                        'organization' => $organization,
-                        'form' => $form,
-                    ]);
-                }
-            }
+            // Use OrganizationMemberService to check if user can be added
+            $canAdd = $this->organizationMemberService->canAddUserToOrganization($userToAdd, $organization);
             
-            // Verificarea dacă userul este deja membru
-            if ($this->organizationMemberRepository->isUserMemberOfOrganization($userToAdd, $organization)) {
-                $this->addFlash('error', 'User is already a member of this organization');
+            if (!$canAdd['allowed']) {
+                $this->addFlash('error', '❌ ' . $canAdd['reason']);
                 return $this->render('organization/add_member.html.twig', [
                     'organization' => $organization,
                     'form' => $form,
                 ]);
             }
             
-            $this->entityManager->persist($organizationMember);
-            $this->entityManager->flush();
+            // Use OrganizationMemberService to add member
+            $this->organizationMemberService->addMemberToOrganization(
+                $userToAdd,
+                $organization,
+                $organizationMember->getRole(),
+                $this->getUser()
+            );
             
             $this->addFlash('success', '✅ Member added successfully!');
             
@@ -479,16 +426,10 @@ final class OrganizationController extends AbstractController
             return $this->redirectToRoute('app_organizations_show_members', ['id' => $orgId]);
         }
         
-        // Verificarea token-ului CSRF pentru securitate
+        // CSRF token validation for security
         if ($this->isCsrfTokenValid('remove_user_from_organization', $request->request->get('_token'))) {
-            // Mark member as left organization
-            $this->organizationMemberRepository->markAsLeft($member);
-            
-            // Remove user from all teams in this organization
-            $this->removeUserFromOrganizationTeams($member->getUser(), $organization);
-            
-            // Set user's global role to MEMBER
-            $this->setUserRoleToMember($member->getUser());
+            // Use OrganizationMemberService to remove member
+            $this->organizationMemberService->removeMemberFromOrganization($member);
             
             $this->addFlash('success', '✅ Member removed successfully! User removed from all organization teams and role set to MEMBER.');
             
@@ -707,82 +648,5 @@ final class OrganizationController extends AbstractController
                 'users' => []
             ], 500);
         }
-    }
-    
-    /**
-     * Remove user from all teams in the organization
-     */
-    private function removeUserFromOrganizationTeams(User $user, Organization $organization): void
-    {
-        $teamRepository = $this->entityManager->getRepository(Team::class);
-        $teamMemberRepository = $this->entityManager->getRepository(TeamMember::class);
-        
-        // Get all teams in this organization
-        $teams = $teamRepository->createQueryBuilder('t')
-            ->where('t.organization = :organization')
-            ->setParameter('organization', $organization)
-            ->getQuery()
-            ->getResult();
-            
-        // Remove user from each team
-        foreach ($teams as $team) {
-            $teamMember = $teamMemberRepository->findOneBy([
-                'team' => $team,
-                'user' => $user,
-                'isActive' => true
-            ]);
-            
-            if ($teamMember) {
-                $teamMember->setIsActive(false);
-                $teamMember->setLeftAt(new \DateTimeImmutable());
-                $this->entityManager->persist($teamMember);
-            }
-        }
-        
-        $this->entityManager->flush();
-    }
-    
-    /**
-     * Set user's global role to MEMBER
-     */
-    private function setUserRoleToMember(User $user): void
-    {
-        $roleRepository = $this->entityManager->getRepository(Role::class);
-        $userRoleRepository = $this->entityManager->getRepository(UserRole::class);
-        
-        // Find MEMBER role
-        $memberRole = $roleRepository->findOneBy(['code' => 'ROLE_MEMBER']);
-        if (!$memberRole) {
-            return; // MEMBER role doesn't exist, skip
-        }
-        
-        // Deactivate all current roles
-        $currentRoles = $userRoleRepository->findBy(['user' => $user, 'isActive' => true]);
-        foreach ($currentRoles as $currentRole) {
-            $currentRole->setIsActive(false);
-            $this->entityManager->persist($currentRole);
-        }
-        
-        // Check if user already has MEMBER role (any status)
-        $existingMemberRole = $userRoleRepository->findOneBy([
-            'user' => $user,
-            'role' => $memberRole
-        ]);
-        
-        if ($existingMemberRole) {
-            // Reactivate existing MEMBER role
-            $existingMemberRole->setIsActive(true);
-            $this->entityManager->persist($existingMemberRole);
-        } else {
-            // Create new MEMBER role
-            $newMemberRole = new UserRole();
-            $newMemberRole->setUser($user);
-            $newMemberRole->setRole($memberRole);
-            $newMemberRole->setIsActive(true);
-            $newMemberRole->setAssignedAt(new \DateTimeImmutable());
-            $this->entityManager->persist($newMemberRole);
-        }
-        
-        $this->entityManager->flush();
     }
 }
