@@ -161,7 +161,7 @@
                             <span class="stat-label">Members</span>
                         </div>
                         <div class="stat">
-                            <span class="stat-number">{{ member.role ?: 'Member' }}</span>
+                            <span class="stat-number">{% if team.getMemberByUser(app.user) %}{{ team.getMemberByUser(app.user).role }}{% else %}Member{% endif %}</span>
                             <span class="stat-label">Your Role</span>
                         </div>
                     </div>
