@@ -1468,7 +1468,6 @@
 
     <div class="page-content">
 
-    {% if actions|length > 0 %}
         <!-- Stats Overview -->
         <div class = "stats-row">
             {% set totalActions = (statusStats['pending'] ?? 0) + (statusStats['in-progress'] ?? 0) + (statusStats['completed'] ?? 0) + (statusStats['cancelled'] ?? 0) %}
@@ -1604,6 +1603,7 @@
         </div>
 
         <!-- Actions Table -->
+        {% if actions|length > 0 %}
         <div class="actions-table-container">
             <table class="actions-table">
                 <thead>
@@ -1729,21 +1729,34 @@
                 </tbody>
             </table>
         </div>
-    {% else %}
-        <!-- Empty State -->
-        <div class="empty-state">
-            <div class="empty-state-icon">
+        
+        <!-- Empty state for client-side filtering (hidden by default when there are actions) -->
+        <div class="empty-state" style="display: none; text-align: center; padding: 3rem 2rem; background: white; border-radius: 12px; box-shadow: 0 2px 20px rgba(0,0,0,0.08);">
+            <div class="empty-state-icon" style="margin: 0 auto 1.5rem; color: #9ca3af;">
                 <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" clip-rule="evenodd"></path>
+                    <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
                 </svg>
             </div>
-            <h3>No Actions Found</h3>
-            <p>{% if team %}No action items found for {{ team.name }} yet.{% else %}No action items found{% endif %} Create retrospectives and add action items to start tracking progress.</p>
+            <h3 style="font-size: 1.25rem; color: #4b5563; margin-bottom: 0.5rem;">No actions match the applied filters</h3>
+            <p style="color: #9ca3af;">Try adjusting the filters to see results.</p>
         </div>
-    {% endif %}
+        {% else %}
+            <!-- No results after filtering -->
+            {% if filterReview or filterStatus != 'all' %}
+                <div class="empty-state" style="display: block; text-align: center; padding: 3rem 2rem; background: white; border-radius: 12px; box-shadow: 0 2px 20px rgba(0,0,0,0.08);">
+                    <div class="empty-state-icon" style="margin: 0 auto 1.5rem; color: #9ca3af;">
+                        <svg width="64" height="64" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                        </svg>
+                    </div>
+                    <h3 style="font-size: 1.25rem; color: #4b5563; margin-bottom: 0.5rem;">No actions match the applied filters</h3>
+                    <p style="color: #9ca3af;">Try adjusting the filters to see results.</p>
+                </div>
+            {% endif %}
+        {% endif %}
 
     <!-- Pagination Controls -->
-    {% if pagination.total_pages > 1 %}
+    {% if pagination.total_pages > 1 and actions|length > 0 %}
         <div class="pagination-container">
             <div class="pagination-info">
                 Showing {{ ((pagination.current_page - 1) * pagination.items_per_page) + 1 }} to 
@@ -1906,6 +1919,20 @@
             
             row.style.display = showRow ? '' : 'none';
         });
+        
+        // Check if there are any visible rows
+        const visibleRows = Array.from(tableRows).filter(row => row.style.display !== 'none');
+        const emptyState = document.querySelector('.empty-state');
+        const tableContainer = document.querySelector('.actions-table-container');
+        
+        // Show/hide empty state and table based on visible rows
+        if (visibleRows.length === 0 && emptyState) {
+            if (tableContainer) tableContainer.style.display = 'none';
+            emptyState.style.display = 'block';
+        } else {
+            if (tableContainer) tableContainer.style.display = 'block';
+            if (emptyState) emptyState.style.display = 'none';
+        }
     }
 
     function clearFilters() {
@@ -1922,7 +1949,13 @@
         if (reviewFilter) reviewFilter.value = '';
         if (searchBox) searchBox.value = '';
         
-        filterTable();
+        // Clear URL parameters and reload
+        const currentUrl = new URL(window.location);
+        currentUrl.searchParams.delete('status');
+        currentUrl.searchParams.delete('review');
+        currentUrl.searchParams.set('page', '1');
+        
+        window.location.href = currentUrl.toString();
     }
 
     // Custom dropdown functions
@@ -1941,8 +1974,27 @@
 
     function updateStatusFilter() {
         updateStatusDropdownText();
-        filterTable();
-        updateUrlWithFilters();
+        
+        // Get selected statuses
+        const statusCheckboxes = document.querySelectorAll('#statusDropdownMenu input[type="checkbox"]');
+        const selectedStatuses = Array.from(statusCheckboxes)
+            .filter(checkbox => checkbox.checked)
+            .map(checkbox => checkbox.value);
+        
+        // Update URL and reload to get data from server
+        const currentUrl = new URL(window.location);
+        
+        if (selectedStatuses.length > 0) {
+            currentUrl.searchParams.set('status', selectedStatuses.join(','));
+        } else {
+            currentUrl.searchParams.set('status', 'all');
+        }
+        
+        // Reset to first page when filtering
+        currentUrl.searchParams.set('page', '1');
+        
+        // Reload page with new filter
+        window.location.href = currentUrl.toString();
     }
 
     function updateStatusDropdownText() {
@@ -2009,10 +2061,41 @@
         const reviewFilter = document.getElementById('reviewFilter');
         const searchBox = document.getElementById('searchBox');
         
+        // Populate status checkboxes from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const statusParam = urlParams.get('status');
+        
+        if (statusParam && statusParam !== 'all') {
+            const statuses = statusParam.split(',');
+            const statusCheckboxes = document.querySelectorAll('#statusDropdownMenu input[type="checkbox"]');
+            
+            statusCheckboxes.forEach(checkbox => {
+                if (statuses.includes(checkbox.value)) {
+                    checkbox.checked = true;
+                }
+            });
+            
+            // Update dropdown text
+            updateStatusDropdownText();
+        }
+        
         if (reviewFilter) {
             reviewFilter.addEventListener('change', function() {
-                filterTable();
-                updateUrlWithFilters();
+                // For review filter, we need to reload from server to get correct data
+                const currentUrl = new URL(window.location);
+                const reviewValue = this.value;
+                
+                if (reviewValue) {
+                    currentUrl.searchParams.set('review', reviewValue);
+                } else {
+                    currentUrl.searchParams.delete('review');
+                }
+                
+                // Reset to first page when changing filter
+                currentUrl.searchParams.set('page', '1');
+                
+                // Reload page with new filter
+                window.location.href = currentUrl.toString();
             });
         }
         
@@ -2757,12 +2840,16 @@
         titleEl.textContent = 'Reset Reviewed Actions';
         bodyEl.innerHTML = 'Are you sure you want to reset all reviewed actions?';
         
+        // Set button text
+        confirmBtn.textContent = 'Reset';
+        
         // Show modal
         modal.classList.add('active');
         
         // Remove existing event listeners
         const newCancelBtn = cancelBtn.cloneNode(true);
         const newConfirmBtn = confirmBtn.cloneNode(true);
+        newConfirmBtn.textContent = 'Reset'; // Set text after cloning
         cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
         confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
         

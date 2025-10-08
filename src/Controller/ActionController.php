@@ -130,8 +130,15 @@ class ActionController extends AbstractController
         
         // Apply status filter if not 'all'
         if ($filterStatus !== 'all') {
-            $qb->andWhere('a.status = :status')
-               ->setParameter('status', $filterStatus);
+            // Check if multiple statuses are provided (comma-separated)
+            if (strpos($filterStatus, ',') !== false) {
+                $statuses = explode(',', $filterStatus);
+                $qb->andWhere('a.status IN (:statuses)')
+                   ->setParameter('statuses', $statuses);
+            } else {
+                $qb->andWhere('a.status = :status')
+                   ->setParameter('status', $filterStatus);
+            }
         }
         
         // Apply review filter

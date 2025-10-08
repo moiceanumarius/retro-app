@@ -96,6 +96,50 @@ migrate:
 	@echo "Running database migrations..."
 	docker-compose exec app php bin/console doctrine:migrations:migrate
 
+# Database backup commands
+backup-db-dev:
+	@echo "Creating development database backup..."
+	@mkdir -p backups
+	@docker exec retro_app_mysql_dev mysqldump -uroot -proot --single-transaction --quick --lock-tables=false retro_app > backups/retro_app_dev_$(shell date +%Y%m%d_%H%M%S).sql
+	@echo "✅ Backup created successfully!"
+	@ls -lh backups/ | tail -1
+
+backup-db-prod:
+	@echo "Creating production database backup..."
+	@mkdir -p backups
+	@docker exec retro_app_mariadb_prod mysqldump -uroot -p$$MYSQL_ROOT_PASSWORD --single-transaction --quick --lock-tables=false retro_app > backups/retro_app_prod_$(shell date +%Y%m%d_%H%M%S).sql
+	@echo "✅ Backup created successfully!"
+	@ls -lh backups/ | tail -1
+
+restore-db-dev:
+	@echo "📂 Available backups:"
+	@ls -1 backups/*dev*.sql 2>/dev/null || echo "No dev backups found"
+	@read -p "Enter backup filename (from backups/ directory): " backup; \
+	if [ -f "backups/$$backup" ]; then \
+		echo "Restoring $$backup..."; \
+		docker exec -i retro_app_mysql_dev mysql -uroot -proot retro_app < backups/$$backup; \
+		echo "✅ Database restored successfully!"; \
+	else \
+		echo "❌ Backup file not found!"; \
+		exit 1; \
+	fi
+
+list-backups:
+	@echo "📂 Available database backups:"
+	@ls -lh backups/*.sql 2>/dev/null || echo "No backups found. Run 'make backup-db-dev' to create one."
+
+clean-old-backups:
+	@echo "Cleaning backups older than 7 days..."
+	@find backups/ -name "*.sql" -mtime +7 -delete 2>/dev/null || true
+	@echo "✅ Old backups cleaned!"
+
+mysql-status:
+	@echo "📊 MySQL Status:"
+	@docker exec retro_app_mysql_dev mysql -uroot -proot -e "SHOW PROCESSLIST;"
+	@echo ""
+	@echo "📁 Databases:"
+	@docker exec retro_app_mysql_dev mysql -uroot -proot -e "SHOW DATABASES;"
+
 # Environment generation commands
 env-dev:
 	@echo "Generating .env.dev file..."
