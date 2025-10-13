@@ -1,4 +1,17 @@
 /* Action Dialog Styles */
+
+/* Item Separator Styles */
+.item-separator {
+    height: 1px;
+    background: repeating-linear-gradient(
+        to right,
+        #dee2e6 0px,
+        #dee2e6 4px,
+        transparent 4px,
+        transparent 8px
+    );
+    margin: 0.75rem 0;
+}
 .action-dialog-overlay {
     position: fixed;
     top: 0;

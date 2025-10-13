@@ -88,6 +88,21 @@ services:
     networks:
       - retro_network
 
+  selenium:
+    image: selenium/standalone-chrome:4.16.0
+    container_name: retro_app_selenium_dev
+    ports:
+      - "4444:4444"
+      - "7900:7900"
+    environment:
+      - SE_VNC_NO_PASSWORD=1
+      - SE_SCREEN_WIDTH=1920
+      - SE_SCREEN_HEIGHT=1080
+      - SE_SCREEN_DEPTH=24
+    shm_size: 2gb
+    networks:
+      - retro_network
+
 volumes:
   mysql_dev_data:
 

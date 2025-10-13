@@ -208,7 +208,9 @@ class ActionController extends AbstractController
         // Check if user has access to this action
         $hasAccess = $action->getAssignedTo() === $user || 
                     $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
-                    $this->isGranted('ROLE_ADMIN');
+                    $this->isGranted('ROLE_ADMIN') ||
+                    $this->isGranted('ROLE_SUPERVISOR') ||
+                    $this->isGranted('ROLE_FACILITATOR');
 
         if (!$hasAccess) {
             if ($request->isXmlHttpRequest()) {
@@ -250,7 +252,9 @@ class ActionController extends AbstractController
         // Check if user has permission to edit this action
         $hasPermission = $action->getAssignedTo() === $user || 
                         $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
-                        $this->isGranted('ROLE_ADMIN');
+                        $this->isGranted('ROLE_ADMIN') ||
+                        $this->isGranted('ROLE_SUPERVISOR') ||
+                        $this->isGranted('ROLE_FACILITATOR');
 
         if (!$hasPermission) {
             return $this->json(['success' => false, 'message' => 'You do not have permission to edit this action']);
@@ -296,7 +300,9 @@ class ActionController extends AbstractController
         // Check if user has permission to edit this action
         $hasPermission = $action->getAssignedTo() === $user ||
                         $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
-                        $this->isGranted('ROLE_ADMIN');
+                        $this->isGranted('ROLE_ADMIN') ||
+                        $this->isGranted('ROLE_SUPERVISOR') ||
+                        $this->isGranted('ROLE_FACILITATOR');
 
         if (!$hasPermission) {
             return $this->json(['success' => false, 'message' => 'You do not have permission to edit this action']);
@@ -355,7 +361,9 @@ class ActionController extends AbstractController
         // Check if user has permission to edit this action
         $hasPermission = $action->getAssignedTo() === $user ||
                         $action->getRetrospective()->getTeam()->getOwner()->getId() === $user->getId() ||
-                        $this->isGranted('ROLE_ADMIN');
+                        $this->isGranted('ROLE_ADMIN') ||
+                        $this->isGranted('ROLE_SUPERVISOR') ||
+                        $this->isGranted('ROLE_FACILITATOR');
 
         if (!$hasPermission) {
             return $this->json(['success' => false, 'message' => 'You do not have permission to edit this action']);
@@ -555,7 +563,7 @@ class ActionController extends AbstractController
         }
 
         // Check if user has permission to reset reviewed actions
-        if (!$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_SUPERVISOR')) {
+        if (!$this->isGranted('ROLE_ADMIN') && !$this->isGranted('ROLE_SUPERVISOR') && !$this->isGranted('ROLE_FACILITATOR')) {
             return $this->json(['success' => false, 'message' => 'You do not have permission to reset reviewed actions']);
         }
 

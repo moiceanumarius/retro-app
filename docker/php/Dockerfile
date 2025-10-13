@@ -40,7 +40,7 @@ FROM base as development
 RUN pecl install xdebug \
     && docker-php-ext-enable xdebug
 
-# Install additional development tools
+# Install development tools
 RUN apt-get update && apt-get install -y \
     vim \
     nano \
