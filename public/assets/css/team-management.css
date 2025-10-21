@@ -236,6 +236,23 @@
     font-size: 0.875rem;
 }
 
+.team-actions .btn-sm {
+    padding: 0.7rem 1rem;
+    font-size: 0.875rem;
+}
+
+.team-actions .btn-sm.btn-danger {
+    padding: 0.9rem 1rem;
+    font-size: 0.875rem;
+    background: #ff6b6b;
+    color: white;
+}
+
+.team-actions .btn-sm.btn-danger:hover {
+    background: #f56565;
+    transform: translateY(-1px);
+}
+
 .team-actions .btn-primary {
     background: #667eea;
     color: white;

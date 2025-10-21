@@ -160,6 +160,7 @@
             margin-bottom: 1.5rem;
             font-size: 0.875rem;
         }
+        
     </style>
 </head>
 <body>
@@ -181,9 +182,6 @@
             
             {% if not registrationForm.vars.valid %}
                 <div class="form-errors">
-                    {% for error in registrationForm.vars.errors %}
-                        <div>{{ error.message }}</div>
-                    {% endfor %}
                     {% for child in registrationForm %}
                         {% if child.vars.errors|length > 0 %}
                             {% for error in child.vars.errors %}
@@ -197,25 +195,21 @@
             <div class="form-group">
                 <label for="{{ registrationForm.firstName.vars.id }}" class="form-label">First Name</label>
                 {{ form_widget(registrationForm.firstName, {'attr': {'class': 'form-input'}}) }}
-                {{ form_errors(registrationForm.firstName) }}
             </div>
             
             <div class="form-group">
                 <label for="{{ registrationForm.lastName.vars.id }}" class="form-label">Last Name</label>
                 {{ form_widget(registrationForm.lastName, {'attr': {'class': 'form-input'}}) }}
-                {{ form_errors(registrationForm.lastName) }}
             </div>
             
             <div class="form-group">
                 <label for="{{ registrationForm.email.vars.id }}" class="form-label">Email</label>
                 {{ form_widget(registrationForm.email, {'attr': {'class': 'form-input'}}) }}
-                {{ form_errors(registrationForm.email) }}
             </div>
             
             <div class="form-group">
                 <label for="{{ registrationForm.plainPassword.vars.id }}" class="form-label">Password</label>
                 {{ form_widget(registrationForm.plainPassword, {'attr': {'class': 'form-input'}}) }}
-                {{ form_errors(registrationForm.plainPassword) }}
             </div>
             
             <div class="checkbox-group">
@@ -224,7 +218,6 @@
                     I agree to the <a href="#" class="auth-link">Terms of Service</a> and <a href="#" class="auth-link">Privacy Policy</a>
                 </label>
             </div>
-            {{ form_errors(registrationForm.agreeTerms) }}
             
             <button type="submit" class="btn-register">
                 Create Account
