@@ -326,7 +326,7 @@
 }
 
 #actionFormContainer .accordion-content.active {
-    max-height: 600px;
+    max-height: 500px;
     padding: 1rem;
     overflow-y: auto;
 }
